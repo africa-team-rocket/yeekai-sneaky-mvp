@@ -1,0 +1,63 @@
+Ligne 1 — HLM Grand Yoff ↔ Lat Dior
+Ligne 2 — Parcelles Assainies ↔ Pétersen
+Ligne 3 — Yoff Village ↔ Pétersen
+Ligne 4 — Yoff Village ↔ Pétersen
+Ligne 5 — Parcelles Assainies ↔ Pétersen
+Ligne 24 — Guédiawaye ↔ Cheikh Anta Diop UCAD
+Ligne 25 — Parcelles Assainies ↔ Pétersen
+Ligne 26 — Parcelles Assainies ↔ Poste Thiaroye
+Ligne 27 — Marché Boubess (Guédiawaye) ↔ Pétersen
+Ligne 28 — Hamo VI ↔ Pétersen
+Ligne 29 — Cité Nations Unis (Cambérène) ↔ Pétersen
+Ligne 30 — Gadaye ↔ Colobane
+Ligne 31 — Terminus Texaco ↔ Terminus Sham
+Ligne 32 — Guédiawaye ↔ Terminus Sham
+Ligne 33 — Daroukhane ↔ Colobane
+Ligne 34 — Nord Foire ↔ Lat Dior
+Ligne 36 — Daroukhane ↔ Ngor Village
+Ligne 37 — Pétersen ↔ Guédiawaye (Serigne Assane)
+Ligne 38 — Cité des Enseignants (Guédiawaye) ↔ Sham
+Ligne 39 — Terminus Diamalaye ↔ Gare Lat Dior
+Ligne 40 — Terminus Grand Mbao ↔ Pétersen
+Ligne 41 — Guédiawaye Madial ↔ Pétersen
+Ligne 42 — Corniche Guédiawaye ↔ Ouakam
+Ligne 43 — Yeumbeul Sud ↔ Ouakam Cité Avion
+Ligne 44 — Ouakam Bayé ↔ Grand Mbao Extention
+Ligne 46 — Guédiawaye Notaire ↔ Lat Dior
+Ligne 47 — Almadies ↔ Lat Dior
+Ligne 48 — Cité Serigne Mansour (Rufisque) ↔ Lat Dior
+Ligne 49 — Terminus Gadaye ↔ Ngor Village
+Ligne 50 — Malika ↔ Pétersen
+Ligne 51 — Plan Jaxay 1 ↔ Gare des beaux Maraîchers
+Ligne 52 — Bountou Pikine ↔ Keur Massar
+Ligne 53 — Lac Rose ↔ Sébikotane
+Ligne 54 — Keur Massar ↔ Cheikh Anta Diop UCAD
+Ligne 55 — Petersen ↔ Rufisque
+Ligne 56 — Keur Massar Aladji Pathé ↔ Petersen
+Ligne 57 — Liberté 6 ↔ Gouye Mouride (Rufisque)
+Ligne 58 — Fass Mbao Rail ba ↔ Hôpital Abass Ndao
+Ligne 59 — Stade Léopold Senghor ↔ MTOA Keur Massar
+Ligne 60 — Colobane ↔ Terminus Bargny Guedj
+Ligne 61 — Keur Massar ↔ Mamelles
+Ligne 62 — Gueule Tapée Penc Mi ↔ Rufisque
+Ligne 63 — Stade Léopold Senghor ↔ Rufisque
+Ligne 64 — Guédiawaye Notaire ↔ Thiawlène Rufisque
+Ligne 65 — Colobane ↔ Jaxaay 2
+Ligne 66 — Gorom I ↔ Terminus Yoff Frigo
+Ligne 67 — Thiawlène Rufisque ↔ Ouakam
+Ligne 68 — Station Yeumbeul ↔ Sébikotane
+Ligne 69 — Diamalaye ↔ Tivaouane Peulh
+Ligne 70 — Guédiawaye (Serigne Assane) ↔ Jaxaay 2
+Ligne 71 — Keur Massar ↔ Cité Claudel
+Ligne 72 — Guédiawaye ↔ Kounoune
+Ligne 73 — Poste Thiaroye ↔ Lac Rose
+Ligne 74 — Cité SOCABEG ↔ Bargny Guedj
+Ligne 75 — Malika ↔ Colobane
+Ligne 76 — Sud Foire ↔ Keur Massar (Cité Pénitentiaire)
+Ligne 77 — Rufisque Cité Taco ↔ Liberté 5
+Ligne 78 — Thiaroye gouy ga ↔ Liberté 5
+Ligne 79 — Cambérène ↔ Sangalkam
+Ligne 80 — Diamalaye ↔ Darou Thioub
+Ligne 81 — Gare Beaux Maraîchers ↔ Tivaouane Peulh
+Ligne 82 — Cité Comico Yeumbeul ↔ Gare Lat Dior
+Ligne 82 — Grand Yoff Bassin ↔ Plan Jaxaay 2
