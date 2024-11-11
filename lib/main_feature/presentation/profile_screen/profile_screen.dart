@@ -1,13 +1,9 @@
 import 'dart:ui';
 
-import 'package:animated_switcher_plus/animated_switcher_plus.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter/widgets.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:local_hero/local_hero.dart';
 import 'package:page_transition/page_transition.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -23,102 +19,104 @@ class ProfileScreen extends StatefulWidget {
   State<ProfileScreen> createState() => _ProfileScreenState();
 }
 
-class _ProfileScreenState extends State<ProfileScreen> {
-  final ScrollController scrollController = ScrollController();
-  bool isProfilePicVisible = true;
+class ProfileSection extends StatelessWidget {
+  final String title;
+
+  final String? icon;
+  final bool? isTrueTopOrBottomFalse;
+  final void Function() onTap;
+  const ProfileSection({
+    super.key,
+    required this.title,
+    this.icon,
+    this.isTrueTopOrBottomFalse,
+    required this.onTap,
+  });
 
   @override
-  void initState() {
-    // TODO: implement initState
-    scrollController.addListener(() {
-      debugPrint(
-          "Current scroll:" + scrollController.position.pixels.toString());
-      if (scrollController.position.pixels > 295 && isProfilePicVisible) {
-        setState(() {
-          isProfilePicVisible = false;
-        });
-      } else if (scrollController.position.pixels < 295 &&
-          !isProfilePicVisible) {
-        setState(() {
-          isProfilePicVisible = true;
-        });
-      }
-    });
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 1),
+      child: Material(
+        borderRadius: isTrueTopOrBottomFalse != null
+            ? BorderRadius.only(
+                topLeft: isTrueTopOrBottomFalse!
+                    ? const Radius.circular(10)
+                    : Radius.zero,
+                topRight: isTrueTopOrBottomFalse!
+                    ? const Radius.circular(10)
+                    : Radius.zero,
+                bottomLeft: isTrueTopOrBottomFalse!
+                    ? Radius.zero
+                    : const Radius.circular(10),
+                bottomRight: isTrueTopOrBottomFalse!
+                    ? Radius.zero
+                    : const Radius.circular(10))
+            : BorderRadius.zero,
 
-    super.initState();
-  }
-
-  @override
-  void dispose() {
-    // TODO: implement dispose
-    scrollController.dispose();
-    scrollController.removeListener(() {});
-    super.dispose();
-  }
-
-  void _showAlertDialog(BuildContext innerContext) {
-    showCupertinoModalPopup<void>(
-      context: innerContext,
-      builder: (BuildContext context) => CupertinoAlertDialog(
-        title: Text(
-          'Attention',
-          style: TextStyle(fontSize: 20, color: AppColors.primaryText),
-        ),
-        content: Padding(
-          padding: const EdgeInsets.only(top: 10),
-          child: Text(
-            'Vous êtes sur le point de supprimer toutes vos données, votre yeeguide se sentira abandonné et seul dans le noir..',
-            style: TextStyle(fontSize: 15.5, color: AppColors.primaryText),
+        // borderRadius: BorderRadius.only(
+        //     topLeft: Radius.circular(10),
+        //     topRight: Radius.circular(10)),
+        color: Colors.white,
+        child: InkWell(
+          borderRadius: isTrueTopOrBottomFalse != null
+              ? BorderRadius.only(
+                  topLeft: isTrueTopOrBottomFalse!
+                      ? const Radius.circular(10)
+                      : Radius.zero,
+                  topRight: isTrueTopOrBottomFalse!
+                      ? const Radius.circular(10)
+                      : Radius.zero,
+                  bottomLeft: isTrueTopOrBottomFalse!
+                      ? Radius.zero
+                      : const Radius.circular(10),
+                  bottomRight: isTrueTopOrBottomFalse!
+                      ? Radius.zero
+                      : const Radius.circular(10))
+              : BorderRadius.zero,
+          // borderRadius: BorderRadius.only(
+          //     topLeft: Radius.circular(10),
+          //     topRight: Radius.circular(10)),
+          onTap: onTap,
+          child: Container(
+            width: 1.sw,
+            height: 40,
+            decoration: BoxDecoration(
+                // color: Colors.white,
+                borderRadius: isTrueTopOrBottomFalse != null
+                    ? BorderRadius.only(
+                        topLeft: isTrueTopOrBottomFalse!
+                            ? const Radius.circular(10)
+                            : Radius.zero,
+                        topRight: isTrueTopOrBottomFalse!
+                            ? const Radius.circular(10)
+                            : Radius.zero,
+                        bottomLeft: isTrueTopOrBottomFalse!
+                            ? Radius.zero
+                            : const Radius.circular(10),
+                        bottomRight: isTrueTopOrBottomFalse!
+                            ? Radius.zero
+                            : const Radius.circular(10))
+                    : BorderRadius.zero),
+            child: Center(
+                child: Row(
+              children: [
+                const SizedBox(
+                  width: 15,
+                ),
+                Text(title),
+              ],
+            )),
           ),
         ),
-        actions: <CupertinoDialogAction>[
-          CupertinoDialogAction(
-            /// This parameter indicates this action is the default,
-            /// and turns the action's text to bold text.
-            // isDefaultAction: true,
-            onPressed: () {
-              Navigator.pop(context);
-            },
-            child: Text(
-              'Annuler',
-              style: TextStyle(color: AppColors.bootstrapRed),
-            ),
-          ),
-          CupertinoDialogAction(
-            /// This parameter indicates the action would perform
-            /// a destructive action such as deletion, and turns
-            /// the action's text color to red.
-            isDestructiveAction: true,
-            isDefaultAction: true,
-            onPressed: () {
-              locator
-                  .get<SharedPreferences>().clear();
-
-              // Future.delayed(
-              //     Duration(milliseconds: 500),
-              //     () => {
-              //           ScaffoldMessenger.of(context).showSnackBar(
-              //               buildCustomSnackBar(context,
-              //                   "Yeeguide changé avec succès", SnackBarType.info))
-              //         });
-              Navigator.pop(context);
-              Navigator.pushReplacement(
-                  context,
-                  PageTransition(
-                      type: PageTransitionType.fade,
-                      duration: const Duration(milliseconds: 500),
-                      child: NewWelcomeScreen()));
-            },
-            child: Text(
-              'Oui, je supprime',
-              style: TextStyle(color: AppColors.primaryVar0),
-            ),
-          ),
-        ],
       ),
     );
   }
+}
 
+class _ProfileScreenState extends State<ProfileScreen> {
+  final ScrollController scrollController = ScrollController();
+  bool isProfilePicVisible = true;
 
   @override
   Widget build(BuildContext initialContext) {
@@ -137,13 +135,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     SingleChildScrollView(
                       controller: scrollController,
                       child: Padding(
-                        padding: EdgeInsets.only(left: 20.0, right: 20.0,bottom: MediaQuery.of(context).padding.bottom + 20),
+                        padding: EdgeInsets.only(
+                            left: 20.0,
+                            right: 20.0,
+                            bottom: MediaQuery.of(context).padding.bottom + 20),
                         child: Column(
                           children: [
                             SizedBox(
-                              height: 90 +
-                                  MediaQuery.of(context).padding.top
-                              ,
+                              height: 90 + MediaQuery.of(context).padding.top,
                             ),
                             Stack(
                               children: [
@@ -170,15 +169,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                           child: InkWell(
                                             borderRadius:
                                                 BorderRadius.circular(100),
-                                            onTap: () { 
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              buildCustomSnackBar(
-                                context,
-                                "Fonctionnalité disponible prochainement 😉",
-                                SnackBarType.info,
-                                showCloseIcon: false,
-                              ),
-                            );},
+                                            onTap: () {
+                                              ScaffoldMessenger.of(context)
+                                                  .showSnackBar(
+                                                buildCustomSnackBar(
+                                                  context,
+                                                  "Fonctionnalité disponible prochainement 😉",
+                                                  SnackBarType.info,
+                                                  showCloseIcon: false,
+                                                ),
+                                              );
+                                            },
                                             child: Container(
                                               height: 35,
                                               width: 35,
@@ -229,14 +230,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                           //                 "yeeguide_id") ??
                                           //         "raruto")
                                           //     .name,
-                                          locator.get<SharedPreferences>().getString("username") ?? "User",
+                                          locator
+                                                  .get<SharedPreferences>()
+                                                  .getString("username") ??
+                                              "User",
                                           style: TextStyle(
                                               color: AppColors.primaryText,
                                               fontSize: 22,
                                               fontWeight: FontWeight.w500),
                                         ),
                                         Text(
-                                          "@" + (locator.get<SharedPreferences>().getString("username") ?? '') +"theuser",
+                                          "@" +
+                                              (locator
+                                                      .get<SharedPreferences>()
+                                                      .getString("username") ??
+                                                  '') +
+                                              "theuser",
                                           style: TextStyle(
                                               fontSize: 13,
                                               color: AppColors.secondaryText),
@@ -258,15 +267,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   borderRadius: BorderRadius.circular(15),
                                   child: InkWell(
                                     borderRadius: BorderRadius.circular(15),
-                                    onTap: () { 
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              buildCustomSnackBar(
-                                context,
-                                "Fonctionnalité disponible prochainement 😉",
-                                SnackBarType.info,
-                                showCloseIcon: false,
-                              ),
-                            );},
+                                    onTap: () {
+                                      ScaffoldMessenger.of(context)
+                                          .showSnackBar(
+                                        buildCustomSnackBar(
+                                          context,
+                                          "Fonctionnalité disponible prochainement 😉",
+                                          SnackBarType.info,
+                                          showCloseIcon: false,
+                                        ),
+                                      );
+                                    },
                                     child: Container(
                                       height: 64,
                                       decoration: BoxDecoration(
@@ -297,15 +308,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   borderRadius: BorderRadius.circular(15),
                                   child: InkWell(
                                     borderRadius: BorderRadius.circular(15),
-                                    onTap: () { 
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              buildCustomSnackBar(
-                                context,
-                                "Fonctionnalité disponible prochainement 😉",
-                                SnackBarType.info,
-                                showCloseIcon: false,
-                              ),
-                            );},
+                                    onTap: () {
+                                      ScaffoldMessenger.of(context)
+                                          .showSnackBar(
+                                        buildCustomSnackBar(
+                                          context,
+                                          "Fonctionnalité disponible prochainement 😉",
+                                          SnackBarType.info,
+                                          showCloseIcon: false,
+                                        ),
+                                      );
+                                    },
                                     child: Container(
                                       height: 64,
                                       decoration: BoxDecoration(
@@ -350,63 +363,68 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 ProfileSection(
                                   title: "Notifications",
                                   isTrueTopOrBottomFalse: true,
-                                  onTap: () { 
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              buildCustomSnackBar(
-                                context,
-                                "Fonctionnalité disponible prochainement 😉",
-                                SnackBarType.info,
-                                showCloseIcon: false,
-                              ),
-                            );},
+                                  onTap: () {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      buildCustomSnackBar(
+                                        context,
+                                        "Fonctionnalité disponible prochainement 😉",
+                                        SnackBarType.info,
+                                        showCloseIcon: false,
+                                      ),
+                                    );
+                                  },
                                 ),
                                 ProfileSection(
                                   title: "Utilisation des données IA",
-                                  onTap: () { 
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              buildCustomSnackBar(
-                                context,
-                                "Fonctionnalité disponible prochainement 😉",
-                                SnackBarType.info,
-                                showCloseIcon: false,
-                              ),
-                            );},
+                                  onTap: () {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      buildCustomSnackBar(
+                                        context,
+                                        "Fonctionnalité disponible prochainement 😉",
+                                        SnackBarType.info,
+                                        showCloseIcon: false,
+                                      ),
+                                    );
+                                  },
                                 ),
                                 ProfileSection(
                                   title: "Message éphémères",
-                                  onTap: () { 
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              buildCustomSnackBar(
-                                context,
-                                "Fonctionnalité disponible prochainement 😉",
-                                SnackBarType.info,
-                                showCloseIcon: false,
-                              ),
-                            );},
+                                  onTap: () {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      buildCustomSnackBar(
+                                        context,
+                                        "Fonctionnalité disponible prochainement 😉",
+                                        SnackBarType.info,
+                                        showCloseIcon: false,
+                                      ),
+                                    );
+                                  },
                                 ),
                                 ProfileSection(
                                   title: "Supprimer mon compte",
-                                  onTap: () { 
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              buildCustomSnackBar(
-                                context,
-                                "Fonctionnalité disponible prochainement 😉",
-                                SnackBarType.info,
-                                showCloseIcon: false,
-                              ),
-                            );},
+                                  onTap: () {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      buildCustomSnackBar(
+                                        context,
+                                        "Fonctionnalité disponible prochainement 😉",
+                                        SnackBarType.info,
+                                        showCloseIcon: false,
+                                      ),
+                                    );
+                                  },
                                 ),
                                 ProfileSection(
                                   title: "Déconnexion",
-                                  onTap: () { 
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              buildCustomSnackBar(
-                                context,
-                                "Fonctionnalité disponible prochainement 😉",
-                                SnackBarType.info,
-                                showCloseIcon: false,
-                              ),
-                            );},
+                                  onTap: () {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      buildCustomSnackBar(
+                                        context,
+                                        "Fonctionnalité disponible prochainement 😉",
+                                        SnackBarType.info,
+                                        showCloseIcon: false,
+                                      ),
+                                    );
+                                  },
                                 ),
                               ],
                             ),
@@ -431,64 +449,69 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 ProfileSection(
                                   title: "Thème et apparence",
                                   isTrueTopOrBottomFalse: true,
-                                  onTap: () { 
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              buildCustomSnackBar(
-                                context,
-                                "Fonctionnalité disponible prochainement 😉",
-                                SnackBarType.info,
-                                showCloseIcon: false,
-                              ),
-                            );},
+                                  onTap: () {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      buildCustomSnackBar(
+                                        context,
+                                        "Fonctionnalité disponible prochainement 😉",
+                                        SnackBarType.info,
+                                        showCloseIcon: false,
+                                      ),
+                                    );
+                                  },
                                 ),
                                 ProfileSection(
                                   title: "Langue de l'application",
-                                  onTap: () { 
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              buildCustomSnackBar(
-                                context,
-                                "Fonctionnalité disponible prochainement 😉",
-                                SnackBarType.info,
-                                showCloseIcon: false,
-                              ),
-                            );},
+                                  onTap: () {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      buildCustomSnackBar(
+                                        context,
+                                        "Fonctionnalité disponible prochainement 😉",
+                                        SnackBarType.info,
+                                        showCloseIcon: false,
+                                      ),
+                                    );
+                                  },
                                 ),
                                 ProfileSection(
                                   title: "Centre d'aide",
-                                  onTap: () { 
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              buildCustomSnackBar(
-                                context,
-                                "Fonctionnalité disponible prochainement 😉",
-                                SnackBarType.info,
-                                showCloseIcon: false,
-                              ),
-                            );},
+                                  onTap: () {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      buildCustomSnackBar(
+                                        context,
+                                        "Fonctionnalité disponible prochainement 😉",
+                                        SnackBarType.info,
+                                        showCloseIcon: false,
+                                      ),
+                                    );
+                                  },
                                 ),
                                 ProfileSection(
                                   title: "Conditions d'utilisation",
-                                  onTap: () { 
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              buildCustomSnackBar(
-                                context,
-                                "Fonctionnalité disponible prochainement 😉",
-                                SnackBarType.info,
-                                showCloseIcon: false,
-                              ),
-                            );},
+                                  onTap: () {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      buildCustomSnackBar(
+                                        context,
+                                        "Fonctionnalité disponible prochainement 😉",
+                                        SnackBarType.info,
+                                        showCloseIcon: false,
+                                      ),
+                                    );
+                                  },
                                 ),
                                 ProfileSection(
                                   title: "Politique de confidentialité",
                                   isTrueTopOrBottomFalse: false,
-                                  onTap: () { 
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              buildCustomSnackBar(
-                                context,
-                                "Fonctionnalité disponible prochainement 😉",
-                                SnackBarType.info,
-                                showCloseIcon: false,
-                              ),
-                            );},
+                                  onTap: () {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      buildCustomSnackBar(
+                                        context,
+                                        "Fonctionnalité disponible prochainement 😉",
+                                        SnackBarType.info,
+                                        showCloseIcon: false,
+                                      ),
+                                    );
+                                  },
                                 ),
                                 const SizedBox(height: 15),
                                 Container(
@@ -556,7 +579,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ),
                     ),
                     Container(
-                      height:  65 + MediaQuery.of(context).padding.top,
+                      height: 65 + MediaQuery.of(context).padding.top,
                       // padding: EdgeInsets.only(bottom: 15),
                       decoration: BoxDecoration(
                           color: Colors.white.withOpacity(0.6),
@@ -571,12 +594,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       child: Center(
                         child: ClipRRect(
                           child: BackdropFilter(
-                            filter: ImageFilter.blur(sigmaX: 15.0, sigmaY: 15.0),
+                            filter:
+                                ImageFilter.blur(sigmaX: 15.0, sigmaY: 15.0),
                             child: Container(
                                 // padding: EdgeInsets.symmetric(horizontal: 20.0),
                                 padding: EdgeInsets.only(
-                                    top: MediaQuery.of(context).padding.top/2
-                                    , left: 5.0, right: 10.0,bottom: 5),
+                                    top: MediaQuery.of(context).padding.top / 2,
+                                    left: 5.0,
+                                    right: 10.0,
+                                    bottom: 5),
                                 width: 1.sw,
                                 height: 65 + MediaQuery.of(context).padding.top,
                                 decoration: BoxDecoration(
@@ -657,18 +683,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                                       //         .name,
                                                       isProfilePicVisible
                                                           ? "Profil"
-                                                          : locator.get<SharedPreferences>().getString("username") ?? "User",
+                                                          : locator
+                                                                  .get<
+                                                                      SharedPreferences>()
+                                                                  .getString(
+                                                                      "username") ??
+                                                              "User",
                                                       style: TextStyle(
                                                         fontSize: 16,
                                                         fontWeight:
                                                             FontWeight.w500,
-                                                        color:
-                                                            AppColors.primaryText,
-                                                        overflow:
-                                                            TextOverflow.ellipsis,
+                                                        color: AppColors
+                                                            .primaryText,
+                                                        overflow: TextOverflow
+                                                            .ellipsis,
                                                       ),
                                                       maxLines: 1,
-                                                      textAlign: TextAlign.start,
+                                                      textAlign:
+                                                          TextAlign.start,
                                                     ),
                                                   ],
                                                 )),
@@ -681,16 +713,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                       child: Material(
                                         color: Colors.transparent,
                                         child: InkWell(
-                                          borderRadius: BorderRadius.circular(30),
-                                          onTap: () { 
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              buildCustomSnackBar(
-                                context,
-                                "Fonctionnalité disponible prochainement 😉",
-                                SnackBarType.info,
-                                showCloseIcon: false,
-                              ),
-                            );},
+                                          borderRadius:
+                                              BorderRadius.circular(30),
+                                          onTap: () {
+                                            ScaffoldMessenger.of(context)
+                                                .showSnackBar(
+                                              buildCustomSnackBar(
+                                                context,
+                                                "Fonctionnalité disponible prochainement 😉",
+                                                SnackBarType.info,
+                                                showCloseIcon: false,
+                                              ),
+                                            );
+                                          },
                                           child: SizedBox(
                                             height: 60,
                                             width: 42,
@@ -714,98 +749,94 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ],
                 ))));
   }
-}
-
-class ProfileSection extends StatelessWidget {
-  const ProfileSection({
-    super.key,
-    required this.title,
-    this.icon,
-    this.isTrueTopOrBottomFalse,
-    required this.onTap,
-  });
-
-  final String title;
-  final String? icon;
-  final bool? isTrueTopOrBottomFalse;
-  final void Function() onTap;
 
   @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 1),
-      child: Material(
-        borderRadius: isTrueTopOrBottomFalse != null
-            ? BorderRadius.only(
-                topLeft: isTrueTopOrBottomFalse!
-                    ? const Radius.circular(10)
-                    : Radius.zero,
-                topRight: isTrueTopOrBottomFalse!
-                    ? const Radius.circular(10)
-                    : Radius.zero,
-                bottomLeft: isTrueTopOrBottomFalse!
-                    ? Radius.zero
-                    : const Radius.circular(10),
-                bottomRight: isTrueTopOrBottomFalse!
-                    ? Radius.zero
-                    : const Radius.circular(10))
-            : BorderRadius.zero,
+  void dispose() {
+    // TODO: implement dispose
+    scrollController.dispose();
+    scrollController.removeListener(() {});
+    super.dispose();
+  }
 
-        // borderRadius: BorderRadius.only(
-        //     topLeft: Radius.circular(10),
-        //     topRight: Radius.circular(10)),
-        color: Colors.white,
-        child: InkWell(
-          borderRadius: isTrueTopOrBottomFalse != null
-              ? BorderRadius.only(
-                  topLeft: isTrueTopOrBottomFalse!
-                      ? const Radius.circular(10)
-                      : Radius.zero,
-                  topRight: isTrueTopOrBottomFalse!
-                      ? const Radius.circular(10)
-                      : Radius.zero,
-                  bottomLeft: isTrueTopOrBottomFalse!
-                      ? Radius.zero
-                      : const Radius.circular(10),
-                  bottomRight: isTrueTopOrBottomFalse!
-                      ? Radius.zero
-                      : const Radius.circular(10))
-              : BorderRadius.zero,
-          // borderRadius: BorderRadius.only(
-          //     topLeft: Radius.circular(10),
-          //     topRight: Radius.circular(10)),
-          onTap: onTap,
-          child: Container(
-            width: 1.sw,
-            height: 40,
-            decoration: BoxDecoration(
-                // color: Colors.white,
-                borderRadius: isTrueTopOrBottomFalse != null
-                    ? BorderRadius.only(
-                        topLeft: isTrueTopOrBottomFalse!
-                            ? const Radius.circular(10)
-                            : Radius.zero,
-                        topRight: isTrueTopOrBottomFalse!
-                            ? const Radius.circular(10)
-                            : Radius.zero,
-                        bottomLeft: isTrueTopOrBottomFalse!
-                            ? Radius.zero
-                            : const Radius.circular(10),
-                        bottomRight: isTrueTopOrBottomFalse!
-                            ? Radius.zero
-                            : const Radius.circular(10))
-                    : BorderRadius.zero),
-            child: Center(
-                child: Row(
-              children: [
-                const SizedBox(
-                  width: 15,
-                ),
-                Text(title),
-              ],
-            )),
+  @override
+  void initState() {
+    // TODO: implement initState
+    scrollController.addListener(() {
+      debugPrint(
+          "Current scroll:" + scrollController.position.pixels.toString());
+      if (scrollController.position.pixels > 295 && isProfilePicVisible) {
+        setState(() {
+          isProfilePicVisible = false;
+        });
+      } else if (scrollController.position.pixels < 295 &&
+          !isProfilePicVisible) {
+        setState(() {
+          isProfilePicVisible = true;
+        });
+      }
+    });
+
+    super.initState();
+  }
+
+  void _showAlertDialog(BuildContext innerContext) {
+    showCupertinoModalPopup<void>(
+      context: innerContext,
+      builder: (BuildContext context) => CupertinoAlertDialog(
+        title: Text(
+          'Attention',
+          style: TextStyle(fontSize: 20, color: AppColors.primaryText),
+        ),
+        content: Padding(
+          padding: const EdgeInsets.only(top: 10),
+          child: Text(
+            'Vous êtes sur le point de supprimer toutes vos données, votre yeeguide se sentira abandonné et seul dans le noir..',
+            style: TextStyle(fontSize: 15.5, color: AppColors.primaryText),
           ),
         ),
+        actions: <CupertinoDialogAction>[
+          CupertinoDialogAction(
+            /// This parameter indicates this action is the default,
+            /// and turns the action's text to bold text.
+            // isDefaultAction: true,
+            onPressed: () {
+              Navigator.pop(context);
+            },
+            child: Text(
+              'Annuler',
+              style: TextStyle(color: AppColors.bootstrapRed),
+            ),
+          ),
+          CupertinoDialogAction(
+            /// This parameter indicates the action would perform
+            /// a destructive action such as deletion, and turns
+            /// the action's text color to red.
+            isDestructiveAction: true,
+            isDefaultAction: true,
+            onPressed: () {
+              locator.get<SharedPreferences>().clear();
+
+              // Future.delayed(
+              //     Duration(milliseconds: 500),
+              //     () => {
+              //           ScaffoldMessenger.of(context).showSnackBar(
+              //               buildCustomSnackBar(context,
+              //                   "Yeeguide changé avec succès", SnackBarType.info))
+              //         });
+              Navigator.pop(context);
+              Navigator.pushReplacement(
+                  context,
+                  PageTransition(
+                      type: PageTransitionType.fade,
+                      duration: const Duration(milliseconds: 500),
+                      child: NewWelcomeScreen()));
+            },
+            child: Text(
+              'Oui, je supprime',
+              style: TextStyle(color: AppColors.primaryVar0),
+            ),
+          ),
+        ],
       ),
     );
   }

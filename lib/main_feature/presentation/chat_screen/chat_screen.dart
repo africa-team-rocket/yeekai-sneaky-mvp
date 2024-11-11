@@ -11,23 +11,23 @@ import '../../domain/model/chat_message.dart';
 import 'bloc/chat_bloc.dart';
 import 'bloc/chat_state.dart';
 
+// Ecran du tutorial du chatScreen
+class ChatScreen extends StatefulWidget {
+  final bool shouldOpenKeyboard;
+  final InitialPrompt? initialPrompt;
+  const ChatScreen(
+      {Key? key, required this.shouldOpenKeyboard, this.initialPrompt})
+      : super(key: key);
+
+  @override
+  State<ChatScreen> createState() => _ChatScreenState();
+}
+
 class InitialPrompt {
   final String text;
   final bool shouldSendInitialPrompt;
 
   InitialPrompt({required this.text, required this.shouldSendInitialPrompt});
-}
-
-// Ecran du tutorial du chatScreen
-class ChatScreen extends StatefulWidget {
-  const ChatScreen(
-      {Key? key, required this.shouldOpenKeyboard, this.initialPrompt})
-      : super(key: key);
-  final bool shouldOpenKeyboard;
-  final InitialPrompt? initialPrompt;
-
-  @override
-  State<ChatScreen> createState() => _ChatScreenState();
 }
 
 class _ChatScreenState extends State<ChatScreen> {
@@ -76,20 +76,6 @@ class _ChatScreenState extends State<ChatScreen> {
 
   final ScrollController _scrollController = ScrollController();
   bool showScrollButton = false;
-
-  @override
-  void initState() {
-    // initializeDateFormatting("fr_FR");
-    // initializeDateFormatting("fr_FR", n).then((value) => (){
-    // Intl.systemLocale = await findSystemLocale();
-    // });
-  }
-
-  @override
-  void dispose() {
-    _scrollController.dispose();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -146,7 +132,9 @@ class _ChatScreenState extends State<ChatScreen> {
                             height: 65 + MediaQuery.of(context).padding.top,
                           ),
                           Container(
-                              padding: EdgeInsets.only(bottom: 110 + MediaQuery.of(context).padding.bottom),
+                              padding: EdgeInsets.only(
+                                  bottom: 110 +
+                                      MediaQuery.of(context).padding.bottom),
                               child: Column(
                                 mainAxisAlignment: MainAxisAlignment.start,
                                 children: [
@@ -154,34 +142,34 @@ class _ChatScreenState extends State<ChatScreen> {
                                     height: 30,
                                   ),
                                   Container(
-                                      margin: EdgeInsets.symmetric(horizontal: 20.0),
+                                      margin: EdgeInsets.symmetric(
+                                          horizontal: 20.0),
                                       padding: EdgeInsets.all(15),
                                       decoration: BoxDecoration(
-                                        color: Color(0xFFFFF8E3),
-                                        borderRadius: BorderRadius.circular(15),
+                                          color: Color(0xFFFFF8E3),
+                                          borderRadius:
+                                              BorderRadius.circular(15),
                                           boxShadow: [
                                             BoxShadow(
                                                 spreadRadius: 0,
                                                 blurRadius: 10,
                                                 offset: const Offset(0, 0),
                                                 blurStyle: BlurStyle.outer,
-                                                color: Colors.grey.withOpacity(.25)
-                                            )
-                                          ]
-                                      ),
+                                                color: Colors.grey
+                                                    .withOpacity(.25))
+                                          ]),
                                       width: 1.sw,
                                       child: Text(
                                         // "⚠️ Cette application est un prototype. L'assistant ne fournit pas encore de réponses à 100% précises, il sert à uniquement tester le concept. Amusez-vous, et faites nous un feedback.",
                                         "⚠️ Cette application est un prototype. L'assistant n'est pas encore fonctionnel, veuillez vous référer à la carte ou à notre communauté whatsapp en attendant (+221 76 309 94 67).",
                                         textAlign: TextAlign.center,
                                         style: TextStyle(
-
-                                        fontSize: 12,
-                                      ),)),
+                                          fontSize: 12,
+                                        ),
+                                      )),
                                   const SizedBox(
                                     height: 10,
                                   ),
-
                                   ListView.builder(
                                     padding: EdgeInsets.zero,
                                     physics:
@@ -237,10 +225,11 @@ class _ChatScreenState extends State<ChatScreen> {
                   Align(
                     alignment: Alignment.bottomCenter,
                     child: ChatScreenFooter(
-                        initialPrompt: widget.initialPrompt,
-                        shouldOpenKeyboard: widget.shouldOpenKeyboard,
-                        chatBloc: context.read<ChatBloc>(),
-                        scrollController: _scrollController,),
+                      initialPrompt: widget.initialPrompt,
+                      shouldOpenKeyboard: widget.shouldOpenKeyboard,
+                      chatBloc: context.read<ChatBloc>(),
+                      scrollController: _scrollController,
+                    ),
                   ),
                   const ChatScreenHeader(),
                   Positioned(
@@ -275,14 +264,15 @@ class _ChatScreenState extends State<ChatScreen> {
                                           curve: Curves.easeInOut);
                                     },
                                     child: Center(
-                                        child: Padding(
-                                      padding: const EdgeInsets.only(top: 2),
-                                      child: Icon(
-                                        Icons.keyboard_arrow_down_rounded,
-                                        color: AppColors.primaryText,
-                                        size: 35.0,
+                                      child: Padding(
+                                        padding: const EdgeInsets.only(top: 2),
+                                        child: Icon(
+                                          Icons.keyboard_arrow_down_rounded,
+                                          color: AppColors.primaryText,
+                                          size: 35.0,
+                                        ),
                                       ),
-                                    ),),
+                                    ),
                                   ),
                                 ),
                               )
@@ -299,5 +289,20 @@ class _ChatScreenState extends State<ChatScreen> {
         );
       }),
     );
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    // initializeDateFormatting("fr_FR");
+    // initializeDateFormatting("fr_FR", n).then((value) => (){
+    // Intl.systemLocale = await findSystemLocale();
+    // });
   }
 }

@@ -1,23 +1,14 @@
-import 'dart:io';
-
-import 'package:flutter/cupertino.dart';
-
 import 'dart:convert';
 
-import 'package:animated_marker/animated_marker.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_switch/flutter_switch.dart';
-
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:infinite_scroll_pagination/infinite_scroll_pagination.dart';
-import 'package:page_transition/page_transition.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 import 'package:widget_to_marker/widget_to_marker.dart';
-import 'package:yeebus_filthy_mvp/main_feature/presentation/profile_screen/profile_screen.dart';
 import 'package:yeebus_filthy_mvp/map_feature/presentation/map_screen/widgets/details_screen.dart';
 
 import '../../../core/commons/theme/app_colors.dart';
@@ -30,7 +21,6 @@ import '../../domain/model/line.dart';
 import '../../domain/model/main_place.dart';
 import '../../domain/model/map_entity.dart';
 import '../../domain/model/place.dart';
-import '../../domain/model/product.dart';
 import '../../domain/model/search_hit_entity.dart';
 import '../../domain/model/stop.dart';
 import '../search_screen/search_screen.dart';
@@ -38,456 +28,548 @@ import 'bloc/map_bloc.dart';
 import 'bloc/map_event.dart';
 import 'bloc/map_state.dart';
 
-class MapScreen extends StatefulWidget {
-  const MapScreen({
+class BottomSheetExpandableContent extends StatefulWidget {
+  final PagingController<int, SearchHitEntity> pagingController;
+
+  final GlobalKey<ExpandableBottomSheetState> bsKey;
+  final Function(MainPlace detailsPage) toggleDetailsPage;
+  const BottomSheetExpandableContent({
     Key? key,
-    this.foundPlace,
-    this.trafficMode,
-    this.searchMode,
+    required this.bsKey,
+    required this.pagingController,
+    required this.toggleDetailsPage,
   }) : super(key: key);
-
-  final Place? foundPlace;
-  final bool? trafficMode;
-  final bool? searchMode;
-
   @override
-  State<MapScreen> createState() => _MapScreenState();
+  State<BottomSheetExpandableContent> createState() =>
+      _BottomSheetExpandableContentState();
 }
 
-class _MapScreenState extends State<MapScreen> {
-  final GlobalKey<ExpandableBottomSheetState> key = GlobalKey();
-  final GlobalKey<MapWState> mapKey = GlobalKey();
-  // Je le déclare ici parce que c'est déjà stateful mais on verra dans le futur
-  // ça fonctionne mais bon on pourra toujours y revenir, perso ça me va.
+class BusIconInfo extends StatelessWidget {
+  final String lineNumber;
 
-  final PagingController<int, SearchHitEntity> _pagingController =
-      PagingController(firstPageKey: 0);
-  final TextEditingController textEditingController = TextEditingController();
-  late MapBloc mapBloc;
-
-  onPop() {
-    if (mapBloc.state.selectedEntity != null) {
-      mapBloc.add(SetSelectedMapEntity(null));
-      return;
-    }
-    Navigator.of(context).maybePop();
-  }
-
-  @override
-  void initState() {
-    // J'essaye d'update à partir d'ici mais je ne suis pas sur de si c'est convenable
-    // on verra.
-    mapBloc = MapBloc();
-    // _pagingController.addPageRequestListener(
-    //         (pageKey) => mapBloc.add(ApplyAlgoliaState(stateUpdater: (state) => state.copyWith(
-    //           page: pageKey,
-    //         )))
-    // );
-    textEditingController.addListener(
-      () {
-        mapBloc.add(UpdatePrompt(newPrompt: textEditingController.text));
-      },
-    );
-    super.initState();
-  }
-
-  @override
-  void dispose() {
-    // mapBloc.state.gMapController?.dispose();
-    textEditingController.dispose();
-    _pagingController.dispose();
-    mapBloc.close();
-    super.dispose();
-  }
-
-  int floorLevel = 0;
-  MainPlace? detailsPage = null;
+  final BusState busState;
+  const BusIconInfo({
+    super.key,
+    required this.lineNumber,
+    required this.busState,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: () async {
-        if (widget.searchMode != null && mapBloc.state.isSearchModeEnabled) {
-          // Peut-être qu'autre chose qu'un push aurait été plus adapté ?
-          // Navigator.push(
-          //     context,
-          //     PageTransition(
-          //         type: PageTransitionType.fade,
-          //         duration: const Duration(milliseconds: 200),
-          //         child: HomeScreen(rootContext: context,)));
-          //
-          // return false;
-          debugPrint("Popped here !");
-
-          return true;
-        }
-
-        if (widget.searchMode == null && mapBloc.state.isSearchModeEnabled) {
-          mapBloc.add(const UpdateSearchMode(newSearchMode: false));
-
-          return false;
-        }
-
-        return true;
-      },
-      child: AnnotatedRegion<SystemUiOverlayStyle>(
-        value: const SystemUiOverlayStyle(
-          statusBarColor: Colors.transparent,
-          statusBarIconBrightness: Brightness.dark,
-        ),
-        child: BlocProvider(
-          create: (_) {
-            // mapBloc.
-
-            if (widget.searchMode == true) {
-              mapBloc.add(const UpdateSearchMode(newSearchMode: true));
-            }
-            // mapBloc.add(const SetSelectedMapEntity(Place(
-            //   placeName:
-            //       'Ecole supérieure multinationale des télécommunications (ESMT)',
-            //   entityPosition: LatLng(14.700029517700326, -17.451019219831917),
-            // )));
-
-            // mapBloc.add(const SetSelectedMapEntity(Stop(
-            //     entityName: 'Arrêt Dardanelles',
-            //     stopName: 'Arrêt Dardanelles',
-            //     entityPosition: LatLng(14.695223067123997, -17.44946546833327))));
-
-            return mapBloc;
-          },
-          child: Stack(
-            children: [
-              Scaffold(
-                backgroundColor: Colors.white,
-                resizeToAvoidBottomInset: false,
-                body: SafeArea(
-                  top: false,
-                  child: ExpandableBottomSheet(
-                      key: key,
-                      initialDraggableState: true,
-                      isLazyModeEnabled: true,
-                      onIsExtendedCallback: () => {
-                            if (mapBloc.state.selectedEntity == null &&
-                                mapBloc.state.isSearchModeEnabled == false)
-                              {
-                                mapBloc.add(
-                                    const UpdateSearchMode(newSearchMode: true))
-                              }
-                          },
-                      onIsContractedCallback: () => {
-                            // mapBloc.state.selectedEntity == null
-                            if (mapBloc.state.isSearchModeEnabled == true)
-                              {
-                                mapBloc.add(const UpdateSearchMode(
-                                    newSearchMode: false)),
-                                mapBloc.add(UpdatePrompt(newPrompt: ""))
-                              }
-                          },
-                      animationDurationExtend:
-                          const Duration(milliseconds: 150),
-                      animationDurationContract:
-                          const Duration(milliseconds: 250),
-                      animationCurveExpand: Curves.easeInOut,
-                      animationCurveContract: Curves.easeInOut,
-
-                      // Il faudra prendre en compte ceci pour l'animation des floating button
-                      persistentContentHeight: 0,
-                      initialPos: widget.searchMode == true ? 1.0 : 0.06,
-                      // 0.06
-                      initialMaxExpandableHeight: 1.0,
-                      initialMinExpandableHeight: 0.06,
-                      background: GMap(
-                          key: mapKey,
-                          floorLevel: floorLevel,
-                          isTrafficModeEnabled: widget.trafficMode ?? false),
-
-                      // persistentHeader: const PersistentHeaderContent(),
-
-                      expandableContent: BottomSheetExpandableContent(
-                        bsKey: key,
-                        pagingController: _pagingController,
-                        toggleDetailsPage: (newDetailsPage) {
-                          setState(() {
-                            detailsPage = newDetailsPage;
-                          });
-                        },
-                      ),
-                      lowerLeftFloatingButtons: FloatingButtonsContainer(
-                          isUpper: false,
-                          floatingButton1: MapFloatingButton(
-                            iconUrl: "assets/icons/back_left_icon_black.png",
-                            isUpper: false,
-                            onTap: () {
-                              mapBloc.add(const SetSelectedMapEntity(null));
-                            },
-                          )),
-                      lowerRightFloatingButtons: FloorFloatingButton(
-                          updateFloorLevel: (level) {
-                            setState(() {
-                              floorLevel = level;
-                            });
-
-                            print("Yahallooo, new floor : " +
-                                floorLevel.toString());
-                          },
-                          initialFloorLevel: floorLevel),
-                      upperRightFloatingButtons: FloatingButtonsContainer(
-                        isUpper: true,
-                        floatingButton2: MapFloatingButton(
-                          iconUrl: "assets/icons/map_level.png",
-                          isUpper: true,
-                          onTap: () {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              buildCustomSnackBar(
-                                context,
-                                "Fonctionnalité disponible prochainement 😉",
-                                SnackBarType.info,
-                                showCloseIcon: false,
-                              ),
-                            );
-                          },
-                        ),
-                      ),
-                      upperLeftFloatingButtons: FloatingButtonsContainer(
-                        floatingButton2: MapFloatingButton(
-                          iconUrl: "assets/icons/more_fav_white.png",
-                          isUpper: true,
-                          backgroundColor: AppColors.primaryVar0,
-                          onTap: () {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              buildCustomSnackBar(
-                                context,
-                                "Fonctionnalité disponible prochainement 😉",
-                                SnackBarType.info,
-                                showCloseIcon: false,
-                              ),
-                            );
-                          },
-                        ),
-                        floatingButton1: MapFloatingButton(
-                          iconUrl: "assets/icons/map_settings_white.png",
-                          backgroundColor: AppColors.primaryVar0,
-                          isUpper: true,
-                          onTap: () {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              buildCustomSnackBar(
-                                context,
-                                "Fonctionnalité disponible prochainement 😉",
-                                SnackBarType.info,
-                                showCloseIcon: false,
-                              ),
-                            );
-                          },
-                        ),
-                        isUpper: true,
-                        // isUpperButtonActive: mapBloc.state.selectedEntity == null || mapBloc.state.isSearchModeEnabled,
-                        // bsKey: key,
-                      ),
-                      topBar: BlocBuilder<MapBloc, MapState>(
-                          builder: (context, mapState) {
-                        return BsTopBar(
-                          isActive: mapBloc.state.isSearchModeEnabled,
-                          rootContext: context,
-                          textValue: mapBloc.state.userPrompt,
-                          selectedEntityTitle:
-                              mapBloc.state.selectedEntity is MainPlace
-                                  ? (mapBloc.state.selectedEntity as MainPlace)
-                                      .placeName
-                                  : mapBloc.state.selectedEntity?.entityName,
-                          onTap: () {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              buildCustomSnackBar(
-                                context,
-                                "Fonctionnalité disponible prochainement 😉",
-                                SnackBarType.info,
-                                showCloseIcon: false,
-                              ),
-                            );
-                            // mapBloc.add(const UpdateSearchMode(newSearchMode: true));
-                          },
-                          onCancelSearch: () {
-                            // mapBloc.add(const UpdateSearchMode(newSearchMode: false));
-                            if (mapBloc.state.selectedEntity != null) {
-                              mapBloc.add(const SetSelectedMapEntity(null));
-                            } else {
-                              mapBloc.add(const UpdatePrompt(newPrompt: ""));
-                            }
-                            textEditingController.clear();
-                          },
-                          onSubmitValue: (String text) {
-                            mapBloc.add(AddSearchHitToCache(
-                                searchHitEntity:
-                                    mapBloc.state.filteredSearchHits.first));
-                            var searchHitEntity =
-                                mapBloc.state.searchHitsPage?.items.first;
-                            if (searchHitEntity != null) {
-                              if (searchHitEntity.entityType == "place") {
-                                context
-                                    .read<MapBloc>()
-                                    .add(const SetSelectedMapEntity(Place(
-                                      entityName:
-                                          'Ecole supérieure multinationale des télécommunications (ESMT)',
-                                      placeName:
-                                          'Ecole supérieure multinationale des télécommunications (ESMT)',
-                                      entityPosition: LatLng(14.700029517700326,
-                                          -17.451019219831917),
-                                    )));
-                              } else if (searchHitEntity.entityType == "stop") {
-                                context.read<MapBloc>().add(
-                                      const SetSelectedMapEntity(
-                                        Stop(
-                                            entityName: 'Arrêt Dardanelles',
-                                            stopName: 'Arrêt Dardanelles',
-                                            entityPosition: LatLng(
-                                                14.695223067123997,
-                                                -17.44946546833327)),
-                                      ),
-                                    );
-                              } else {
-                                context.read<MapBloc>().add(
-                                      const SetSelectedMapEntity(Bus(
-                                          entityName:
-                                              "Ligne 001 - Dakar Dem Dikk",
-                                          state: BusState.UNKNOWN,
-                                          capacity: 45,
-                                          line: Line(
-                                            arrival: 'LECLERC',
-                                            departure: 'PARCELLES ASSAINIES',
-                                            lineNumber: "001",
-                                            description:
-                                                'Cette ligne couvre la distance PARCELLES ASSAINIES-LECLERC',
-                                            rating: 5,
-                                            fareRange: '200-300',
-                                            onwardShape: [
-                                              LatLng(14.76033717791818,
-                                                  -17.438687495664922),
-                                              LatLng(14.763940762120395,
-                                                  -17.441183406746163),
-                                              LatLng(14.762826227208505,
-                                                  -17.446516269735618),
-                                              LatLng(14.75983177074642,
-                                                  -17.44810450812752),
-                                              LatLng(14.758248455408173,
-                                                  -17.44776497933181),
-                                              LatLng(14.756328841098107,
-                                                  -17.44733680657224),
-                                              LatLng(14.754299800845413,
-                                                  -17.446884226197255),
-                                              LatLng(14.750523231135967,
-                                                  -17.446540219732984),
-                                              LatLng(14.750049793921685,
-                                                  -17.44799082092741),
-                                              LatLng(14.7502938867721,
-                                                  -17.44962752085666),
-                                              LatLng(14.750618183071591,
-                                                  -17.451216308405563),
-                                              LatLng(14.751908674768655,
-                                                  -17.45432092949277),
-                                              LatLng(14.751323779488551,
-                                                  -17.45614723355753),
-                                              LatLng(14.750277612687961,
-                                                  -17.45788510152128),
-                                              LatLng(14.746394954969995,
-                                                  -17.466588512861758),
-                                              LatLng(14.744905821864554,
-                                                  -17.46887636539269),
-                                              LatLng(14.740497732127464,
-                                                  -17.471505759915615),
-                                              LatLng(14.735673214191454,
-                                                  -17.473247964998105),
-                                              LatLng(14.729655629460476,
-                                                  -17.472863237737428),
-                                              LatLng(14.72590576002534,
-                                                  -17.471812771657483),
-                                              LatLng(14.722566078908324,
-                                                  -17.471226477452866),
-                                              LatLng(14.719750523903995,
-                                                  -17.47138906188038),
-                                              LatLng(14.712284520605824,
-                                                  -17.471902590631213),
-                                              LatLng(14.709249652444962,
-                                                  -17.471284811984475),
-                                              LatLng(14.70503495422966,
-                                                  -17.470293948214813),
-                                              LatLng(14.700211986761264,
-                                                  -17.468850235517714),
-                                              LatLng(14.695885291241627,
-                                                  -17.465384372683875),
-                                              LatLng(14.69356583153468,
-                                                  -17.46262004957258),
-                                              LatLng(14.691573627552767,
-                                                  -17.460203620061222),
-                                              LatLng(14.689322117315578,
-                                                  -17.457816311477483),
-                                              LatLng(14.686677185172137,
-                                                  -17.45551296891371),
-                                              LatLng(14.683540150827751,
-                                                  -17.452373935181324),
-                                              LatLng(14.68151197255026,
-                                                  -17.450238695218715),
-                                              LatLng(14.679699854072759,
-                                                  -17.4482861599848),
-                                              LatLng(14.678560024739568,
-                                                  -17.447046170035282),
-                                              LatLng(14.675097340711405,
-                                                  -17.443518609858753),
-                                              LatLng(14.670725088433215,
-                                                  -17.440326509804457),
-                                              LatLng(14.669173822827892,
-                                                  -17.43795000330283),
-                                              LatLng(14.6693667259859,
-                                                  -17.434781353950044),
-                                              LatLng(14.669498559521607,
-                                                  -17.432615841203198),
-                                              LatLng(14.669904854641885,
-                                                  -17.43170395936341),
-                                              LatLng(14.6742458189469,
-                                                  -17.43261082618835),
-                                              LatLng(14.673962216827931,
-                                                  -17.43167132154245),
-                                              LatLng(14.671892986596275,
-                                                  -17.42734131811217),
-                                              LatLng(14.67212311504506,
-                                                  -17.42733760332219),
-                                            ],
-                                            lineId: 1,
-                                          ),
-                                          isAccessible: false,
-                                          entityPosition: LatLng(
-                                              14.67212311504506,
-                                              -17.42733760332219))),
-                                      // Ajoutez d'autres éléments de la liste ici
-                                    );
-                              }
-                            }
-                            // mapBloc.add(const UpdateSearchMode(newSearchMode: true));
-                          },
-                          onBackPressed: onPop,
-                          onTextChanged: (String value) {
-                            mapBloc.add(UpdatePrompt(newPrompt: value));
-                          },
-                          bsKey: key,
-                          textEditingController: textEditingController,
-                        );
-                      })),
+    return Container(
+      height: 40,
+      width: 40,
+      decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: busState == BusState.EMPTY
+              ? AppColors.bootstrapGreen
+              : busState == BusState.CROWDED
+                  ? AppColors.bootstrapRed
+                  : busState == BusState.HALFCROWDED
+                      ? AppColors.bootstrapYellow
+                      : AppColors.secondaryText.withOpacity(.5)),
+      child: Stack(
+        children: [
+          Align(
+            alignment: Alignment.bottomCenter,
+            heightFactor: 1.7,
+            child: Image.asset(
+              // "assets/icons/single_bus_green.png",
+              busState == BusState.EMPTY
+                  ? "assets/icons/single_bus_green.png"
+                  : busState == BusState.CROWDED
+                      ? "assets/icons/single_bus_red.png"
+                      : busState == BusState.HALFCROWDED
+                          ? "assets/icons/single_bus_yellow.png"
+                          : "assets/icons/single_bus_unknown.png",
+              height: 18,
+              width: 18,
+            ),
+          ),
+          Align(
+              alignment: Alignment.topCenter,
+              child: Container(
+                width: 25,
+                height: 10,
+                decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(15)),
+                child: Center(
+                  child: Text(
+                    lineNumber,
+                    style: const TextStyle(
+                        fontWeight: FontWeight.w500, fontSize: 8, height: 0.8),
+                  ),
                 ),
+              ))
+        ],
+      ),
+    );
+  }
+}
+
+class BusInfoDisplayer extends StatefulWidget {
+  final SheetPositionPair sheetPosition;
+
+  const BusInfoDisplayer({Key? key, required this.sheetPosition})
+      : super(key: key);
+
+  @override
+  State<BusInfoDisplayer> createState() => _BusInfoDisplayerState();
+}
+
+class BusMarkerIcon extends StatelessWidget {
+  final String lineNumber;
+
+  final BusState state;
+  final double? height;
+  final double? width;
+  final double? fontSize;
+  const BusMarkerIcon(
+      {super.key,
+      required this.lineNumber,
+      required this.state,
+      this.height,
+      this.width,
+      this.fontSize});
+
+  @override
+  Widget build(BuildContext context) {
+    String imagePath = "assets/images/empty_bus.png"; // Valeur par défaut
+
+    if (state == BusState.CROWDED) {
+      imagePath = "assets/images/crowded_bus.png";
+    } else if (state == BusState.HALFCROWDED) {
+      imagePath = "assets/images/half_crowded_bus.png";
+    } else if (state == BusState.UNKNOWN) {
+      imagePath = "assets/images/unknown_bus.png";
+    }
+
+    return SizedBox(
+      height: height ?? 82,
+      width: width ?? 78,
+      child: Stack(
+        children: [
+          Image(
+            image: AssetImage(imagePath),
+            width: 82,
+            height: 82,
+          ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                lineNumber,
+                style: TextStyle(
+                    fontSize: fontSize ?? 15,
+                    color: AppColors.primaryText,
+                    fontWeight: FontWeight.w400),
               ),
-              AnimatedSwitcher(
-                  duration: Duration(milliseconds: 300),
-                  child: detailsPage != null
-                      ? Container(
-                          width: 1.sw,
-                          height: 1.sh,
-                          child: DetailsScreen(
-                              placeDetails: detailsPage!,
-                              closeDetails: () {
-                                setState(() {
-                                  detailsPage = null;
-                                });
-                              }),
-                        )
-                      : null),
             ],
+          )
+        ],
+      ),
+    );
+  }
+}
+
+class CommentSection extends StatelessWidget {
+  const CommentSection({
+    super.key,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        UserComment(
+          username: "Adji Sonko",
+          userPicture: "assets/images/adji_sonko.png",
+          userComment:
+              "J'ai pris la ligne 007 plusieurs fois pour me déplacer à travers Dakar et je suis vraiment satisfait du service. Les bus sont généralement propres et bien entretenus...",
+        ),
+        SizedBox(
+          height: 10,
+        ),
+        UserComment(
+            username: "Ousmane Sarr",
+            userPicture: "assets/images/ousmane_sarr.png",
+            userComment:
+                "En tant que personne handicapée, je suis ravi de constater à quel point la ligne 007 est accessible. Les bus sont équipés de rampes d'accès pour fauteuils roulants, ce qui facilite grandement...")
+      ],
+    );
+  }
+}
+
+class EntityRating extends StatelessWidget {
+  const EntityRating({
+    super.key,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Row(
+          children: [
+            Icon(
+              Icons.star,
+              color: AppColors.primaryVar0,
+              size: 20.0,
+            ),
+            Icon(
+              Icons.star,
+              color: AppColors.primaryVar0,
+              size: 20.0,
+            ),
+            Icon(
+              Icons.star,
+              color: AppColors.primaryVar0,
+              size: 20.0,
+            ),
+            Icon(
+              Icons.star_half_outlined,
+              color: AppColors.primaryVar0,
+              size: 20.0,
+            ),
+            Icon(
+              Icons.star_border,
+              color: AppColors.primaryVar0,
+              size: 20.0,
+            ),
+            const SizedBox(
+              width: 3,
+            ),
+            Text(
+              "4.7/5",
+              style: TextStyle(
+                  color: AppColors.secondaryText,
+                  fontWeight: FontWeight.w400,
+                  height: 1.8,
+                  fontSize: 14),
+            ),
+          ],
+        ),
+        Text(
+          "(25 avis)",
+          style: TextStyle(
+              color: AppColors.secondaryText,
+              fontWeight: FontWeight.w400,
+              height: 1.8,
+              fontSize: 14),
+        ),
+      ],
+    );
+  }
+}
+
+class FloatingButtonsContainer extends StatelessWidget {
+  final bool isUpper;
+
+  final Widget? floatingButton1;
+  final Widget? floatingButton2;
+  const FloatingButtonsContainer({
+    super.key,
+    this.floatingButton1,
+    this.floatingButton2,
+    required this.isUpper,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      constraints: const BoxConstraints(minHeight: 110),
+      child: Column(
+        mainAxisAlignment:
+            isUpper ? MainAxisAlignment.start : MainAxisAlignment.end,
+        children: [
+          if (floatingButton2 != null) ...[
+            floatingButton2!,
+          ],
+          if (floatingButton1 != null) ...[
+            const SizedBox(height: 15),
+            floatingButton1!
+          ]
+        ],
+      ),
+    );
+  }
+}
+
+class FloatingButtonsContainerReverso extends StatelessWidget {
+  // final bool isUpper;
+  final Widget? floatingButton1;
+
+  final bool isUpperButtonActive;
+  final GlobalKey<ExpandableBottomSheetState> bsKey;
+  final Widget? floatingButton2;
+  const FloatingButtonsContainerReverso({
+    super.key,
+    this.floatingButton1,
+    this.floatingButton2,
+    required this.bsKey,
+    required this.isUpperButtonActive,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ValueListenableBuilder<SheetPositionPair>(
+        valueListenable: bsKey.currentState!.sheetPosition,
+        builder: (context, sheetPosition, child) {
+          return SizedBox(
+            height: 110,
+            width: AppConstants.screenWidth,
+            child: Stack(
+              // mainAxisAlignment: isUpper ? MainAxisAlignment.start : MainAxisAlignment.end,
+              children: [
+                if (floatingButton2 != null) ...[
+                  AnimatedPositioned(
+                      duration: const Duration(milliseconds: 100),
+                      left: sheetPosition.gSheetPosition >= 0.50 &&
+                              !isUpperButtonActive
+                          ? -50.0
+                          : 20.0,
+                      child: floatingButton2!)
+                ],
+                if (floatingButton1 != null) ...[
+                  AnimatedPositioned(
+                      duration: const Duration(milliseconds: 100),
+                      top: 55,
+                      left: sheetPosition.gSheetPosition >= 0.50 ? -50.0 : 20.0,
+                      child: floatingButton1!)
+                ]
+              ],
+            ),
+          );
+        });
+  }
+}
+
+class FloorFloatingButton extends StatefulWidget {
+  final Function(int level) updateFloorLevel;
+
+  final int initialFloorLevel;
+  const FloorFloatingButton({
+    super.key,
+    required this.updateFloorLevel,
+    required this.initialFloorLevel,
+  });
+
+  @override
+  _FloorFloatingButtonState createState() => _FloorFloatingButtonState();
+}
+
+class GMap extends StatefulWidget {
+  final bool isTrafficModeEnabled;
+
+  final int floorLevel;
+  const GMap(
+      {Key? key, required this.isTrafficModeEnabled, required this.floorLevel})
+      : super(key: key);
+
+  @override
+  State<GMap> createState() => MapWState();
+}
+
+class ImageSwiper extends StatefulWidget {
+  final bool isLikeable;
+
+  final List<String> images;
+  const ImageSwiper({Key? key, required this.isLikeable, required this.images})
+      : super(key: key);
+
+  @override
+  State<ImageSwiper> createState() => _ImageSwiperState();
+}
+
+class InfoCard extends StatelessWidget {
+  final String title;
+
+  final String image;
+  const InfoCard({
+    super.key,
+    required this.title,
+    required this.image,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return PhysicalModel(
+      color: Colors.white,
+      shadowColor: Colors.grey.withOpacity(.2),
+      elevation: 4,
+      borderRadius: BorderRadius.circular(15),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 9.0),
+        child: Center(
+            child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Image.asset(
+              image,
+              height: 16,
+              width: 16,
+            ),
+            const SizedBox(
+              width: 5,
+            ),
+            Text(
+              title,
+              style: const TextStyle(height: 1.32),
+            ),
+          ],
+        )),
+      ),
+    );
+  }
+}
+
+class LineSchedule extends StatelessWidget {
+  final String day;
+
+  final String schedule;
+  const LineSchedule({
+    super.key,
+    required this.day,
+    required this.schedule,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(day, style: const TextStyle(fontSize: 13)),
+            Text(schedule, style: const TextStyle(fontSize: 13))
+          ],
+        ),
+        Divider(
+          thickness: 0.2,
+          height: 0.8,
+          color: AppColors.secondaryText,
+        )
+      ],
+    );
+  }
+}
+
+class LineStop extends StatelessWidget {
+  final bool isNextStop;
+
+  final String stopTitle;
+  final String stopAddress;
+  final bool isFinal;
+  const LineStop({
+    super.key,
+    required this.isNextStop,
+    required this.stopTitle,
+    required this.stopAddress,
+    this.isFinal = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.white,
+      child: InkWell(
+        onTap: () {
+          ScaffoldMessenger.of(context).showSnackBar(
+            buildCustomSnackBar(
+              context,
+              "Fonctionnalité disponible prochainement 😉",
+              SnackBarType.info,
+              showCloseIcon: false,
+            ),
+          );
+        },
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: SizedBox(
+            height: 75,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    Column(
+                      children: [
+                        Container(
+                          height: 30,
+                          width: 30,
+                          decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: isNextStop
+                                  ? AppColors.lightRed
+                                  : AppColors.primaryVar1),
+                        ),
+                        if (!isFinal) ...[
+                          Expanded(
+                            child: Center(
+                                child: Container(
+                                    width: 1.0,
+                                    color: isNextStop
+                                        ? AppColors.lightRed
+                                        : AppColors.primaryVar1)),
+                          )
+                        ]
+                      ],
+                    ),
+                    const SizedBox(
+                      width: 13,
+                    ),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(stopTitle),
+                        // const SizedBox(height: 10,),
+                        Text(
+                          stopAddress,
+                          style: TextStyle(
+                              color: AppColors.secondaryText,
+                              fontWeight: FontWeight.w400,
+                              fontSize: 13),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+                if (isNextStop) ...[
+                  Container(
+                    padding:
+                        EdgeInsets.symmetric(horizontal: 7.0, vertical: 1.0),
+                    height: 33,
+                    decoration: BoxDecoration(
+                        color: AppColors.lightRed,
+                        borderRadius: BorderRadius.circular(15)),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 1.0),
+                          child: Image.asset(
+                            "assets/icons/clock_white.png",
+                            height: 17,
+                            width: 17,
+                          ),
+                        ),
+                        const SizedBox(
+                          width: 5,
+                        ),
+                        Text(
+                          "6 mins",
+                          style: TextStyle(color: Colors.white, fontSize: 12.0),
+                        )
+                      ],
+                    ),
+                  )
+                ]
+              ],
+            ),
           ),
         ),
       ),
@@ -495,16 +577,84 @@ class _MapScreenState extends State<MapScreen> {
   }
 }
 
-class GMap extends StatefulWidget {
-  const GMap(
-      {Key? key, required this.isTrafficModeEnabled, required this.floorLevel})
-      : super(key: key);
-
-  final bool isTrafficModeEnabled;
-  final int floorLevel;
+class MapEntityRating extends StatelessWidget {
+  const MapEntityRating({
+    super.key,
+  });
 
   @override
-  State<GMap> createState() => MapWState();
+  Widget build(BuildContext context) {
+    return const Row(
+      children: [
+        RatingsStars(),
+        RatingsStats(),
+      ],
+    );
+  }
+}
+
+class MapFloatingButton extends StatelessWidget {
+  final String iconUrl;
+
+  final Color? backgroundColor;
+  final Function onTap;
+  final bool isUpper;
+  const MapFloatingButton({
+    super.key,
+    required this.iconUrl,
+    required this.onTap,
+    this.backgroundColor,
+    required this.isUpper,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 50,
+      width: 50,
+      decoration: BoxDecoration(
+          color: backgroundColor ?? Colors.white,
+          borderRadius: BorderRadius.circular(15),
+          boxShadow: [
+            BoxShadow(
+                spreadRadius: 1,
+                blurRadius: 5,
+                offset: const Offset(0, 1.5),
+                color: Colors.black.withOpacity(.3))
+          ]),
+      child: Material(
+        color: backgroundColor ?? Colors.white,
+        borderRadius: BorderRadius.circular(15),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(15),
+          onTap: () => onTap(),
+          child: Center(
+            child: Image.asset(
+              iconUrl,
+              height: 16,
+              width: 16,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class MapScreen extends StatefulWidget {
+  final Place? foundPlace;
+
+  final bool? trafficMode;
+  final bool? searchMode;
+  const MapScreen({
+    Key? key,
+    this.foundPlace,
+    this.trafficMode,
+    this.searchMode,
+  }) : super(key: key);
+
+  @override
+  State<MapScreen> createState() => _MapScreenState();
 }
 
 class MapWState extends State<GMap> {
@@ -517,7 +667,7 @@ class MapWState extends State<GMap> {
   Set<Marker> _levelTwoMarkers = {};
   Set<Marker> _levelTwoMarkers2 = {};
   Set<Marker> _levelThreeMarkers = {};
-  Set<Marker> _levelThreeMarkers2 = {};
+  // Set<Marker> _levelThreeMarkers2 = {};
   Set<Polygon> _baseBuildingPolygons = {
     // Escaliers 3 (à côté bureau surveillant) :
 
@@ -1771,1587 +1921,10 @@ class MapWState extends State<GMap> {
   };
   double zoomLevel = 17;
 
-  @override
-  void dispose() {
-    googleMapController.dispose();
-    super.dispose();
-  }
-
-// Map pour stocker les objets Uint8List avec leur nom comme clé
+  // Map pour stocker les objets Uint8List avec leur nom comme clé
   Map<String, Uint8List> imageByteMap = {};
+
   Map<String, BitmapDescriptor> icons = {};
-
-  Future<void> loadImagesAsUint8List() async {
-    // Liste des noms de fichiers dans le dossier assets/map_icons/
-    List<String> imageNames = [
-      "labo.png",
-      "ne_venez_pas_ici.png",
-      "point_priere.png",
-      "salle_amicale.png",
-      "salle_biblio.png",
-      "salle_conference.png",
-      "salle_cyber_hb8.png",
-      "salle_dar.png",
-      "salle_gymnase.png",
-      "salle_ha_.png",
-      "salle_ha?.png",
-      "salle_ha1.png",
-      "salle_ha3.png",
-      "salle_ha4.png",
-      "salle_ha5.png",
-      "salle_ha6.png",
-      "salle_hb2.png",
-      "salle_hb3.png",
-      "salle_hb6.png",
-      "salle_hb7.png",
-      "salle_hb8.png",
-      "salle_incubateur.png",
-      "salle_infirmerie.png",
-      "salle_mp_isi2.png",
-      "salle_mp_ssi2.png",
-      "salle_mystere_2.png",
-      "salle_mystere.png",
-      "salle_reprographie.png",
-      "exit.png",
-      "bat_e.png",
-      "salle_restaurant.png",
-      "sortie_batiment.png",
-      "toilette_mixte_locked.png",
-      "toilette_mixte.png",
-      "toilettes_femme.png",
-      "toilettes_homme.png",
-    ];
-
-    // Parcourir chaque image et la convertir en Uint8List
-    for (String imageName in imageNames) {
-      try {
-        // Charger l'image en tant que ByteData
-        ByteData data = await rootBundle.load('assets/map_icons/$imageName');
-        // Convertir le ByteData en Uint8List
-        Uint8List bytes = data.buffer.asUint8List();
-        // Ajouter le Uint8List à la map avec le nom de l'image comme clé
-        imageByteMap[imageName] = bytes;
-
-        icons[imageName] = await BitmapDescriptor.fromBytes(
-          bytes,
-          size: Size(1, 1),
-        );
-        print(
-            'Image: $imageName, Bytes: ${base64Encode(bytes).substring(0, 50)}...'); // Print une partie de l'encodage en base64 pour vérification
-      } catch (e) {
-        print('Erreur lors du chargement de l\'image: $imageName. Erreur: $e');
-      }
-    }
-
-    print('Nombre total d\'images chargées : ${icons.length}');
-  }
-
-  @override
-  void initState() {
-    DefaultAssetBundle.of(context)
-        .loadString("assets/mapstyles/light_mode.json")
-        .then((value) {
-      mapStyle = value;
-    });
-
-    loadImagesAsUint8List().then((value) {
-      _initializeLevel1Markers();
-      _initializeLevel1Markers2();
-      _initializeLevel2Markers();
-      _initializeLevel2Markers2();
-      _initializeLevel3Markers();
-      _initializeTextMarkersOfLevel1();
-      _initializeTextMarkersOfLevel12();
-    });
-    super.initState();
-  }
-
-  Future<void> _initializeTextMarkersOfLevel1() async {
-    List<Map<String, dynamic>> markerData = [
-      {
-        "markerId": "Salle HA6",
-        "rotation": -18.0,
-        "position": LatLng(14.69963, -17.45128),
-        "title": "Salle HA6",
-      },
-      {
-        "markerId": "Salle HA4",
-        "rotation": -18.0,
-        "position": LatLng(14.69967, -17.45114),
-        "title": "Salle HA4",
-      },
-      {
-        "markerId": "Salle HA?",
-        "rotation": -18.0,
-        "position": LatLng(14.69958114267191, -17.45119046419859),
-        "title": "Salle HA?",
-      },
-      {
-        "markerId": "Bureau recouvrement",
-        "rotation": 74.0,
-        "position": LatLng(14.699544172194296, -17.45131216943264),
-        "title": "Bureau\nrecouvrement",
-      },
-      {
-        "markerId": "Bureausurveillants",
-        "rotation": 70.0,
-        "position": LatLng(14.6996, -17.45138),
-        "title": "Bureau\nsurveillants",
-      },
-      {
-        "markerId": "Bureau Mme Barro",
-        "rotation": 70.0,
-        "position": LatLng(14.69959, -17.45141),
-        "title": "Bureau\nMme Barro",
-      },
-      {
-        "markerId": "Bureau Mr Ouedraogo",
-        "rotation": 10.0,
-        "position": LatLng(14.6998, -17.45148),
-        "title": "Bureau Mr\nOuedraogo",
-      },
-      {
-        "markerId": "Bureau Mr Kondengar",
-        "rotation": 10.0,
-        "position": LatLng(14.69979, -17.45151),
-        "title": "Bureau Mr\nKondengar",
-      },
-      {
-        "markerId": "Salle MP-SSI2",
-        "rotation": -20.0,
-        "position": LatLng(14.69983, -17.45153),
-        "title": "Salle MP-SSI2",
-      },
-      {
-        "markerId": "Salle MP-ISI2",
-        "rotation": -20,
-        "position": LatLng(14.69988, -17.45155),
-        "title": "Salle MP-ISI2",
-      },
-      {
-        "markerId": "Salle HA1",
-        "rotation": 73.0,
-        "position": LatLng(14.69973, -17.45105),
-        "title": "Salle HA1",
-      },
-
-      {
-        "markerId": "Salle HA3",
-        "rotation": -20.0,
-        "position": LatLng(14.6996, -17.45112),
-        "title": "Salle HA3",
-      },
-
-      {
-        "markerId": "Salle HA5",
-        "rotation": -20.0,
-        "position": LatLng(14.69956, -17.45125),
-        "title": "Salle HA5",
-      },
-
-      {
-        "markerId": "Ne venez pas ici",
-        "rotation": -20.0,
-        "position": LatLng(14.699972251025462, -17.45158407837153),
-        "title": "Ne venez pas ici",
-      },
-      {
-        "markerId": "Salle mystère",
-        "rotation": 75.0,
-        "position": LatLng(14.700063055518143, -17.451431192457676),
-        "title": "Salle mystère",
-      },
-      {
-        "markerId": "Bureau service technique",
-        "rotation": 75.0,
-        "position": LatLng(14.70006775831137, -17.45139867067337),
-        "title": "Bureau service technique",
-      },
-      {
-        "markerId": "Salle mystère 2",
-        "rotation": 73.0,
-        "position": LatLng(14.69999689796291, -17.45123405009508),
-        "title": "Salle mystère 2",
-      },
-      // Ajoute plus de markers ici si nécessaire
-    ];
-
-    for (var data in markerData) {
-      Marker marker = await createTextMarker(
-        data["markerId"],
-        data["rotation"],
-        data["position"],
-        data["title"],
-      );
-      setState(() {
-        _levelOneMarkers.add(marker);
-      });
-    }
-  }
-
-  Future<Marker> createTextMarker(
-    String markerId,
-    double rotation,
-    LatLng position,
-    String title,
-  ) async {
-    return Marker(
-        markerId: MarkerId(markerId),
-        anchor: const Offset(0.5, 0.5),
-        rotation: rotation,
-        position: position,
-        icon: await Text(
-          title,
-          textAlign: TextAlign.center,
-          style: const TextStyle(
-              color: Color.fromRGBO(75, 75, 75, 1.0),
-              fontWeight: FontWeight.w600,
-              fontSize: 30),
-        ).toBitmapDescriptor(
-            logicalSize: const Size(352, 352), imageSize: const Size(352, 352)),
-        onTap: () {
-          if (markerId == "Bureau Mr Kondengar") {
-            context.read<MapBloc>().add(SetSelectedMapEntity(Office(
-                  officeRole: "Responsable CISCO",
-                  aboutOffice: "Bureau de Mr.Kondengar : Situé au bât..",
-                  officeHours: [
-                    "05:00 - 22:38",
-                    "05:00 - 22:38",
-                    "05:00 - 22:38",
-                    "05:00 - 22:38",
-                    "indisponible (congés)",
-                    "indisponible (congés)",
-                    "indisponible (congés)",
-                  ],
-                  servicesProvided: [
-                    "Assistance pour les demandes de bourses et autres financements",
-                    "Vérification des dossiers d'admission et suivi des candidatures",
-                    "Gestion et délivrance des certificats académiques"
-                  ],
-                  responsables: [
-                    Responsable(
-                      fullName: "Thierry Kondengar",
-                      email: "kondengar@esmt.sn",
-                      description:
-                          "Toujours à l'écoute, j'accompagne les étudiants dans leurs démarches et m'assure qu'ils aient toutes les ressources pour réussir. N'hésitez pas à venir me voir pour toute question ou besoin de conseil.",
-                      photos: [],
-                      // Liste de photos, à remplir si nécessaire
-                      isTeacher: true,
-                      phoneNumber: "+221 76 309 94 67",
-                      linkedin: "/in/thierry-49",
-                      position: "Assistant Labo CISCO",
-                    ),
-                  ],
-                  placeName: "Bureau Mr.Kondengar",
-                  shortDescription:
-                      "Responsable CISCO, assistance pour les demandes de bourses et autres financements",
-                  entityPosition: position,
-                  // Position approximative; à ajuster si nécessaire
-                  entityName: "Bureau Mr.Kondengar",
-                  rating: "4.7/5",
-                  floor: "Étage 0",
-                  building: "Bat H",
-                  timeDetail: "Ferme à 17h30",
-                  about:
-                      "N’hésitez pas à me contacter via Whatsapp si je ne suis pas joignable par appel téléphonique.",
-                  isOpen: true,
-                  photos: [
-                    "assets/images/bureau_esmt.jpg",
-                    "assets/images/place_placeholder.png",
-                    "assets/images/esmt_3.png"
-                  ],
-                  // Ajouter les photos disponibles ici
-                  placeType: "Bureau",
-                )));
-          } else {
-            switch (markerId) {
-              case "Salle HA1":
-                context.read<MapBloc>().add(SetSelectedMapEntity(
-                    Classroom(
-                      placeType: "Salle de classe",
-                      placeName: "Salle HA1",
-                      shortDescription: "Salle de classe situé au bâtiment H occupé par la classe HA1",
-                      rating: "4.5",
-                      floor: "Étage 0",
-                      building: "Bâtiment H",
-                      timeDetail: "Ouvert",
-                      entityPosition: LatLng(14.69973, -17.45105),
-                      photos: [
-                        "assets/images/salle_de_classe_esmt.jpg",
-                        "assets/images/place_placeholder.png",
-                        "assets/images/esmt_3.png"
-                      ],
-                      about: "Salle de classe situé au bâtiment H occupé par la classe HA1",
-                      isOpen: true,
-                      entityName: "Salle HA1",
-                    )
-                ));
-                break;
-
-              case "Salle informatique DAR (SES)":
-                context.read<MapBloc>().add(SetSelectedMapEntity(
-                    Classroom(
-                      placeType: "Salle de classe",
-                      placeName: "Salle informatique DAR (SES)",
-                      shortDescription: "Salle dédiée aux cours d'informatique pour la section SES.",
-                      rating: "4.3",
-                      floor: "Étage 0",
-                      building: "Bâtiment D",
-                      timeDetail: "Ouvert",
-                      entityPosition: LatLng(14.699996573661137, -17.451602183282375),
-                      photos: [
-                        "assets/images/salle_de_classe_esmt.jpg",
-                        "assets/images/place_placeholder.png",
-                        "assets/images/esmt_3.png"
-                      ],
-                      about: "Salle informatique DAR équipée pour les cours et travaux en informatique.",
-                      isOpen: true,
-                      entityName: "Salle informatique DAR (SES)",
-                    )
-                ));
-                break;
-
-              case "Salle de classe RT":
-                context.read<MapBloc>().add(SetSelectedMapEntity(
-                    Classroom(
-                      placeType: "Salle de classe",
-                      placeName: "Salle de classe HB2",
-                      shortDescription: "Salle de classe dédiée aux cours de la filière RT.",
-                      rating: "4.1",
-                      floor: "Étage 0",
-                      building: "Bâtiment H",
-                      timeDetail: "Ouvert",
-                      entityPosition: LatLng(14.699910309367722, -17.45156731456518),
-                      photos: [
-                        "assets/images/salle_de_classe_esmt.jpg",
-                        "assets/images/place_placeholder.png",
-                        "assets/images/esmt_3.png"
-                      ],
-                      about: "Salle de classe pour les cours de la filière RT.",
-                      isOpen: true,
-                      entityName: "Salle de classe HB2",
-                    )
-                ));
-                break;
-
-              case "Restaurant administration (Accès interdit)":
-                context.read<MapBloc>().add(SetSelectedMapEntity(
-                    Classroom(
-                      placeType: "Restaurant",
-                      placeName: "Restaurant administration",
-                      shortDescription: "Restaurant réservé à l'administration.",
-                      rating: "N/A",
-                      floor: "Étage 0",
-                      building: "Bâtiment principal",
-                      timeDetail: "Accès interdit",
-                      entityPosition: LatLng(14.700116565290788, -17.451326586306095),
-                      photos: [
-                        "assets/images/restaurant_admin.jpg",
-                        "assets/images/place_placeholder.png",
-                        "assets/images/esmt_3.png"
-                      ],
-                      about: "Restaurant réservé à l'administration, l'accès y est interdit pour les étudiants.",
-                      isOpen: false,
-                      entityName: "Restaurant admin",
-                    )
-                ));
-                break;
-
-              case "Salle de classe HB3":
-                context.read<MapBloc>().add(SetSelectedMapEntity(
-                    Classroom(
-                      placeType: "Salle de classe",
-                      placeName: "Salle de classe HB3",
-                      shortDescription: "Salle de classe située au bâtiment H, destinée aux cours généraux.",
-                      rating: "4.0",
-                      floor: "Étage 0",
-                      building: "Bâtiment H",
-                      timeDetail: "Ouvert",
-                      entityPosition: LatLng(14.69982599085251, -17.451537810266014),
-                      photos: [
-                        "assets/images/salle_de_classe_esmt.jpg",
-                        "assets/images/place_placeholder.png",
-                        "assets/images/esmt_3.png"
-                      ],
-                      about: "Salle de classe pour les cours de la filière HB.",
-                      isOpen: true,
-                      entityName: "Salle de classe HB3",
-                    )
-                ));
-                break;
-
-              case "Gymnase":
-                context.read<MapBloc>().add(SetSelectedMapEntity(
-                    Classroom(
-                      placeType: "Gymnase",
-                      placeName: "Gymnase",
-                      shortDescription: "Espace sportif pour les activités physiques et sportives.",
-                      rating: "4.6",
-                      floor: "Étage 0",
-                      building: "Bâtiment Sportif",
-                      timeDetail: "Ouvert",
-                      entityPosition: LatLng(14.699498769844816, -17.451488524675373),
-                      photos: [
-                        "assets/images/gymnase_esmt.jpg",
-                        "assets/images/place_placeholder.png",
-                        "assets/images/esmt_3.png"
-                      ],
-                      about: "Gymnase pour les entraînements et compétitions sportives.",
-                      isOpen: true,
-                      entityName: "Gymnase",
-                    )
-                ));
-                break;
-
-              case "Salle de classe HB6":
-                context.read<MapBloc>().add(SetSelectedMapEntity(
-                    Classroom(
-                      placeType: "Salle de classe",
-                      placeName: "Salle de classe HB6",
-                      shortDescription: "Salle de classe située au bâtiment H pour divers cours.",
-                      rating: "4.2",
-                      floor: "Étage 0",
-                      building: "Bâtiment H",
-                      timeDetail: "Ouvert",
-                      entityPosition: LatLng(14.699535091725156, -17.451366148889065),
-                      photos: [
-                        "assets/images/salle_de_classe_esmt.jpg",
-                        "assets/images/place_placeholder.png",
-                        "assets/images/esmt_3.png"
-                      ],
-                      about: "Salle de classe pour les cours divers.",
-                      isOpen: true,
-                      entityName: "Salle de classe HB6",
-                    )
-                ));
-                break;
-
-              case "Salle de classe mystère (a côté HB6) HB7":
-                context.read<MapBloc>().add(SetSelectedMapEntity(
-                    Classroom(
-                      placeType: "Salle de classe",
-                      placeName: "Salle HB7",
-                      shortDescription: "Salle mystère située près de HB6.",
-                      rating: "3.8",
-                      floor: "Étage 0",
-                      building: "Bâtiment H",
-                      timeDetail: "Ouvert",
-                      entityPosition: LatLng(14.699569792087336, -17.451251484453678),
-                      photos: [
-                        "assets/images/salle_de_classe_esmt.jpg",
-                        "assets/images/place_placeholder.png",
-                        "assets/images/esmt_3.png"
-                      ],
-                      about: "Salle de classe pour les cours.",
-                      isOpen: true,
-                      entityName: "Salle HB7",
-                    )
-                ));
-                break;
-
-              case "salle HB8?":
-                context.read<MapBloc>().add(SetSelectedMapEntity(
-                    Classroom(
-                      placeType: "Salle de classe",
-                      placeName: "Salle HB8",
-                      shortDescription: "Salle de classe située au bâtiment H.",
-                      rating: "4.1",
-                      floor: "Étage 0",
-                      building: "Bâtiment H",
-                      timeDetail: "Ouvert",
-                      entityPosition: LatLng(14.699631409539332, -17.451135143637657),
-                      photos: [
-                        "assets/images/salle_de_classe_esmt.jpg",
-                        "assets/images/place_placeholder.png",
-                        "assets/images/esmt_3.png"
-                      ],
-                      about: "Salle de classe pour divers cours.",
-                      isOpen: true,
-                      entityName: "Salle HB8",
-                    )
-                ));
-                break;
-
-              case "salle HB1":
-                context.read<MapBloc>().add(SetSelectedMapEntity(
-                    Classroom(
-                      placeType: "Salle de classe",
-                      placeName: "Salle HB1",
-                      shortDescription: "Salle de classe HB1 pour les cours divers.",
-                      rating: "4.0",
-                      floor: "Étage 0",
-                      building: "Bâtiment H",
-                      timeDetail: "Ouvert",
-                      entityPosition: LatLng(14.7000585152944, -17.451403364539146),
-                      photos: [
-                        "assets/images/salle_de_classe_esmt.jpg",
-                        "assets/images/place_placeholder.png",
-                        "assets/images/esmt_3.png"
-                      ],
-                      about: "Salle de classe pour les étudiants de HB1.",
-                      isOpen: false,
-                      entityName: "Salle HB1",
-                    )
-                ));
-                break;
-
-              case "salle mystère admin":
-                context.read<MapBloc>().add(SetSelectedMapEntity(
-                    Classroom(
-                      placeType: "Salle mystère",
-                      placeName: "Salle mystère admin",
-                      shortDescription: "Salle mystère pour l'administration.",
-                      rating: "N/A",
-                      floor: "Étage 0",
-                      building: "Bâtiment administratif",
-                      timeDetail: "Accès réservé",
-                      entityPosition: LatLng(14.699995600755758, -17.451235055923462),
-                      photos: [
-                        "assets/images/salle_admin.jpg",
-                        "assets/images/place_placeholder.png",
-                        "assets/images/esmt_3.png"
-                      ],
-                      about: "Salle administrative dont l'accès est limité.",
-                      isOpen: false,
-                      entityName: "Salle mystère admin",
-                    )
-                ));
-                break;
-
-              case "salle HB9 - Cyber":
-                context.read<MapBloc>().add(SetSelectedMapEntity(
-                    Classroom(
-                      placeType: "Salle de classe",
-                      placeName: "Salle Cyber - HB9",
-                      shortDescription: "Salle HB9 dédiée aux cours de cyber.",
-                      rating: "4.5",
-                      floor: "Étage 0",
-                      building: "Bâtiment H",
-                      timeDetail: "Ouvert",
-                      entityPosition: LatLng(14.699784804489017, -17.451064065098763),
-                      photos: [
-                        "assets/images/salle_de_classe_esmt.jpg",
-                        "assets/images/place_placeholder.png",
-                        "assets/images/esmt_3.png"
-                      ],
-                      about: "Salle dédiée aux cours de cyber sécurité.",
-                      isOpen: true,
-                      entityName: "Salle Cyber - HB9",
-                    )
-                ));
-                break;
-
-              case "Salle HA3":
-                context.read<MapBloc>().add(SetSelectedMapEntity(
-                    Classroom(
-                      placeType: "Salle de classe",
-                      placeName: "Salle HA3",
-                      shortDescription: "Salle de classe situé au bâtiment H occupé par la classe HA3",
-                      rating: "4.2",
-                      floor: "Étage 0",
-                      building: "Bâtiment H",
-                      timeDetail: "Ouvert",
-                      entityPosition: LatLng(14.6996, -17.45112),
-                      photos: [
-                        "assets/images/salle_de_classe_esmt.jpg",
-                        "assets/images/place_placeholder.png",
-                        "assets/images/esmt_3.png"
-                      ],
-                      about: "Salle de classe situé au bâtiment H occupé par la classe HA3",
-                      isOpen: true,
-                      entityName: "Salle HA3",
-                    )
-                ));
-                break;
-
-              case "Salle HA5":
-                context.read<MapBloc>().add(SetSelectedMapEntity(
-                    Classroom(
-                      placeType: "Salle de classe",
-                      placeName: "Salle HA5",
-                      shortDescription: "Salle de classe situé au bâtiment H occupé par la classe HA5",
-                      rating: "4.4",
-                      floor: "Étage 0",
-                      building: "Bâtiment H",
-                      timeDetail: "Ouvert",
-                      entityPosition: LatLng(14.69956, -17.45125),
-                      photos: [
-                        "assets/images/salle_de_classe_esmt.jpg",
-                        "assets/images/place_placeholder.png",
-                        "assets/images/esmt_3.png"
-                      ],
-                      about: "Salle de classe situé au bâtiment H occupé par la classe HA5",
-                      isOpen: true,
-                      entityName: "Salle HA5",
-                    )
-                ));
-                break;
-
-              case "Salle HA6":
-                context.read<MapBloc>().add(SetSelectedMapEntity(
-                      Classroom(
-                        placeType: "Salle de classe",
-                        placeName: "Salle HA6",
-                        shortDescription:
-                            "Salle de classe située au bâtiment H occupée par la classe HA6",
-                        rating: "4.2",
-                        floor: "Étage 0",
-                        building: 'Bâtiment H',
-                        timeDetail: 'Ouvert',
-                        entityPosition: position,
-                        photos: [
-                          "assets/images/salle_de_classe_esmt.jpg",
-                          "assets/images/place_placeholder.png",
-                          "assets/images/esmt_3.png"
-                        ],
-                        about:
-                            "Salle de classe située au bâtiment H occupée par la classe HA6",
-                        isOpen: true,
-                        entityName: 'Salle HA6',
-                      ),
-                    ));
-                break;
-
-              case "Salle HA4":
-                context.read<MapBloc>().add(SetSelectedMapEntity(
-                      Classroom(
-                        placeType: "Salle de classe",
-                        placeName: "Salle HA4",
-                        shortDescription:
-                            "Salle de classe située au bâtiment H occupée par la classe HA4",
-                        rating: "4.1",
-                        floor: "Étage 0",
-                        building: 'Bâtiment H',
-                        timeDetail: 'Ouvert',
-                        entityPosition: position,
-                        photos: [
-                          "assets/images/salle_de_classe_esmt.jpg",
-                          "assets/images/place_placeholder.png",
-                          "assets/images/esmt_3.png"
-                        ],
-                        about:
-                            "Salle de classe située au bâtiment H occupée par la classe HA4",
-                        isOpen: true,
-                        entityName: 'Salle HA4',
-                      ),
-                    ));
-                break;
-
-              case "Salle HA?":
-                context.read<MapBloc>().add(SetSelectedMapEntity(
-                      Classroom(
-                        placeType: "Salle de classe",
-                        placeName: "Salle HA?",
-                        shortDescription:
-                            "Salle de classe située au bâtiment H, classe non spécifiée",
-                        rating: "3.8",
-                        floor: "Étage 0",
-                        building: 'Bâtiment H',
-                        timeDetail: 'Ouvert',
-                        entityPosition: position,
-                        photos: [
-                          "assets/images/salle_de_classe_esmt.jpg",
-                          "assets/images/place_placeholder.png",
-                          "assets/images/esmt_3.png"
-                        ],
-                        about:
-                            "Salle de classe située au bâtiment H, classe non spécifiée",
-                        isOpen: true,
-                        entityName: 'Salle HA?',
-                      ),
-                    ));
-                break;
-
-              case "Salle MP-SSI2":
-                context.read<MapBloc>().add(SetSelectedMapEntity(
-                      Classroom(
-                        placeType: "Salle de classe",
-                        placeName: "Salle MP-SSI2",
-                        shortDescription:
-                            "Salle de classe située au bâtiment H occupée par la classe MP-SSI2",
-                        rating: "4.0",
-                        floor: "Étage 0",
-                        building: 'Bâtiment H',
-                        timeDetail: 'Ouvert',
-                        entityPosition: position,
-                        photos: [
-                          "assets/images/salle_de_classe_esmt.jpg",
-                          "assets/images/place_placeholder.png",
-                          "assets/images/esmt_3.png"
-                        ],
-                        about:
-                            "Salle de classe située au bâtiment H occupée par la classe MP-SSI2",
-                        isOpen: true,
-                        entityName: 'Salle MP-SSI2',
-                      ),
-                    ));
-                break;
-
-              case "Salle MP-ISI2":
-                context.read<MapBloc>().add(SetSelectedMapEntity(
-                      Classroom(
-                        placeType: "Salle de classe",
-                        placeName: "Salle MP-ISI2",
-                        shortDescription:
-                            "Salle de classe située au bâtiment H occupée par la classe MP-ISI2",
-                        rating: "4.3",
-                        floor: "Étage 0",
-                        building: 'Bâtiment H',
-                        timeDetail: 'Ouvert',
-                        entityPosition: position,
-                        photos: [
-                          "assets/images/salle_de_classe_esmt.jpg",
-                          "assets/images/place_placeholder.png",
-                          "assets/images/esmt_3.png"
-                        ],
-                        about:
-                            "Salle de classe située au bâtiment H occupée par la classe MP-ISI2",
-                        isOpen: true,
-                        entityName: 'Salle MP-ISI2',
-                      ),
-                    ));
-                break;
-
-              case "Salle mystère":
-                context.read<MapBloc>().add(SetSelectedMapEntity(
-                      Classroom(
-                        placeType: "Salle de classe",
-                        placeName: "Salle mystère",
-                        shortDescription:
-                            "Salle de classe située au bâtiment H, nom de la classe inconnu",
-                        rating: "3.7",
-                        floor: "Étage 0",
-                        building: 'Bâtiment H',
-                        timeDetail: 'Ouvert',
-                        entityPosition: position,
-                        photos: [
-                          "assets/images/salle_de_classe_esmt.jpg",
-                          "assets/images/place_placeholder.png",
-                          "assets/images/esmt_3.png"
-                        ],
-                        about:
-                            "Salle de classe située au bâtiment H, nom de la classe inconnu",
-                        isOpen: true,
-                        entityName: 'Salle mystère',
-                      ),
-                    ));
-                break;
-
-              case "Salle mystère 2":
-                context.read<MapBloc>().add(SetSelectedMapEntity(
-                      Classroom(
-                        placeType: "Salle de classe",
-                        placeName: "Salle mystère 2",
-                        shortDescription:
-                            "Salle de classe située au bâtiment H, nom de la classe inconnu",
-                        rating: "3.9",
-                        floor: "Étage 0",
-                        building: 'Bâtiment H',
-                        timeDetail: 'Ouvert',
-                        entityPosition: position,
-                        photos: [
-                          "assets/images/salle_de_classe_esmt.jpg",
-                          "assets/images/place_placeholder.png",
-                          "assets/images/esmt_3.png"
-                        ],
-                        about:
-                            "Salle de classe située au bâtiment H, nom de la classe inconnu",
-                        isOpen: true,
-                        entityName: 'Salle mystère 2',
-                      ),
-                    ));
-                break;
-
-              default:
-                // Cas par défaut pour les markers qui ne sont pas des salles de classe
-                break;
-            }
-          }
-        });
-  }
-
-  Future<void> _initializeTextMarkersOfLevel12() async {
-    List<Map<String, dynamic>> markerData = [
-      {
-        "markerId": "Salle informatique DAR (SES)",
-        "position": LatLng(14.699996573661137, -17.451602183282375),
-        "title": "Salle informatique DAR \n(SES)",
-        "rotation": -20.0,
-      },
-      {
-        "markerId": "Salle de classe RT",
-        "position": LatLng(14.699910309367722, -17.45156731456518),
-        "title": "Salle de classe HB2",
-        "rotation": -20.0,
-      },
-      {
-        "markerId": "Restaurant administration \n(Accès interdit)",
-        "position": LatLng(14.700116565290788, -17.451326586306095),
-        "title": "Restaurant admin",
-        "rotation": -20.0,
-      },
-      {
-        "markerId": "Salle de classe HB3",
-        "position": LatLng(14.69982599085251, -17.451537810266014),
-        "title": "Salle de classe HB3",
-        "rotation": -20.0,
-      },
-      {
-        "markerId": "Gymnase",
-        "position": LatLng(14.699498769844816, -17.451488524675373),
-        "title": "Gymnase",
-        "rotation": -20.0,
-      },
-      {
-        "markerId": "Salle de classe HB6",
-        "position": LatLng(14.699535091725156, -17.451366148889065),
-        "title": "Salle HB6",
-        "rotation": -20.0,
-      },
-      {
-        "markerId": "Salle de classe mystère (a côté HB6) HB7",
-        "position": LatLng(14.699569792087336, -17.451251484453678),
-        "title": "Salle HB7",
-        "rotation": -20.0,
-      },
-      {
-        "markerId": "salle HB8?",
-        "position": LatLng(14.699631409539332, -17.451135143637657),
-        "title": "Salle HB8",
-        "rotation": 73.0,
-      },
-      {
-        "markerId": "salle HB1",
-        "position": LatLng(14.7000585152944, -17.451403364539146),
-        "title": "Salle HB1",
-        "rotation": 73.0,
-      },
-      {
-        "markerId": "salle mystère admin",
-        "position": LatLng(14.699995600755758, -17.451235055923462),
-        "title": "Salle mystère",
-        "rotation": 73.0,
-      },
-      {
-        "markerId": "salle HB9 - Cyber",
-        "position": LatLng(14.699784804489017, -17.451064065098763),
-        "title": "Salle Cyber - HB9",
-        "rotation": 73.0,
-      },
-      // Vous pouvez ajouter plus de marqueurs ici
-    ];
-
-    for (var data in markerData) {
-      Marker marker = await createTextMarker(
-        data["markerId"],
-        data["rotation"],
-        data["position"],
-        data["title"],
-      );
-      setState(() {
-        _levelOneMarkers2.add(marker);
-      });
-    }
-  }
-
-  Future<void> _initializeLevel1Markers() async {
-    List<Marker> levelOneMarkers = [
-      // -- Another level
-
-      Marker(
-        markerId: const MarkerId("Toilettes 6 (H/F)"),
-        anchor: const Offset(0.5, 0.5),
-        position: LatLng(14.700027706630838, -17.45155222713947),
-        icon: icons["toilette_mixte.png"]!,
-        onTap: () {
-          context.read<MapBloc>().add(SetSelectedMapEntity(
-                Restroom(
-                  occupancyLevel: "Faible",
-                  urinalsAvailable: "Oui",
-                  cleanlinessLevel: "Très propre",
-                  placeName: "Toilettes 6 (H/F)",
-                  shortDescription:
-                      "Sanitaires modernes, accessibles à tous, mixtes. Ces toilettes mixtes sont bien entretenues et offrent un accès universel.",
-                  entityPosition:
-                      LatLng(14.700027706630838, -17.45155222713947),
-                  entityName: "Toilettes mixte",
-                  rating: "4.5/5",
-                  floor: "Étage 0",
-                  building: "Bat H",
-                  timeDetail: "Ouvert H24",
-                  about:
-                      "Ces toilettes mixtes sont bien entretenues et offrent un accès universel. Elles se situent au rez-de-chaussée du bâtiment G, toujours prêtes à l'emploi.",
-                  isOpen: true,
-                  photos: [
-                    "assets/images/school_toilets.jpg",
-                    "assets/images/place_placeholder.png",
-                    "assets/images/esmt_3.png"
-                  ],
-                  placeType: "Toilettes",
-                ),
-              ));
-        },
-      ),
-
-      Marker(
-        markerId: const MarkerId("Toilettes 7 (H/F)"),
-        anchor: const Offset(0.5, 0.5),
-        position: LatLng(14.700059488199502, -17.451249808073044),
-        icon: icons["toilette_mixte.png"]!,
-        onTap: () {
-          context.read<MapBloc>().add(SetSelectedMapEntity(
-                Restroom(
-                  occupancyLevel: "Faible",
-                  urinalsAvailable: "Oui",
-                  cleanlinessLevel: "Très propre",
-                  placeName: "Toilettes 7 (H/F)",
-                  shortDescription:
-                      "Sanitaires modernes, accessibles à tous, mixtes. Ces toilettes mixtes sont bien entretenues et offrent un accès universel.",
-                  entityPosition:
-                      LatLng(14.700059488199502, -17.451249808073044),
-                  entityName: "Toilettes mixte",
-                  rating: "4.5/5",
-                  floor: "Étage 0",
-                  building: "Bat H",
-                  timeDetail: "Ouvert H24",
-                  about:
-                      "Ces toilettes mixtes sont bien entretenues et offrent un accès universel. Elles se situent au rez-de-chaussée du bâtiment G, toujours prêtes à l'emploi.",
-                  isOpen: true,
-                  photos: [
-                    "assets/images/school_toilets.jpg",
-                    "assets/images/place_placeholder.png",
-                    "assets/images/esmt_3.png"
-                  ],
-                  placeType: "Toilettes",
-                ),
-              ));
-        },
-      ),
-
-      Marker(
-        markerId: const MarkerId("Toilettes 5 (F)"),
-        anchor: const Offset(0.5, 0.5),
-        position: LatLng(14.700027706630838, -17.45155222713947),
-        icon: icons["toilettes_femme.png"]!,
-        onTap: () {
-          context.read<MapBloc>().add(SetSelectedMapEntity(
-                Restroom(
-                  occupancyLevel: "Faible",
-                  urinalsAvailable: "Oui",
-                  cleanlinessLevel: "Très propre",
-                  placeName: "Toilettes 7 (Femme)",
-                  shortDescription:
-                      "Sanitaires modernes, accessibles aux femmes. Ces toilettes sont bien entretenues et offrent un accès universel.",
-                  entityPosition:
-                      LatLng(14.700027706630838, -17.45155222713947),
-                  entityName: "Toilettes femme",
-                  rating: "4.5/5",
-                  floor: "Étage 0",
-                  building: "Bat H",
-                  timeDetail: "Ouvert H24",
-                  about:
-                      "Ces toilettes femme sont bien entretenues et offrent un accès universel. Elles se situent au rez-de-chaussée du bâtiment G, toujours prêtes à l'emploi.",
-                  isOpen: true,
-                  photos: [
-                    "assets/images/school_toilets.jpg",
-                    "assets/images/place_placeholder.png",
-                    "assets/images/esmt_3.png"
-                  ],
-                  placeType: "Toilettes",
-                ),
-              ));
-        },
-      ),
-
-      Marker(
-        markerId: const MarkerId("Toilettes 5 (F)"),
-        anchor: const Offset(0.5, 0.5),
-        position: LatLng(14.69977377821716, -17.45155993849039),
-        icon: icons["toilettes_femme.png"]!,
-        onTap: () {
-          context.read<MapBloc>().add(SetSelectedMapEntity(
-                Restroom(
-                  occupancyLevel: "Faible",
-                  urinalsAvailable: "Oui",
-                  cleanlinessLevel: "Très propre",
-                  placeName: "Toilettes 5 (Femme)",
-                  shortDescription:
-                      "Sanitaires modernes, accessibles aux femmes. Ces toilettes sont bien entretenues et offrent un accès universel.",
-                  entityPosition: LatLng(14.69977377821716, -17.45155993849039),
-                  entityName: "Toilettes femme",
-                  rating: "4.5/5",
-                  floor: "Étage 0",
-                  building: "Bat H",
-                  timeDetail: "Ouvert H24",
-                  about:
-                      "Ces toilettes femme sont bien entretenues et offrent un accès universel. Elles se situent au rez-de-chaussée du bâtiment G, toujours prêtes à l'emploi.",
-                  isOpen: true,
-                  photos: [
-                    "assets/images/school_toilets.jpg",
-                    "assets/images/place_placeholder.png",
-                    "assets/images/esmt_3.png"
-                  ],
-                  placeType: "Toilettes",
-                ),
-              ));
-        },
-      ),
-
-      Marker(
-        markerId: const MarkerId("Toilettes 4 (H)"),
-        anchor: const Offset(0.5, 0.5),
-        position: LatLng(14.69970924208541, -17.451542168855667),
-        icon: icons["toilettes_homme.png"]!,
-        onTap: () {
-          context.read<MapBloc>().add(SetSelectedMapEntity(
-                Restroom(
-                  occupancyLevel: "Faible",
-                  urinalsAvailable: "Oui",
-                  cleanlinessLevel: "Très propre",
-                  placeName: "Toilettes 7 (Homme)",
-                  shortDescription:
-                      "Sanitaires modernes, accessibles aux hommes. Ces toilettes sont bien entretenues et offrent un accès universel.",
-                  entityPosition:
-                      LatLng(14.69970924208541, -17.451542168855667),
-                  entityName: "Toilettes homme",
-                  rating: "4.5/5",
-                  floor: "Étage 0",
-                  building: "Bat H",
-                  timeDetail: "Ouvert H24",
-                  about:
-                      "Ces toilettes homme sont bien entretenues et offrent un accès universel. Elles se situent au rez-de-chaussée du bâtiment G, toujours prêtes à l'emploi.",
-                  isOpen: true,
-                  photos: [
-                    "assets/images/school_toilets.jpg",
-                    "assets/images/place_placeholder.png",
-                    "assets/images/esmt_3.png"
-                  ],
-                  placeType: "Toilettes",
-                ),
-              ));
-        },
-      ),
-
-      Marker(
-        markerId: const MarkerId("Toilettes 3.5 (H/F)"),
-        anchor: const Offset(0.5, 0.5),
-        position: LatLng(14.699574008018823, -17.451526410877705),
-        icon: icons["toilette_mixte.png"]!,
-        onTap: () {
-          context.read<MapBloc>().add(SetSelectedMapEntity(
-                Restroom(
-                  occupancyLevel: "Faible",
-                  urinalsAvailable: "Oui",
-                  cleanlinessLevel: "Très propre",
-                  placeName: "Toilettes 7 (H/F)",
-                  shortDescription:
-                      "Sanitaires modernes, accessibles à tous, mixtes. Ces toilettes mixtes sont bien entretenues et offrent un accès universel.",
-                  entityPosition:
-                      LatLng(14.699574008018823, -17.451526410877705),
-                  entityName: "Toilettes mixte",
-                  rating: "4.5/5",
-                  floor: "Étage 0",
-                  building: "Bat H",
-                  timeDetail: "Ouvert H24",
-                  about:
-                      "Ces toilettes mixtes sont bien entretenues et offrent un accès universel. Elles se situent au rez-de-chaussée du bâtiment G, toujours prêtes à l'emploi.",
-                  isOpen: true,
-                  photos: [
-                    "assets/images/school_toilets.jpg",
-                    "assets/images/place_placeholder.png",
-                    "assets/images/esmt_3.png"
-                  ],
-                  placeType: "Toilettes",
-                ),
-              ));
-        },
-      ),
-
-      Marker(
-        markerId: const MarkerId("Toilettes 3 (ADMIN)"),
-        anchor: const Offset(0.5, 0.5),
-        position: LatLng(14.699535416027642, -17.45149791240692),
-        icon: icons["toilette_mixte_locked.png"]!,
-        onTap: () {
-          context.read<MapBloc>().add(SetSelectedMapEntity(
-                Restroom(
-                  occupancyLevel: "Faible",
-                  urinalsAvailable: "Oui",
-                  cleanlinessLevel: "Très propre",
-                  placeName: "Toilettes 3 (ADMIN)",
-                  shortDescription:
-                      "Sanitaires modernes, accessibles à tous, mixtes. Ces toilettes mixtes sont bien entretenues et offrent un accès universel.",
-                  entityPosition:
-                      LatLng(14.699535416027642, -17.45149791240692),
-                  entityName: "Toilettes mixte (ADMIN)",
-                  rating: "4.5/5",
-                  floor: "Étage 0",
-                  building: "Bat H",
-                  timeDetail: "Accès interdit",
-                  about:
-                      "Ces toilettes mixtes sont bien entretenues et offrent un accès universel. Elles se situent au rez-de-chaussée du bâtiment G, toujours prêtes à l'emploi.",
-                  isOpen: false,
-                  photos: [
-                    "assets/images/school_toilets.jpg",
-                    "assets/images/place_placeholder.png",
-                    "assets/images/esmt_3.png"
-                  ],
-                  placeType: "Toilettes",
-                ),
-              ));
-        },
-      ),
-
-      Marker(
-        markerId: const MarkerId("Toilettes 4 (F)"),
-        anchor: const Offset(0.5, 0.5),
-        position: LatLng(14.699616167329145, -17.451066747307777),
-        icon: icons["toilettes_femme.png"]!,
-        onTap: () {
-          context.read<MapBloc>().add(SetSelectedMapEntity(
-                Restroom(
-                  occupancyLevel: "Faible",
-                  urinalsAvailable: "Oui",
-                  cleanlinessLevel: "Très propre",
-                  placeName: "Toilettes 4 (FEMME)",
-                  shortDescription:
-                      "Sanitaires modernes, accessibles aux femmes. Ces toilettes femme sont bien entretenues et offrent un accès universel.",
-                  entityPosition:
-                      LatLng(14.699616167329145, -17.451066747307777),
-                  entityName: "Toilettes femme)",
-                  rating: "4.5/5",
-                  floor: "Étage 0",
-                  building: "Bat H",
-                  timeDetail: "Ouvert H24",
-                  about:
-                      "Ces toilettes femme sont bien entretenues et offrent un accès universel. Elles se situent au rez-de-chaussée du bâtiment G, toujours prêtes à l'emploi.",
-                  isOpen: true,
-                  photos: [
-                    "assets/images/school_toilets.jpg",
-                    "assets/images/place_placeholder.png",
-                    "assets/images/esmt_3.png"
-                  ],
-                  placeType: "Toilettes",
-                ),
-              ));
-        },
-      ),
-
-
-    ];
-
-    setState(() {
-      _levelOneMarkers.addAll(levelOneMarkers);
-      // _levelThreeMarkers.addAll(levelThreeMarkers);
-    });
-  }
-
-  Future<void> _initializeLevel1Markers2() async {
-    List<Marker> levelOneMarkers2 = [
-      // -- Another level
-
-      Marker(
-        markerId: const MarkerId("Toilettes 1 (H/F) 2F"),
-        anchor: const Offset(0.5, 0.5),
-        position: LatLng(14.7000348412691, -17.451549880206585),
-        icon: icons["toilette_mixte.png"]!,
-        onTap: () {
-          context.read<MapBloc>().add(SetSelectedMapEntity(
-                Restroom(
-                  occupancyLevel: "Faible", // Peut être ajusté
-                  urinalsAvailable: "Oui", // Peut être ajusté
-                  cleanlinessLevel: "Bonne", // Peut être ajusté
-                  rating: "4.2/5", // Peut être ajusté
-                  placeName: "Toilettes 1 (H/F) 2F", // Nom basé sur le MarkerId
-                  shortDescription:
-                      "Sanitaires modernes, accessibles à tous, mixtes. Ces toilettes mixtes sont bien entretenues et offrent un accès universel.",
-                  entityPosition: LatLng(14.7000348412691,
-                      -17.451549880206585), // Position basée sur le Marker
-                  entityName: "Toilettes mixte",
-                  floor: "Étage 1", // Constante
-                  building: "Bat H", // Constante
-                  timeDetail: "Ouvert H24", // Constante
-                  about:
-                      "Ces toilettes mixtes sont bien entretenues et offrent un accès universel. Elles se situent au rez-de-chaussée du bâtiment G, toujours prêtes à l'emploi.",
-                  isOpen: true,
-                  photos: [
-                    "assets/images/school_toilets.jpg",
-                    "assets/images/place_placeholder.png",
-                    "assets/images/esmt_3.png"
-                  ],
-                  placeType: "Toilettes", // Constante
-                ),
-              ));
-        },
-      ),
-
-      Marker(
-        markerId: const MarkerId("Toilettes 2 (F) 2F"),
-        anchor: const Offset(0.5, 0.5),
-        position: LatLng(14.69971248510756, -17.451538480818275),
-        icon: icons["toilettes_femme.png"]!,
-        onTap: () {
-          context.read<MapBloc>().add(SetSelectedMapEntity(
-                Restroom(
-                  occupancyLevel: "Modéré",
-                  urinalsAvailable: "Non",
-                  cleanlinessLevel: "Propre",
-                  rating: "4.0/5",
-                  placeName: "Toilettes 2 (F) 2F",
-                  shortDescription:
-                      "Sanitaires modernes, accessibles à tous, féminin. Ces toilettes féminines sont bien entretenues et offrent un accès universel.",
-                  entityPosition:
-                      LatLng(14.69971248510756, -17.451538480818275),
-                  entityName: "Toilettes femme",
-                  floor: "Étage 0",
-                  building: "Bat H",
-                  timeDetail: "Ouvert H24",
-                  about:
-                      "Ces toilettes féminines sont bien entretenues et offrent un accès universel. Elles se situent au rez-de-chaussée du bâtiment G, toujours prêtes à l'emploi.",
-                  isOpen: true,
-                  photos: [
-                    "assets/images/school_toilets.jpg",
-                    "assets/images/place_placeholder.png",
-                    "assets/images/esmt_3.png"
-                  ],
-                  placeType: "Toilettes",
-                ),
-              ));
-        },
-      ),
-
-      Marker(
-        markerId: const MarkerId("Toilettes 3 (H) 2F"),
-        anchor: const Offset(0.5, 0.5),
-        position: LatLng(14.699726430102261, -17.451483830809593),
-        icon: icons["toilettes_homme.png"]!,
-        onTap: () {
-          context.read<MapBloc>().add(SetSelectedMapEntity(
-                Restroom(
-                  occupancyLevel: "Faible",
-                  urinalsAvailable: "Oui",
-                  cleanlinessLevel: "Très propre",
-                  rating: "4.5/5",
-                  placeName: "Toilettes 3 (H) 2F",
-                  shortDescription:
-                      "Sanitaires modernes, accessibles à tous, masculin. Ces toilettes masculines sont bien entretenues et offrent un accès universel.",
-                  entityPosition:
-                      LatLng(14.699726430102261, -17.451483830809593),
-                  entityName: "Toilettes homme",
-                  floor: "Étage 0",
-                  building: "Bat H",
-                  timeDetail: "Ouvert H24",
-                  about:
-                      "Ces toilettes masculines sont bien entretenues et offrent un accès universel. Elles se situent au rez-de-chaussée du bâtiment G, toujours prêtes à l'emploi.",
-                  isOpen: true,
-                  photos: [
-                    "assets/images/school_toilets.jpg",
-                    "assets/images/place_placeholder.png",
-                    "assets/images/esmt_3.png"
-                  ],
-                  placeType: "Toilettes",
-                ),
-              ));
-        },
-      ),
-
-      Marker(
-        markerId: const MarkerId("Toilettes 4 (H/F) 2F"),
-        anchor: const Offset(0.5, 0.5),
-        position: LatLng(14.699630112329993, -17.45129305869341),
-        icon: icons["toilette_mixte.png"]!,
-        onTap: () {
-          context.read<MapBloc>().add(SetSelectedMapEntity(
-                Restroom(
-                  occupancyLevel: "Élevé",
-                  urinalsAvailable: "Oui",
-                  cleanlinessLevel: "Correct",
-                  rating: "3.8/5",
-                  placeName: "Toilettes 4 (H/F) 2F",
-                  shortDescription:
-                      "Sanitaires modernes, accessibles à tous, mixtes. Ces toilettes mixtes sont bien entretenues et offrent un accès universel.",
-                  entityPosition:
-                      LatLng(14.699630112329993, -17.45129305869341),
-                  entityName: "Toilettes mixte",
-                  floor: "Étage 0",
-                  building: "Bat H",
-                  timeDetail: "Ouvert H24",
-                  about:
-                      "Ces toilettes mixtes sont bien entretenues et offrent un accès universel. Elles se situent au rez-de-chaussée du bâtiment G, toujours prêtes à l'emploi.",
-                  isOpen: true,
-                  photos: [
-                    "assets/images/school_toilets.jpg",
-                    "assets/images/place_placeholder.png",
-                    "assets/images/esmt_3.png"
-                  ],
-                  placeType: "Toilettes",
-                ),
-              ));
-        },
-      ),
-
-      Marker(
-        markerId: const MarkerId("Toilettes 6 - 2n stair (ADMIN)"),
-        anchor: const Offset(0.5, 0.5),
-        position: LatLng(14.700061109707981, -17.451248802244663),
-        icon: icons["toilette_mixte_locked.png"]!,
-        onTap: () {
-          context.read<MapBloc>().add(SetSelectedMapEntity(
-                Restroom(
-                  occupancyLevel: "Indisponible",
-                  urinalsAvailable: "Non",
-                  cleanlinessLevel: "Inconnu",
-                  rating: "N/A",
-                  placeName: "Toilettes 6 - 2n stair (ADMIN)",
-                  shortDescription:
-                      "Sanitaires administratifs, accès restreint, mixtes. Toilettes bien entretenues et accessibles uniquement au personnel.",
-                  entityPosition:
-                      LatLng(14.700061109707981, -17.451248802244663),
-                  entityName: "Toilettes mixte - Accès limité",
-                  floor: "Étage 0",
-                  building: "Bat H",
-                  timeDetail: "Accès interdit",
-                  about:
-                      "Ces toilettes administratives mixtes sont bien entretenues et offrent un accès limité au personnel. Situées au rez-de-chaussée du bâtiment G.",
-                  isOpen: false,
-                  photos: [
-                    "assets/images/school_toilets.jpg",
-                    "assets/images/place_placeholder.png",
-                    "assets/images/esmt_3.png"
-                  ],
-                  placeType: "Toilettes",
-                ),
-              ));
-        },
-      ),
-    ];
-
-    setState(() {
-      _levelOneMarkers2.addAll(levelOneMarkers2);
-      // _levelThreeMarkers.addAll(levelThreeMarkers);
-    });
-  }
-
-  Future<void> _initializeLevel2Markers() async {
-    List<Marker> levelTwoMarkers = [
-      // - Points de prière :
-
-      Marker(
-        markerId: const MarkerId("Point prière 1 (vers resto)"),
-        anchor: const Offset(0.5, 0.5),
-        position: LatLng(14.700017004673004, -17.451315186917782),
-        icon: icons["point_priere.png"]!,
-        onTap: () {
-          // add(SetSelectedMapEntity(event.newMapEntity));
-        },
-      ),
-
-      //  ---- Another level
-
-      Marker(
-        markerId: const MarkerId("Reprographie"),
-        anchor: const Offset(0.5, 0.5),
-        position: LatLng(14.69949649972709, -17.45146505534649),
-        icon: icons["salle_reprographie.png"]!,
-        onTap: () {
-          // add(SetSelectedMapEntity(event.newMapEntity));
-        },
-      ),
-
-      Marker(
-        markerId: const MarkerId("Amicale"),
-        anchor: const Offset(0.5, 0.5),
-        position: LatLng(14.699460177840324, -17.451517023146152),
-        icon: icons["salle_amicale.png"]!,
-        onTap: () {
-          // add(SetSelectedMapEntity(event.newMapEntity));
-        },
-      ),
-
-      Marker(
-        markerId: const MarkerId("Labo 3"),
-        anchor: const Offset(0.5, 0.5),
-        position: LatLng(14.700041327303694, -17.451469749212265),
-        icon: icons["labo.png"]!,
-        onTap: () {
-          // add(SetSelectedMapEntity(event.newMapEntity));
-        },
-      ),
-
-      Marker(
-        markerId: const MarkerId("Labo 2"),
-        anchor: const Offset(0.5, 0.5),
-        position: LatLng(14.700004681205748, -17.45160486549139),
-        icon: icons["labo.png"]!,
-        onTap: () {
-          // add(SetSelectedMapEntity(event.newMapEntity));
-        },
-      ),
-
-      Marker(
-        markerId: const MarkerId("Labo 1"),
-        anchor: const Offset(0.5, 0.5),
-        position: LatLng(14.699664488374792, -17.451476454734802),
-        icon: icons["labo.png"]!,
-        onTap: () {
-          debugPrint("Tapped on labo 1");
-          context.read<MapBloc>().add(const SetSelectedMapEntity(MainPlace(
-                  photos: [
-                    "assets/images/labo_1.jpeg",
-                    "assets/images/place_placeholder.png",
-                    "assets/images/esmt_2.png",
-                    "assets/images/esmt_3.png"
-                  ],
-                  placeType: "Laboratoire",
-                  placeName: "Laboratoire Cisco",
-                  entityPosition:
-                      LatLng(14.699664488374792, -17.451476454734802),
-                  entityName: "Labo1-HE0",
-                  shortDescription:
-                      'dédié à la pratique des technologies réseau avec des équipements Cisco.',
-                  floor: "Étage 0",
-                  rating: '4.7/5',
-                  building: 'Bat H',
-                  timeDetail: 'Ferme à 14h',
-                  about: 'Test',
-                  isOpen: true)));
-          // add(SetSelectedMapEntity(event.newMapEntity));
-        },
-      ),
-
-      Marker(
-        markerId: const MarkerId("Resto"),
-        anchor: const Offset(0.5, 0.5),
-        position: LatLng(14.700116889592406, -17.451324239373207),
-        icon: icons["salle_restaurant.png"]!,
-        onTap: () {
-          // add(SetSelectedMapEntity(event.newMapEntity));
-        },
-      ),
-
-      Marker(
-        markerId: const MarkerId("Infirmerie"),
-        anchor: const Offset(0.5, 0.5),
-        position: LatLng(14.699935604915927, -17.451586090028286),
-        icon: icons["salle_infirmerie.png"]!,
-        onTap: () {
-          // add(SetSelectedMapEntity(event.newMapEntity));
-        },
-      ),
-    ];
-
-    setState(() {
-      _levelTwoMarkers.addAll(levelTwoMarkers);
-      // _levelThreeMarkers.addAll(levelThreeMarkers);
-    });
-  }
-
-  Future<void> _initializeLevel2Markers2() async {
-    List<Marker> levelTwoMarkers2 = [
-      // - Points de prière :
-
-      Marker(
-        markerId: const MarkerId("Point prière 1 (vers resto)"),
-        anchor: const Offset(0.5, 0.5),
-        position: LatLng(14.700017004673004, -17.451315186917782),
-        icon: icons["point_priere.png"]!,
-        onTap: () {
-          // add(SetSelectedMapEntity(event.newMapEntity));
-        },
-      ),
-
-      Marker(
-        markerId: const MarkerId("Point prière 2 (vers 4 bureaux)"),
-        anchor: const Offset(0.5, 0.5),
-        position: LatLng(14.700050407751775, -17.451514676213264),
-        icon: icons["point_priere.png"]!,
-        onTap: () {
-          // add(SetSelectedMapEntity(event.newMapEntity));
-        },
-      ),
-
-      //  ---- Another level
-
-      Marker(
-        markerId: const MarkerId("Incubateur"),
-        anchor: const Offset(0.5, 0.5),
-        position: LatLng(14.69958600720797, -17.451496236026287),
-        icon: icons["salle_incubateur.png"]!,
-        onTap: () {
-          // add(SetSelectedMapEntity(event.newMapEntity));
-        },
-      ),
-
-      Marker(
-        markerId: const MarkerId("Biblio"),
-        anchor: const Offset(0.5, 0.5),
-        position: LatLng(14.699652164887663, -17.451038919389248),
-        icon: icons["salle_biblio.png"]!,
-        onTap: () {
-          // add(SetSelectedMapEntity(event.newMapEntity));
-        },
-      ),
-
-      Marker(
-        markerId: const MarkerId("Conference"),
-        anchor: const Offset(0.5, 0.5),
-        position: LatLng(14.699667082793065, -17.45149288326502),
-        icon: icons["salle_conference.png"]!,
-        onTap: () {
-          // add(SetSelectedMapEntity(event.newMapEntity));
-        },
-      ),
-    ];
-
-    setState(() {
-      _levelTwoMarkers2.addAll(levelTwoMarkers2);
-      // _levelThreeMarkers.addAll(levelThreeMarkers);
-    });
-  }
-
-  Future<void> _initializeLevel3Markers() async {
-    List<Marker> levelThreeMarkers = [
-      // -- Sorties :
-
-      Marker(
-        markerId: const MarkerId("Exit 1 BAT E"),
-        anchor: const Offset(0.5, 0.5),
-        position: LatLng(14.700066622836733, -17.450779750943184),
-        icon: icons["exit.png"]!,
-        onTap: () {
-          // add(SetSelectedMapEntity(event.newMapEntity));
-        },
-      ),
-
-      Marker(
-        markerId: const MarkerId("Exit 1 BAT H"),
-        anchor: const Offset(0.5, 0.5),
-        position: LatLng(14.69948158181005, -17.451396994292736),
-        icon: icons["exit.png"]!,
-        onTap: () {
-          // add(SetSelectedMapEntity(event.newMapEntity));
-        },
-      ),
-
-      // -- Batiments :
-
-      Marker(
-        markerId: const MarkerId("Batiment E"),
-        anchor: const Offset(0.5, 0.5),
-        position: LatLng(14.700240772773133, -17.450975216925144),
-        icon: icons["bat_e.png"]!,
-        onTap: () {
-          // add(SetSelectedMapEntity(event.newMapEntity));
-        },
-      ),
-    ];
-
-    setState(() {
-      _levelThreeMarkers.addAll(levelThreeMarkers);
-      // _levelThreeMarkers.addAll(levelThreeMarkers);
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
     return BlocConsumer<MapBloc, MapState>(
@@ -4449,49 +3022,1776 @@ class MapWState extends State<GMap> {
       },
     );
   }
+
+  Future<Marker> createTextMarker(
+    String markerId,
+    double rotation,
+    LatLng position,
+    String title,
+  ) async {
+    return Marker(
+        markerId: MarkerId(markerId),
+        anchor: const Offset(0.5, 0.5),
+        rotation: rotation,
+        position: position,
+        icon: await Text(
+          title,
+          textAlign: TextAlign.center,
+          style: const TextStyle(
+              color: Color.fromRGBO(75, 75, 75, 1.0),
+              fontWeight: FontWeight.w600,
+              fontSize: 30),
+        ).toBitmapDescriptor(
+            logicalSize: const Size(352, 352), imageSize: const Size(352, 352)),
+        onTap: () {
+          if (markerId == "Bureau Mr Kondengar") {
+            context.read<MapBloc>().add(SetSelectedMapEntity(Office(
+                  officeRole: "Responsable CISCO",
+                  aboutOffice: "Bureau de Mr.Kondengar : Situé au bât..",
+                  officeHours: [
+                    "05:00 - 22:38",
+                    "05:00 - 22:38",
+                    "05:00 - 22:38",
+                    "05:00 - 22:38",
+                    "indisponible (congés)",
+                    "indisponible (congés)",
+                    "indisponible (congés)",
+                  ],
+                  servicesProvided: [
+                    "Assistance pour les demandes de bourses et autres financements",
+                    "Vérification des dossiers d'admission et suivi des candidatures",
+                    "Gestion et délivrance des certificats académiques"
+                  ],
+                  responsables: [
+                    Responsable(
+                      fullName: "Thierry Kondengar",
+                      email: "kondengar@esmt.sn",
+                      description:
+                          "Toujours à l'écoute, j'accompagne les étudiants dans leurs démarches et m'assure qu'ils aient toutes les ressources pour réussir. N'hésitez pas à venir me voir pour toute question ou besoin de conseil.",
+                      photos: [],
+                      // Liste de photos, à remplir si nécessaire
+                      isTeacher: true,
+                      phoneNumber: "+221 76 309 94 67",
+                      linkedin: "/in/thierry-49",
+                      position: "Assistant Labo CISCO",
+                    ),
+                  ],
+                  placeName: "Bureau Mr.Kondengar",
+                  shortDescription:
+                      "Responsable CISCO, assistance pour les demandes de bourses et autres financements",
+                  entityPosition: position,
+                  // Position approximative; à ajuster si nécessaire
+                  entityName: "Bureau Mr.Kondengar",
+                  rating: "4.7/5",
+                  floor: "Étage 0",
+                  building: "Bat H",
+                  timeDetail: "Ferme à 17h30",
+                  about:
+                      "N’hésitez pas à me contacter via Whatsapp si je ne suis pas joignable par appel téléphonique.",
+                  isOpen: true,
+                  photos: [
+                    "assets/images/bureau_esmt.jpg",
+                    "assets/images/place_placeholder.png",
+                    "assets/images/esmt_3.png"
+                  ],
+                  // Ajouter les photos disponibles ici
+                  placeType: "Bureau",
+                )));
+          } else {
+            switch (markerId) {
+              case "Salle HA1":
+                context.read<MapBloc>().add(SetSelectedMapEntity(Classroom(
+                      placeType: "Salle de classe",
+                      placeName: "Salle HA1",
+                      shortDescription:
+                          "Salle de classe situé au bâtiment H occupé par la classe HA1",
+                      rating: "4.5",
+                      floor: "Étage 0",
+                      building: "Bâtiment H",
+                      timeDetail: "Ouvert",
+                      entityPosition: LatLng(14.69973, -17.45105),
+                      photos: [
+                        "assets/images/salle_de_classe_esmt.jpg",
+                        "assets/images/place_placeholder.png",
+                        "assets/images/esmt_3.png"
+                      ],
+                      about:
+                          "Salle de classe situé au bâtiment H occupé par la classe HA1",
+                      isOpen: true,
+                      entityName: "Salle HA1",
+                    )));
+                break;
+
+              case "Salle informatique DAR (SES)":
+                context.read<MapBloc>().add(SetSelectedMapEntity(Classroom(
+                      placeType: "Salle de classe",
+                      placeName: "Salle informatique DAR (SES)",
+                      shortDescription:
+                          "Salle dédiée aux cours d'informatique pour la section SES.",
+                      rating: "4.3",
+                      floor: "Étage 0",
+                      building: "Bâtiment D",
+                      timeDetail: "Ouvert",
+                      entityPosition:
+                          LatLng(14.699996573661137, -17.451602183282375),
+                      photos: [
+                        "assets/images/salle_de_classe_esmt.jpg",
+                        "assets/images/place_placeholder.png",
+                        "assets/images/esmt_3.png"
+                      ],
+                      about:
+                          "Salle informatique DAR équipée pour les cours et travaux en informatique.",
+                      isOpen: true,
+                      entityName: "Salle informatique DAR (SES)",
+                    )));
+                break;
+
+              case "Salle de classe RT":
+                context.read<MapBloc>().add(SetSelectedMapEntity(Classroom(
+                      placeType: "Salle de classe",
+                      placeName: "Salle de classe HB2",
+                      shortDescription:
+                          "Salle de classe dédiée aux cours de la filière RT.",
+                      rating: "4.1",
+                      floor: "Étage 0",
+                      building: "Bâtiment H",
+                      timeDetail: "Ouvert",
+                      entityPosition:
+                          LatLng(14.699910309367722, -17.45156731456518),
+                      photos: [
+                        "assets/images/salle_de_classe_esmt.jpg",
+                        "assets/images/place_placeholder.png",
+                        "assets/images/esmt_3.png"
+                      ],
+                      about: "Salle de classe pour les cours de la filière RT.",
+                      isOpen: true,
+                      entityName: "Salle de classe HB2",
+                    )));
+                break;
+
+              case "Restaurant administration (Accès interdit)":
+                context.read<MapBloc>().add(SetSelectedMapEntity(Classroom(
+                      placeType: "Restaurant",
+                      placeName: "Restaurant administration",
+                      shortDescription:
+                          "Restaurant réservé à l'administration.",
+                      rating: "N/A",
+                      floor: "Étage 0",
+                      building: "Bâtiment principal",
+                      timeDetail: "Accès interdit",
+                      entityPosition:
+                          LatLng(14.700116565290788, -17.451326586306095),
+                      photos: [
+                        "assets/images/restaurant_admin.jpg",
+                        "assets/images/place_placeholder.png",
+                        "assets/images/esmt_3.png"
+                      ],
+                      about:
+                          "Restaurant réservé à l'administration, l'accès y est interdit pour les étudiants.",
+                      isOpen: false,
+                      entityName: "Restaurant admin",
+                    )));
+                break;
+
+              case "Salle de classe HB3":
+                context.read<MapBloc>().add(SetSelectedMapEntity(Classroom(
+                      placeType: "Salle de classe",
+                      placeName: "Salle de classe HB3",
+                      shortDescription:
+                          "Salle de classe située au bâtiment H, destinée aux cours généraux.",
+                      rating: "4.0",
+                      floor: "Étage 0",
+                      building: "Bâtiment H",
+                      timeDetail: "Ouvert",
+                      entityPosition:
+                          LatLng(14.69982599085251, -17.451537810266014),
+                      photos: [
+                        "assets/images/salle_de_classe_esmt.jpg",
+                        "assets/images/place_placeholder.png",
+                        "assets/images/esmt_3.png"
+                      ],
+                      about: "Salle de classe pour les cours de la filière HB.",
+                      isOpen: true,
+                      entityName: "Salle de classe HB3",
+                    )));
+                break;
+
+              case "Gymnase":
+                context.read<MapBloc>().add(SetSelectedMapEntity(Classroom(
+                      placeType: "Gymnase",
+                      placeName: "Gymnase",
+                      shortDescription:
+                          "Espace sportif pour les activités physiques et sportives.",
+                      rating: "4.6",
+                      floor: "Étage 0",
+                      building: "Bâtiment Sportif",
+                      timeDetail: "Ouvert",
+                      entityPosition:
+                          LatLng(14.699498769844816, -17.451488524675373),
+                      photos: [
+                        "assets/images/gymnase_esmt.jpg",
+                        "assets/images/place_placeholder.png",
+                        "assets/images/esmt_3.png"
+                      ],
+                      about:
+                          "Gymnase pour les entraînements et compétitions sportives.",
+                      isOpen: true,
+                      entityName: "Gymnase",
+                    )));
+                break;
+
+              case "Salle de classe HB6":
+                context.read<MapBloc>().add(SetSelectedMapEntity(Classroom(
+                      placeType: "Salle de classe",
+                      placeName: "Salle de classe HB6",
+                      shortDescription:
+                          "Salle de classe située au bâtiment H pour divers cours.",
+                      rating: "4.2",
+                      floor: "Étage 0",
+                      building: "Bâtiment H",
+                      timeDetail: "Ouvert",
+                      entityPosition:
+                          LatLng(14.699535091725156, -17.451366148889065),
+                      photos: [
+                        "assets/images/salle_de_classe_esmt.jpg",
+                        "assets/images/place_placeholder.png",
+                        "assets/images/esmt_3.png"
+                      ],
+                      about: "Salle de classe pour les cours divers.",
+                      isOpen: true,
+                      entityName: "Salle de classe HB6",
+                    )));
+                break;
+
+              case "Salle de classe mystère (a côté HB6) HB7":
+                context.read<MapBloc>().add(SetSelectedMapEntity(Classroom(
+                      placeType: "Salle de classe",
+                      placeName: "Salle HB7",
+                      shortDescription: "Salle mystère située près de HB6.",
+                      rating: "3.8",
+                      floor: "Étage 0",
+                      building: "Bâtiment H",
+                      timeDetail: "Ouvert",
+                      entityPosition:
+                          LatLng(14.699569792087336, -17.451251484453678),
+                      photos: [
+                        "assets/images/salle_de_classe_esmt.jpg",
+                        "assets/images/place_placeholder.png",
+                        "assets/images/esmt_3.png"
+                      ],
+                      about: "Salle de classe pour les cours.",
+                      isOpen: true,
+                      entityName: "Salle HB7",
+                    )));
+                break;
+
+              case "salle HB8?":
+                context.read<MapBloc>().add(SetSelectedMapEntity(Classroom(
+                      placeType: "Salle de classe",
+                      placeName: "Salle HB8",
+                      shortDescription: "Salle de classe située au bâtiment H.",
+                      rating: "4.1",
+                      floor: "Étage 0",
+                      building: "Bâtiment H",
+                      timeDetail: "Ouvert",
+                      entityPosition:
+                          LatLng(14.699631409539332, -17.451135143637657),
+                      photos: [
+                        "assets/images/salle_de_classe_esmt.jpg",
+                        "assets/images/place_placeholder.png",
+                        "assets/images/esmt_3.png"
+                      ],
+                      about: "Salle de classe pour divers cours.",
+                      isOpen: true,
+                      entityName: "Salle HB8",
+                    )));
+                break;
+
+              case "salle HB1":
+                context.read<MapBloc>().add(SetSelectedMapEntity(Classroom(
+                      placeType: "Salle de classe",
+                      placeName: "Salle HB1",
+                      shortDescription:
+                          "Salle de classe HB1 pour les cours divers.",
+                      rating: "4.0",
+                      floor: "Étage 0",
+                      building: "Bâtiment H",
+                      timeDetail: "Ouvert",
+                      entityPosition:
+                          LatLng(14.7000585152944, -17.451403364539146),
+                      photos: [
+                        "assets/images/salle_de_classe_esmt.jpg",
+                        "assets/images/place_placeholder.png",
+                        "assets/images/esmt_3.png"
+                      ],
+                      about: "Salle de classe pour les étudiants de HB1.",
+                      isOpen: false,
+                      entityName: "Salle HB1",
+                    )));
+                break;
+
+              case "salle mystère admin":
+                context.read<MapBloc>().add(SetSelectedMapEntity(Classroom(
+                      placeType: "Salle mystère",
+                      placeName: "Salle mystère admin",
+                      shortDescription: "Salle mystère pour l'administration.",
+                      rating: "N/A",
+                      floor: "Étage 0",
+                      building: "Bâtiment administratif",
+                      timeDetail: "Accès réservé",
+                      entityPosition:
+                          LatLng(14.699995600755758, -17.451235055923462),
+                      photos: [
+                        "assets/images/salle_admin.jpg",
+                        "assets/images/place_placeholder.png",
+                        "assets/images/esmt_3.png"
+                      ],
+                      about: "Salle administrative dont l'accès est limité.",
+                      isOpen: false,
+                      entityName: "Salle mystère admin",
+                    )));
+                break;
+
+              case "salle HB9 - Cyber":
+                context.read<MapBloc>().add(SetSelectedMapEntity(Classroom(
+                      placeType: "Salle de classe",
+                      placeName: "Salle Cyber - HB9",
+                      shortDescription: "Salle HB9 dédiée aux cours de cyber.",
+                      rating: "4.5",
+                      floor: "Étage 0",
+                      building: "Bâtiment H",
+                      timeDetail: "Ouvert",
+                      entityPosition:
+                          LatLng(14.699784804489017, -17.451064065098763),
+                      photos: [
+                        "assets/images/salle_de_classe_esmt.jpg",
+                        "assets/images/place_placeholder.png",
+                        "assets/images/esmt_3.png"
+                      ],
+                      about: "Salle dédiée aux cours de cyber sécurité.",
+                      isOpen: true,
+                      entityName: "Salle Cyber - HB9",
+                    )));
+                break;
+
+              case "Salle HA3":
+                context.read<MapBloc>().add(SetSelectedMapEntity(Classroom(
+                      placeType: "Salle de classe",
+                      placeName: "Salle HA3",
+                      shortDescription:
+                          "Salle de classe situé au bâtiment H occupé par la classe HA3",
+                      rating: "4.2",
+                      floor: "Étage 0",
+                      building: "Bâtiment H",
+                      timeDetail: "Ouvert",
+                      entityPosition: LatLng(14.6996, -17.45112),
+                      photos: [
+                        "assets/images/salle_de_classe_esmt.jpg",
+                        "assets/images/place_placeholder.png",
+                        "assets/images/esmt_3.png"
+                      ],
+                      about:
+                          "Salle de classe situé au bâtiment H occupé par la classe HA3",
+                      isOpen: true,
+                      entityName: "Salle HA3",
+                    )));
+                break;
+
+              case "Salle HA5":
+                context.read<MapBloc>().add(SetSelectedMapEntity(Classroom(
+                      placeType: "Salle de classe",
+                      placeName: "Salle HA5",
+                      shortDescription:
+                          "Salle de classe situé au bâtiment H occupé par la classe HA5",
+                      rating: "4.4",
+                      floor: "Étage 0",
+                      building: "Bâtiment H",
+                      timeDetail: "Ouvert",
+                      entityPosition: LatLng(14.69956, -17.45125),
+                      photos: [
+                        "assets/images/salle_de_classe_esmt.jpg",
+                        "assets/images/place_placeholder.png",
+                        "assets/images/esmt_3.png"
+                      ],
+                      about:
+                          "Salle de classe situé au bâtiment H occupé par la classe HA5",
+                      isOpen: true,
+                      entityName: "Salle HA5",
+                    )));
+                break;
+
+              case "Salle HA6":
+                context.read<MapBloc>().add(SetSelectedMapEntity(
+                      Classroom(
+                        placeType: "Salle de classe",
+                        placeName: "Salle HA6",
+                        shortDescription:
+                            "Salle de classe située au bâtiment H occupée par la classe HA6",
+                        rating: "4.2",
+                        floor: "Étage 0",
+                        building: 'Bâtiment H',
+                        timeDetail: 'Ouvert',
+                        entityPosition: position,
+                        photos: [
+                          "assets/images/salle_de_classe_esmt.jpg",
+                          "assets/images/place_placeholder.png",
+                          "assets/images/esmt_3.png"
+                        ],
+                        about:
+                            "Salle de classe située au bâtiment H occupée par la classe HA6",
+                        isOpen: true,
+                        entityName: 'Salle HA6',
+                      ),
+                    ));
+                break;
+
+              case "Salle HA4":
+                context.read<MapBloc>().add(SetSelectedMapEntity(
+                      Classroom(
+                        placeType: "Salle de classe",
+                        placeName: "Salle HA4",
+                        shortDescription:
+                            "Salle de classe située au bâtiment H occupée par la classe HA4",
+                        rating: "4.1",
+                        floor: "Étage 0",
+                        building: 'Bâtiment H',
+                        timeDetail: 'Ouvert',
+                        entityPosition: position,
+                        photos: [
+                          "assets/images/salle_de_classe_esmt.jpg",
+                          "assets/images/place_placeholder.png",
+                          "assets/images/esmt_3.png"
+                        ],
+                        about:
+                            "Salle de classe située au bâtiment H occupée par la classe HA4",
+                        isOpen: true,
+                        entityName: 'Salle HA4',
+                      ),
+                    ));
+                break;
+
+              case "Salle HA?":
+                context.read<MapBloc>().add(SetSelectedMapEntity(
+                      Classroom(
+                        placeType: "Salle de classe",
+                        placeName: "Salle HA?",
+                        shortDescription:
+                            "Salle de classe située au bâtiment H, classe non spécifiée",
+                        rating: "3.8",
+                        floor: "Étage 0",
+                        building: 'Bâtiment H',
+                        timeDetail: 'Ouvert',
+                        entityPosition: position,
+                        photos: [
+                          "assets/images/salle_de_classe_esmt.jpg",
+                          "assets/images/place_placeholder.png",
+                          "assets/images/esmt_3.png"
+                        ],
+                        about:
+                            "Salle de classe située au bâtiment H, classe non spécifiée",
+                        isOpen: true,
+                        entityName: 'Salle HA?',
+                      ),
+                    ));
+                break;
+
+              case "Salle MP-SSI2":
+                context.read<MapBloc>().add(SetSelectedMapEntity(
+                      Classroom(
+                        placeType: "Salle de classe",
+                        placeName: "Salle MP-SSI2",
+                        shortDescription:
+                            "Salle de classe située au bâtiment H occupée par la classe MP-SSI2",
+                        rating: "4.0",
+                        floor: "Étage 0",
+                        building: 'Bâtiment H',
+                        timeDetail: 'Ouvert',
+                        entityPosition: position,
+                        photos: [
+                          "assets/images/salle_de_classe_esmt.jpg",
+                          "assets/images/place_placeholder.png",
+                          "assets/images/esmt_3.png"
+                        ],
+                        about:
+                            "Salle de classe située au bâtiment H occupée par la classe MP-SSI2",
+                        isOpen: true,
+                        entityName: 'Salle MP-SSI2',
+                      ),
+                    ));
+                break;
+
+              case "Salle MP-ISI2":
+                context.read<MapBloc>().add(SetSelectedMapEntity(
+                      Classroom(
+                        placeType: "Salle de classe",
+                        placeName: "Salle MP-ISI2",
+                        shortDescription:
+                            "Salle de classe située au bâtiment H occupée par la classe MP-ISI2",
+                        rating: "4.3",
+                        floor: "Étage 0",
+                        building: 'Bâtiment H',
+                        timeDetail: 'Ouvert',
+                        entityPosition: position,
+                        photos: [
+                          "assets/images/salle_de_classe_esmt.jpg",
+                          "assets/images/place_placeholder.png",
+                          "assets/images/esmt_3.png"
+                        ],
+                        about:
+                            "Salle de classe située au bâtiment H occupée par la classe MP-ISI2",
+                        isOpen: true,
+                        entityName: 'Salle MP-ISI2',
+                      ),
+                    ));
+                break;
+
+              case "Salle mystère":
+                context.read<MapBloc>().add(SetSelectedMapEntity(
+                      Classroom(
+                        placeType: "Salle de classe",
+                        placeName: "Salle mystère",
+                        shortDescription:
+                            "Salle de classe située au bâtiment H, nom de la classe inconnu",
+                        rating: "3.7",
+                        floor: "Étage 0",
+                        building: 'Bâtiment H',
+                        timeDetail: 'Ouvert',
+                        entityPosition: position,
+                        photos: [
+                          "assets/images/salle_de_classe_esmt.jpg",
+                          "assets/images/place_placeholder.png",
+                          "assets/images/esmt_3.png"
+                        ],
+                        about:
+                            "Salle de classe située au bâtiment H, nom de la classe inconnu",
+                        isOpen: true,
+                        entityName: 'Salle mystère',
+                      ),
+                    ));
+                break;
+
+              case "Salle mystère 2":
+                context.read<MapBloc>().add(SetSelectedMapEntity(
+                      Classroom(
+                        placeType: "Salle de classe",
+                        placeName: "Salle mystère 2",
+                        shortDescription:
+                            "Salle de classe située au bâtiment H, nom de la classe inconnu",
+                        rating: "3.9",
+                        floor: "Étage 0",
+                        building: 'Bâtiment H',
+                        timeDetail: 'Ouvert',
+                        entityPosition: position,
+                        photos: [
+                          "assets/images/salle_de_classe_esmt.jpg",
+                          "assets/images/place_placeholder.png",
+                          "assets/images/esmt_3.png"
+                        ],
+                        about:
+                            "Salle de classe située au bâtiment H, nom de la classe inconnu",
+                        isOpen: true,
+                        entityName: 'Salle mystère 2',
+                      ),
+                    ));
+                break;
+
+              default:
+                // Cas par défaut pour les markers qui ne sont pas des salles de classe
+                break;
+            }
+          }
+        });
+  }
+
+  @override
+  void dispose() {
+    googleMapController.dispose();
+    super.dispose();
+  }
+
+  @override
+  void initState() {
+    DefaultAssetBundle.of(context)
+        .loadString("assets/mapstyles/light_mode.json")
+        .then((value) {
+      mapStyle = value;
+    });
+
+    loadImagesAsUint8List().then((value) {
+      _initializeLevel1Markers();
+      _initializeLevel1Markers2();
+      _initializeLevel2Markers();
+      _initializeLevel2Markers2();
+      _initializeLevel3Markers();
+      _initializeTextMarkersOfLevel1();
+      _initializeTextMarkersOfLevel12();
+    });
+    super.initState();
+  }
+
+  Future<void> loadImagesAsUint8List() async {
+    // Liste des noms de fichiers dans le dossier assets/map_icons/
+    List<String> imageNames = [
+      "labo.png",
+      "ne_venez_pas_ici.png",
+      "point_priere.png",
+      "salle_amicale.png",
+      "salle_biblio.png",
+      "salle_conference.png",
+      "salle_cyber_hb8.png",
+      "salle_dar.png",
+      "salle_gymnase.png",
+      "salle_ha_.png",
+      "salle_ha?.png",
+      "salle_ha1.png",
+      "salle_ha3.png",
+      "salle_ha4.png",
+      "salle_ha5.png",
+      "salle_ha6.png",
+      "salle_hb2.png",
+      "salle_hb3.png",
+      "salle_hb6.png",
+      "salle_hb7.png",
+      "salle_hb8.png",
+      "salle_incubateur.png",
+      "salle_infirmerie.png",
+      "salle_mp_isi2.png",
+      "salle_mp_ssi2.png",
+      "salle_mystere_2.png",
+      "salle_mystere.png",
+      "salle_reprographie.png",
+      "exit.png",
+      "bat_e.png",
+      "salle_restaurant.png",
+      "sortie_batiment.png",
+      "toilette_mixte_locked.png",
+      "toilette_mixte.png",
+      "toilettes_femme.png",
+      "toilettes_homme.png",
+    ];
+
+    // Parcourir chaque image et la convertir en Uint8List
+    for (String imageName in imageNames) {
+      try {
+        // Charger l'image en tant que ByteData
+        ByteData data = await rootBundle.load('assets/map_icons/$imageName');
+        // Convertir le ByteData en Uint8List
+        Uint8List bytes = data.buffer.asUint8List();
+        // Ajouter le Uint8List à la map avec le nom de l'image comme clé
+        imageByteMap[imageName] = bytes;
+
+        icons[imageName] = await BitmapDescriptor.fromBytes(
+          bytes,
+          size: Size(1, 1),
+        );
+        print(
+            'Image: $imageName, Bytes: ${base64Encode(bytes).substring(0, 50)}...'); // Print une partie de l'encodage en base64 pour vérification
+      } catch (e) {
+        print('Erreur lors du chargement de l\'image: $imageName. Erreur: $e');
+      }
+    }
+
+    print('Nombre total d\'images chargées : ${icons.length}');
+  }
+
+  Future<void> _initializeLevel1Markers() async {
+    List<Marker> levelOneMarkers = [
+      // -- Another level
+
+      Marker(
+        markerId: const MarkerId("Toilettes 6 (H/F)"),
+        anchor: const Offset(0.5, 0.5),
+        position: LatLng(14.700027706630838, -17.45155222713947),
+        icon: icons["toilette_mixte.png"]!,
+        onTap: () {
+          context.read<MapBloc>().add(SetSelectedMapEntity(
+                Restroom(
+                  occupancyLevel: "Faible",
+                  urinalsAvailable: "Oui",
+                  cleanlinessLevel: "Très propre",
+                  placeName: "Toilettes 6 (H/F)",
+                  shortDescription:
+                      "Sanitaires modernes, accessibles à tous, mixtes. Ces toilettes mixtes sont bien entretenues et offrent un accès universel.",
+                  entityPosition:
+                      LatLng(14.700027706630838, -17.45155222713947),
+                  entityName: "Toilettes mixte",
+                  rating: "4.5/5",
+                  floor: "Étage 0",
+                  building: "Bat H",
+                  timeDetail: "Ouvert H24",
+                  about:
+                      "Ces toilettes mixtes sont bien entretenues et offrent un accès universel. Elles se situent au rez-de-chaussée du bâtiment G, toujours prêtes à l'emploi.",
+                  isOpen: true,
+                  photos: [
+                    "assets/images/school_toilets.jpg",
+                    "assets/images/place_placeholder.png",
+                    "assets/images/esmt_3.png"
+                  ],
+                  placeType: "Toilettes",
+                ),
+              ));
+        },
+      ),
+
+      Marker(
+        markerId: const MarkerId("Toilettes 7 (H/F)"),
+        anchor: const Offset(0.5, 0.5),
+        position: LatLng(14.700059488199502, -17.451249808073044),
+        icon: icons["toilette_mixte.png"]!,
+        onTap: () {
+          context.read<MapBloc>().add(SetSelectedMapEntity(
+                Restroom(
+                  occupancyLevel: "Faible",
+                  urinalsAvailable: "Oui",
+                  cleanlinessLevel: "Très propre",
+                  placeName: "Toilettes 7 (H/F)",
+                  shortDescription:
+                      "Sanitaires modernes, accessibles à tous, mixtes. Ces toilettes mixtes sont bien entretenues et offrent un accès universel.",
+                  entityPosition:
+                      LatLng(14.700059488199502, -17.451249808073044),
+                  entityName: "Toilettes mixte",
+                  rating: "4.5/5",
+                  floor: "Étage 0",
+                  building: "Bat H",
+                  timeDetail: "Ouvert H24",
+                  about:
+                      "Ces toilettes mixtes sont bien entretenues et offrent un accès universel. Elles se situent au rez-de-chaussée du bâtiment G, toujours prêtes à l'emploi.",
+                  isOpen: true,
+                  photos: [
+                    "assets/images/school_toilets.jpg",
+                    "assets/images/place_placeholder.png",
+                    "assets/images/esmt_3.png"
+                  ],
+                  placeType: "Toilettes",
+                ),
+              ));
+        },
+      ),
+
+      Marker(
+        markerId: const MarkerId("Toilettes 5 (F)"),
+        anchor: const Offset(0.5, 0.5),
+        position: LatLng(14.700027706630838, -17.45155222713947),
+        icon: icons["toilettes_femme.png"]!,
+        onTap: () {
+          context.read<MapBloc>().add(SetSelectedMapEntity(
+                Restroom(
+                  occupancyLevel: "Faible",
+                  urinalsAvailable: "Oui",
+                  cleanlinessLevel: "Très propre",
+                  placeName: "Toilettes 7 (Femme)",
+                  shortDescription:
+                      "Sanitaires modernes, accessibles aux femmes. Ces toilettes sont bien entretenues et offrent un accès universel.",
+                  entityPosition:
+                      LatLng(14.700027706630838, -17.45155222713947),
+                  entityName: "Toilettes femme",
+                  rating: "4.5/5",
+                  floor: "Étage 0",
+                  building: "Bat H",
+                  timeDetail: "Ouvert H24",
+                  about:
+                      "Ces toilettes femme sont bien entretenues et offrent un accès universel. Elles se situent au rez-de-chaussée du bâtiment G, toujours prêtes à l'emploi.",
+                  isOpen: true,
+                  photos: [
+                    "assets/images/school_toilets.jpg",
+                    "assets/images/place_placeholder.png",
+                    "assets/images/esmt_3.png"
+                  ],
+                  placeType: "Toilettes",
+                ),
+              ));
+        },
+      ),
+
+      Marker(
+        markerId: const MarkerId("Toilettes 5 (F)"),
+        anchor: const Offset(0.5, 0.5),
+        position: LatLng(14.69977377821716, -17.45155993849039),
+        icon: icons["toilettes_femme.png"]!,
+        onTap: () {
+          context.read<MapBloc>().add(SetSelectedMapEntity(
+                Restroom(
+                  occupancyLevel: "Faible",
+                  urinalsAvailable: "Oui",
+                  cleanlinessLevel: "Très propre",
+                  placeName: "Toilettes 5 (Femme)",
+                  shortDescription:
+                      "Sanitaires modernes, accessibles aux femmes. Ces toilettes sont bien entretenues et offrent un accès universel.",
+                  entityPosition: LatLng(14.69977377821716, -17.45155993849039),
+                  entityName: "Toilettes femme",
+                  rating: "4.5/5",
+                  floor: "Étage 0",
+                  building: "Bat H",
+                  timeDetail: "Ouvert H24",
+                  about:
+                      "Ces toilettes femme sont bien entretenues et offrent un accès universel. Elles se situent au rez-de-chaussée du bâtiment G, toujours prêtes à l'emploi.",
+                  isOpen: true,
+                  photos: [
+                    "assets/images/school_toilets.jpg",
+                    "assets/images/place_placeholder.png",
+                    "assets/images/esmt_3.png"
+                  ],
+                  placeType: "Toilettes",
+                ),
+              ));
+        },
+      ),
+
+      Marker(
+        markerId: const MarkerId("Toilettes 4 (H)"),
+        anchor: const Offset(0.5, 0.5),
+        position: LatLng(14.69970924208541, -17.451542168855667),
+        icon: icons["toilettes_homme.png"]!,
+        onTap: () {
+          context.read<MapBloc>().add(SetSelectedMapEntity(
+                Restroom(
+                  occupancyLevel: "Faible",
+                  urinalsAvailable: "Oui",
+                  cleanlinessLevel: "Très propre",
+                  placeName: "Toilettes 7 (Homme)",
+                  shortDescription:
+                      "Sanitaires modernes, accessibles aux hommes. Ces toilettes sont bien entretenues et offrent un accès universel.",
+                  entityPosition:
+                      LatLng(14.69970924208541, -17.451542168855667),
+                  entityName: "Toilettes homme",
+                  rating: "4.5/5",
+                  floor: "Étage 0",
+                  building: "Bat H",
+                  timeDetail: "Ouvert H24",
+                  about:
+                      "Ces toilettes homme sont bien entretenues et offrent un accès universel. Elles se situent au rez-de-chaussée du bâtiment G, toujours prêtes à l'emploi.",
+                  isOpen: true,
+                  photos: [
+                    "assets/images/school_toilets.jpg",
+                    "assets/images/place_placeholder.png",
+                    "assets/images/esmt_3.png"
+                  ],
+                  placeType: "Toilettes",
+                ),
+              ));
+        },
+      ),
+
+      Marker(
+        markerId: const MarkerId("Toilettes 3.5 (H/F)"),
+        anchor: const Offset(0.5, 0.5),
+        position: LatLng(14.699574008018823, -17.451526410877705),
+        icon: icons["toilette_mixte.png"]!,
+        onTap: () {
+          context.read<MapBloc>().add(SetSelectedMapEntity(
+                Restroom(
+                  occupancyLevel: "Faible",
+                  urinalsAvailable: "Oui",
+                  cleanlinessLevel: "Très propre",
+                  placeName: "Toilettes 7 (H/F)",
+                  shortDescription:
+                      "Sanitaires modernes, accessibles à tous, mixtes. Ces toilettes mixtes sont bien entretenues et offrent un accès universel.",
+                  entityPosition:
+                      LatLng(14.699574008018823, -17.451526410877705),
+                  entityName: "Toilettes mixte",
+                  rating: "4.5/5",
+                  floor: "Étage 0",
+                  building: "Bat H",
+                  timeDetail: "Ouvert H24",
+                  about:
+                      "Ces toilettes mixtes sont bien entretenues et offrent un accès universel. Elles se situent au rez-de-chaussée du bâtiment G, toujours prêtes à l'emploi.",
+                  isOpen: true,
+                  photos: [
+                    "assets/images/school_toilets.jpg",
+                    "assets/images/place_placeholder.png",
+                    "assets/images/esmt_3.png"
+                  ],
+                  placeType: "Toilettes",
+                ),
+              ));
+        },
+      ),
+
+      Marker(
+        markerId: const MarkerId("Toilettes 3 (ADMIN)"),
+        anchor: const Offset(0.5, 0.5),
+        position: LatLng(14.699535416027642, -17.45149791240692),
+        icon: icons["toilette_mixte_locked.png"]!,
+        onTap: () {
+          context.read<MapBloc>().add(SetSelectedMapEntity(
+                Restroom(
+                  occupancyLevel: "Faible",
+                  urinalsAvailable: "Oui",
+                  cleanlinessLevel: "Très propre",
+                  placeName: "Toilettes 3 (ADMIN)",
+                  shortDescription:
+                      "Sanitaires modernes, accessibles à tous, mixtes. Ces toilettes mixtes sont bien entretenues et offrent un accès universel.",
+                  entityPosition:
+                      LatLng(14.699535416027642, -17.45149791240692),
+                  entityName: "Toilettes mixte (ADMIN)",
+                  rating: "4.5/5",
+                  floor: "Étage 0",
+                  building: "Bat H",
+                  timeDetail: "Accès interdit",
+                  about:
+                      "Ces toilettes mixtes sont bien entretenues et offrent un accès universel. Elles se situent au rez-de-chaussée du bâtiment G, toujours prêtes à l'emploi.",
+                  isOpen: false,
+                  photos: [
+                    "assets/images/school_toilets.jpg",
+                    "assets/images/place_placeholder.png",
+                    "assets/images/esmt_3.png"
+                  ],
+                  placeType: "Toilettes",
+                ),
+              ));
+        },
+      ),
+
+      Marker(
+        markerId: const MarkerId("Toilettes 4 (F)"),
+        anchor: const Offset(0.5, 0.5),
+        position: LatLng(14.699616167329145, -17.451066747307777),
+        icon: icons["toilettes_femme.png"]!,
+        onTap: () {
+          context.read<MapBloc>().add(SetSelectedMapEntity(
+                Restroom(
+                  occupancyLevel: "Faible",
+                  urinalsAvailable: "Oui",
+                  cleanlinessLevel: "Très propre",
+                  placeName: "Toilettes 4 (FEMME)",
+                  shortDescription:
+                      "Sanitaires modernes, accessibles aux femmes. Ces toilettes femme sont bien entretenues et offrent un accès universel.",
+                  entityPosition:
+                      LatLng(14.699616167329145, -17.451066747307777),
+                  entityName: "Toilettes femme)",
+                  rating: "4.5/5",
+                  floor: "Étage 0",
+                  building: "Bat H",
+                  timeDetail: "Ouvert H24",
+                  about:
+                      "Ces toilettes femme sont bien entretenues et offrent un accès universel. Elles se situent au rez-de-chaussée du bâtiment G, toujours prêtes à l'emploi.",
+                  isOpen: true,
+                  photos: [
+                    "assets/images/school_toilets.jpg",
+                    "assets/images/place_placeholder.png",
+                    "assets/images/esmt_3.png"
+                  ],
+                  placeType: "Toilettes",
+                ),
+              ));
+        },
+      ),
+    ];
+
+    setState(() {
+      _levelOneMarkers.addAll(levelOneMarkers);
+      // _levelThreeMarkers.addAll(levelThreeMarkers);
+    });
+  }
+
+  Future<void> _initializeLevel1Markers2() async {
+    List<Marker> levelOneMarkers2 = [
+      // -- Another level
+
+      Marker(
+        markerId: const MarkerId("Toilettes 1 (H/F) 2F"),
+        anchor: const Offset(0.5, 0.5),
+        position: LatLng(14.7000348412691, -17.451549880206585),
+        icon: icons["toilette_mixte.png"]!,
+        onTap: () {
+          context.read<MapBloc>().add(SetSelectedMapEntity(
+                Restroom(
+                  occupancyLevel: "Faible", // Peut être ajusté
+                  urinalsAvailable: "Oui", // Peut être ajusté
+                  cleanlinessLevel: "Bonne", // Peut être ajusté
+                  rating: "4.2/5", // Peut être ajusté
+                  placeName: "Toilettes 1 (H/F) 2F", // Nom basé sur le MarkerId
+                  shortDescription:
+                      "Sanitaires modernes, accessibles à tous, mixtes. Ces toilettes mixtes sont bien entretenues et offrent un accès universel.",
+                  entityPosition: LatLng(14.7000348412691,
+                      -17.451549880206585), // Position basée sur le Marker
+                  entityName: "Toilettes mixte",
+                  floor: "Étage 1", // Constante
+                  building: "Bat H", // Constante
+                  timeDetail: "Ouvert H24", // Constante
+                  about:
+                      "Ces toilettes mixtes sont bien entretenues et offrent un accès universel. Elles se situent au rez-de-chaussée du bâtiment G, toujours prêtes à l'emploi.",
+                  isOpen: true,
+                  photos: [
+                    "assets/images/school_toilets.jpg",
+                    "assets/images/place_placeholder.png",
+                    "assets/images/esmt_3.png"
+                  ],
+                  placeType: "Toilettes", // Constante
+                ),
+              ));
+        },
+      ),
+
+      Marker(
+        markerId: const MarkerId("Toilettes 2 (F) 2F"),
+        anchor: const Offset(0.5, 0.5),
+        position: LatLng(14.69971248510756, -17.451538480818275),
+        icon: icons["toilettes_femme.png"]!,
+        onTap: () {
+          context.read<MapBloc>().add(SetSelectedMapEntity(
+                Restroom(
+                  occupancyLevel: "Modéré",
+                  urinalsAvailable: "Non",
+                  cleanlinessLevel: "Propre",
+                  rating: "4.0/5",
+                  placeName: "Toilettes 2 (F) 2F",
+                  shortDescription:
+                      "Sanitaires modernes, accessibles à tous, féminin. Ces toilettes féminines sont bien entretenues et offrent un accès universel.",
+                  entityPosition:
+                      LatLng(14.69971248510756, -17.451538480818275),
+                  entityName: "Toilettes femme",
+                  floor: "Étage 0",
+                  building: "Bat H",
+                  timeDetail: "Ouvert H24",
+                  about:
+                      "Ces toilettes féminines sont bien entretenues et offrent un accès universel. Elles se situent au rez-de-chaussée du bâtiment G, toujours prêtes à l'emploi.",
+                  isOpen: true,
+                  photos: [
+                    "assets/images/school_toilets.jpg",
+                    "assets/images/place_placeholder.png",
+                    "assets/images/esmt_3.png"
+                  ],
+                  placeType: "Toilettes",
+                ),
+              ));
+        },
+      ),
+
+      Marker(
+        markerId: const MarkerId("Toilettes 3 (H) 2F"),
+        anchor: const Offset(0.5, 0.5),
+        position: LatLng(14.699726430102261, -17.451483830809593),
+        icon: icons["toilettes_homme.png"]!,
+        onTap: () {
+          context.read<MapBloc>().add(SetSelectedMapEntity(
+                Restroom(
+                  occupancyLevel: "Faible",
+                  urinalsAvailable: "Oui",
+                  cleanlinessLevel: "Très propre",
+                  rating: "4.5/5",
+                  placeName: "Toilettes 3 (H) 2F",
+                  shortDescription:
+                      "Sanitaires modernes, accessibles à tous, masculin. Ces toilettes masculines sont bien entretenues et offrent un accès universel.",
+                  entityPosition:
+                      LatLng(14.699726430102261, -17.451483830809593),
+                  entityName: "Toilettes homme",
+                  floor: "Étage 0",
+                  building: "Bat H",
+                  timeDetail: "Ouvert H24",
+                  about:
+                      "Ces toilettes masculines sont bien entretenues et offrent un accès universel. Elles se situent au rez-de-chaussée du bâtiment G, toujours prêtes à l'emploi.",
+                  isOpen: true,
+                  photos: [
+                    "assets/images/school_toilets.jpg",
+                    "assets/images/place_placeholder.png",
+                    "assets/images/esmt_3.png"
+                  ],
+                  placeType: "Toilettes",
+                ),
+              ));
+        },
+      ),
+
+      Marker(
+        markerId: const MarkerId("Toilettes 4 (H/F) 2F"),
+        anchor: const Offset(0.5, 0.5),
+        position: LatLng(14.699630112329993, -17.45129305869341),
+        icon: icons["toilette_mixte.png"]!,
+        onTap: () {
+          context.read<MapBloc>().add(SetSelectedMapEntity(
+                Restroom(
+                  occupancyLevel: "Élevé",
+                  urinalsAvailable: "Oui",
+                  cleanlinessLevel: "Correct",
+                  rating: "3.8/5",
+                  placeName: "Toilettes 4 (H/F) 2F",
+                  shortDescription:
+                      "Sanitaires modernes, accessibles à tous, mixtes. Ces toilettes mixtes sont bien entretenues et offrent un accès universel.",
+                  entityPosition:
+                      LatLng(14.699630112329993, -17.45129305869341),
+                  entityName: "Toilettes mixte",
+                  floor: "Étage 0",
+                  building: "Bat H",
+                  timeDetail: "Ouvert H24",
+                  about:
+                      "Ces toilettes mixtes sont bien entretenues et offrent un accès universel. Elles se situent au rez-de-chaussée du bâtiment G, toujours prêtes à l'emploi.",
+                  isOpen: true,
+                  photos: [
+                    "assets/images/school_toilets.jpg",
+                    "assets/images/place_placeholder.png",
+                    "assets/images/esmt_3.png"
+                  ],
+                  placeType: "Toilettes",
+                ),
+              ));
+        },
+      ),
+
+      Marker(
+        markerId: const MarkerId("Toilettes 6 - 2n stair (ADMIN)"),
+        anchor: const Offset(0.5, 0.5),
+        position: LatLng(14.700061109707981, -17.451248802244663),
+        icon: icons["toilette_mixte_locked.png"]!,
+        onTap: () {
+          context.read<MapBloc>().add(SetSelectedMapEntity(
+                Restroom(
+                  occupancyLevel: "Indisponible",
+                  urinalsAvailable: "Non",
+                  cleanlinessLevel: "Inconnu",
+                  rating: "N/A",
+                  placeName: "Toilettes 6 - 2n stair (ADMIN)",
+                  shortDescription:
+                      "Sanitaires administratifs, accès restreint, mixtes. Toilettes bien entretenues et accessibles uniquement au personnel.",
+                  entityPosition:
+                      LatLng(14.700061109707981, -17.451248802244663),
+                  entityName: "Toilettes mixte - Accès limité",
+                  floor: "Étage 0",
+                  building: "Bat H",
+                  timeDetail: "Accès interdit",
+                  about:
+                      "Ces toilettes administratives mixtes sont bien entretenues et offrent un accès limité au personnel. Situées au rez-de-chaussée du bâtiment G.",
+                  isOpen: false,
+                  photos: [
+                    "assets/images/school_toilets.jpg",
+                    "assets/images/place_placeholder.png",
+                    "assets/images/esmt_3.png"
+                  ],
+                  placeType: "Toilettes",
+                ),
+              ));
+        },
+      ),
+    ];
+
+    setState(() {
+      _levelOneMarkers2.addAll(levelOneMarkers2);
+      // _levelThreeMarkers.addAll(levelThreeMarkers);
+    });
+  }
+
+  Future<void> _initializeLevel2Markers() async {
+    List<Marker> levelTwoMarkers = [
+      // - Points de prière :
+
+      Marker(
+        markerId: const MarkerId("Point prière 1 (vers resto)"),
+        anchor: const Offset(0.5, 0.5),
+        position: LatLng(14.700017004673004, -17.451315186917782),
+        icon: icons["point_priere.png"]!,
+        onTap: () {
+          // add(SetSelectedMapEntity(event.newMapEntity));
+        },
+      ),
+
+      //  ---- Another level
+
+      Marker(
+        markerId: const MarkerId("Reprographie"),
+        anchor: const Offset(0.5, 0.5),
+        position: LatLng(14.69949649972709, -17.45146505534649),
+        icon: icons["salle_reprographie.png"]!,
+        onTap: () {
+          // add(SetSelectedMapEntity(event.newMapEntity));
+        },
+      ),
+
+      Marker(
+        markerId: const MarkerId("Amicale"),
+        anchor: const Offset(0.5, 0.5),
+        position: LatLng(14.699460177840324, -17.451517023146152),
+        icon: icons["salle_amicale.png"]!,
+        onTap: () {
+          // add(SetSelectedMapEntity(event.newMapEntity));
+        },
+      ),
+
+      Marker(
+        markerId: const MarkerId("Labo 3"),
+        anchor: const Offset(0.5, 0.5),
+        position: LatLng(14.700041327303694, -17.451469749212265),
+        icon: icons["labo.png"]!,
+        onTap: () {
+          // add(SetSelectedMapEntity(event.newMapEntity));
+        },
+      ),
+
+      Marker(
+        markerId: const MarkerId("Labo 2"),
+        anchor: const Offset(0.5, 0.5),
+        position: LatLng(14.700004681205748, -17.45160486549139),
+        icon: icons["labo.png"]!,
+        onTap: () {
+          // add(SetSelectedMapEntity(event.newMapEntity));
+        },
+      ),
+
+      Marker(
+        markerId: const MarkerId("Labo 1"),
+        anchor: const Offset(0.5, 0.5),
+        position: LatLng(14.699664488374792, -17.451476454734802),
+        icon: icons["labo.png"]!,
+        onTap: () {
+          debugPrint("Tapped on labo 1");
+          context.read<MapBloc>().add(const SetSelectedMapEntity(MainPlace(
+                  photos: [
+                    "assets/images/labo_1.jpeg",
+                    "assets/images/place_placeholder.png",
+                    "assets/images/esmt_2.png",
+                    "assets/images/esmt_3.png"
+                  ],
+                  placeType: "Laboratoire",
+                  placeName: "Laboratoire Cisco",
+                  entityPosition:
+                      LatLng(14.699664488374792, -17.451476454734802),
+                  entityName: "Labo1-HE0",
+                  shortDescription:
+                      'dédié à la pratique des technologies réseau avec des équipements Cisco.',
+                  floor: "Étage 0",
+                  rating: '4.7/5',
+                  building: 'Bat H',
+                  timeDetail: 'Ferme à 14h',
+                  about: 'Test',
+                  isOpen: true)));
+          // add(SetSelectedMapEntity(event.newMapEntity));
+        },
+      ),
+
+      Marker(
+        markerId: const MarkerId("Resto"),
+        anchor: const Offset(0.5, 0.5),
+        position: LatLng(14.700116889592406, -17.451324239373207),
+        icon: icons["salle_restaurant.png"]!,
+        onTap: () {
+          // add(SetSelectedMapEntity(event.newMapEntity));
+        },
+      ),
+
+      Marker(
+        markerId: const MarkerId("Infirmerie"),
+        anchor: const Offset(0.5, 0.5),
+        position: LatLng(14.699935604915927, -17.451586090028286),
+        icon: icons["salle_infirmerie.png"]!,
+        onTap: () {
+          // add(SetSelectedMapEntity(event.newMapEntity));
+        },
+      ),
+    ];
+
+    setState(() {
+      _levelTwoMarkers.addAll(levelTwoMarkers);
+      // _levelThreeMarkers.addAll(levelThreeMarkers);
+    });
+  }
+
+  Future<void> _initializeLevel2Markers2() async {
+    List<Marker> levelTwoMarkers2 = [
+      // - Points de prière :
+
+      Marker(
+        markerId: const MarkerId("Point prière 1 (vers resto)"),
+        anchor: const Offset(0.5, 0.5),
+        position: LatLng(14.700017004673004, -17.451315186917782),
+        icon: icons["point_priere.png"]!,
+        onTap: () {
+          // add(SetSelectedMapEntity(event.newMapEntity));
+        },
+      ),
+
+      Marker(
+        markerId: const MarkerId("Point prière 2 (vers 4 bureaux)"),
+        anchor: const Offset(0.5, 0.5),
+        position: LatLng(14.700050407751775, -17.451514676213264),
+        icon: icons["point_priere.png"]!,
+        onTap: () {
+          // add(SetSelectedMapEntity(event.newMapEntity));
+        },
+      ),
+
+      //  ---- Another level
+
+      Marker(
+        markerId: const MarkerId("Incubateur"),
+        anchor: const Offset(0.5, 0.5),
+        position: LatLng(14.69958600720797, -17.451496236026287),
+        icon: icons["salle_incubateur.png"]!,
+        onTap: () {
+          // add(SetSelectedMapEntity(event.newMapEntity));
+        },
+      ),
+
+      Marker(
+        markerId: const MarkerId("Biblio"),
+        anchor: const Offset(0.5, 0.5),
+        position: LatLng(14.699652164887663, -17.451038919389248),
+        icon: icons["salle_biblio.png"]!,
+        onTap: () {
+          // add(SetSelectedMapEntity(event.newMapEntity));
+        },
+      ),
+
+      Marker(
+        markerId: const MarkerId("Conference"),
+        anchor: const Offset(0.5, 0.5),
+        position: LatLng(14.699667082793065, -17.45149288326502),
+        icon: icons["salle_conference.png"]!,
+        onTap: () {
+          // add(SetSelectedMapEntity(event.newMapEntity));
+        },
+      ),
+    ];
+
+    setState(() {
+      _levelTwoMarkers2.addAll(levelTwoMarkers2);
+      // _levelThreeMarkers.addAll(levelThreeMarkers);
+    });
+  }
+
+  Future<void> _initializeLevel3Markers() async {
+    List<Marker> levelThreeMarkers = [
+      // -- Sorties :
+
+      Marker(
+        markerId: const MarkerId("Exit 1 BAT E"),
+        anchor: const Offset(0.5, 0.5),
+        position: LatLng(14.700066622836733, -17.450779750943184),
+        icon: icons["exit.png"]!,
+        onTap: () {
+          // add(SetSelectedMapEntity(event.newMapEntity));
+        },
+      ),
+
+      Marker(
+        markerId: const MarkerId("Exit 1 BAT H"),
+        anchor: const Offset(0.5, 0.5),
+        position: LatLng(14.69948158181005, -17.451396994292736),
+        icon: icons["exit.png"]!,
+        onTap: () {
+          // add(SetSelectedMapEntity(event.newMapEntity));
+        },
+      ),
+
+      // -- Batiments :
+
+      Marker(
+        markerId: const MarkerId("Batiment E"),
+        anchor: const Offset(0.5, 0.5),
+        position: LatLng(14.700240772773133, -17.450975216925144),
+        icon: icons["bat_e.png"]!,
+        onTap: () {
+          // add(SetSelectedMapEntity(event.newMapEntity));
+        },
+      ),
+    ];
+
+    setState(() {
+      _levelThreeMarkers.addAll(levelThreeMarkers);
+      // _levelThreeMarkers.addAll(levelThreeMarkers);
+    });
+  }
+
+  Future<void> _initializeTextMarkersOfLevel1() async {
+    List<Map<String, dynamic>> markerData = [
+      {
+        "markerId": "Salle HA6",
+        "rotation": -18.0,
+        "position": LatLng(14.69963, -17.45128),
+        "title": "Salle HA6",
+      },
+      {
+        "markerId": "Salle HA4",
+        "rotation": -18.0,
+        "position": LatLng(14.69967, -17.45114),
+        "title": "Salle HA4",
+      },
+      {
+        "markerId": "Salle HA?",
+        "rotation": -18.0,
+        "position": LatLng(14.69958114267191, -17.45119046419859),
+        "title": "Salle HA?",
+      },
+      {
+        "markerId": "Bureau recouvrement",
+        "rotation": 74.0,
+        "position": LatLng(14.699544172194296, -17.45131216943264),
+        "title": "Bureau\nrecouvrement",
+      },
+      {
+        "markerId": "Bureausurveillants",
+        "rotation": 70.0,
+        "position": LatLng(14.6996, -17.45138),
+        "title": "Bureau\nsurveillants",
+      },
+      {
+        "markerId": "Bureau Mme Barro",
+        "rotation": 70.0,
+        "position": LatLng(14.69959, -17.45141),
+        "title": "Bureau\nMme Barro",
+      },
+      {
+        "markerId": "Bureau Mr Ouedraogo",
+        "rotation": 10.0,
+        "position": LatLng(14.6998, -17.45148),
+        "title": "Bureau Mr\nOuedraogo",
+      },
+      {
+        "markerId": "Bureau Mr Kondengar",
+        "rotation": 10.0,
+        "position": LatLng(14.69979, -17.45151),
+        "title": "Bureau Mr\nKondengar",
+      },
+      {
+        "markerId": "Salle MP-SSI2",
+        "rotation": -20.0,
+        "position": LatLng(14.69983, -17.45153),
+        "title": "Salle MP-SSI2",
+      },
+      {
+        "markerId": "Salle MP-ISI2",
+        "rotation": -20,
+        "position": LatLng(14.69988, -17.45155),
+        "title": "Salle MP-ISI2",
+      },
+      {
+        "markerId": "Salle HA1",
+        "rotation": 73.0,
+        "position": LatLng(14.69973, -17.45105),
+        "title": "Salle HA1",
+      },
+
+      {
+        "markerId": "Salle HA3",
+        "rotation": -20.0,
+        "position": LatLng(14.6996, -17.45112),
+        "title": "Salle HA3",
+      },
+
+      {
+        "markerId": "Salle HA5",
+        "rotation": -20.0,
+        "position": LatLng(14.69956, -17.45125),
+        "title": "Salle HA5",
+      },
+
+      {
+        "markerId": "Ne venez pas ici",
+        "rotation": -20.0,
+        "position": LatLng(14.699972251025462, -17.45158407837153),
+        "title": "Ne venez pas ici",
+      },
+      {
+        "markerId": "Salle mystère",
+        "rotation": 75.0,
+        "position": LatLng(14.700063055518143, -17.451431192457676),
+        "title": "Salle mystère",
+      },
+      {
+        "markerId": "Bureau service technique",
+        "rotation": 75.0,
+        "position": LatLng(14.70006775831137, -17.45139867067337),
+        "title": "Bureau service technique",
+      },
+      {
+        "markerId": "Salle mystère 2",
+        "rotation": 73.0,
+        "position": LatLng(14.69999689796291, -17.45123405009508),
+        "title": "Salle mystère 2",
+      },
+      // Ajoute plus de markers ici si nécessaire
+    ];
+
+    for (var data in markerData) {
+      Marker marker = await createTextMarker(
+        data["markerId"],
+        data["rotation"],
+        data["position"],
+        data["title"],
+      );
+      setState(() {
+        _levelOneMarkers.add(marker);
+      });
+    }
+  }
+
+  Future<void> _initializeTextMarkersOfLevel12() async {
+    List<Map<String, dynamic>> markerData = [
+      {
+        "markerId": "Salle informatique DAR (SES)",
+        "position": LatLng(14.699996573661137, -17.451602183282375),
+        "title": "Salle informatique DAR \n(SES)",
+        "rotation": -20.0,
+      },
+      {
+        "markerId": "Salle de classe RT",
+        "position": LatLng(14.699910309367722, -17.45156731456518),
+        "title": "Salle de classe HB2",
+        "rotation": -20.0,
+      },
+      {
+        "markerId": "Restaurant administration \n(Accès interdit)",
+        "position": LatLng(14.700116565290788, -17.451326586306095),
+        "title": "Restaurant admin",
+        "rotation": -20.0,
+      },
+      {
+        "markerId": "Salle de classe HB3",
+        "position": LatLng(14.69982599085251, -17.451537810266014),
+        "title": "Salle de classe HB3",
+        "rotation": -20.0,
+      },
+      {
+        "markerId": "Gymnase",
+        "position": LatLng(14.699498769844816, -17.451488524675373),
+        "title": "Gymnase",
+        "rotation": -20.0,
+      },
+      {
+        "markerId": "Salle de classe HB6",
+        "position": LatLng(14.699535091725156, -17.451366148889065),
+        "title": "Salle HB6",
+        "rotation": -20.0,
+      },
+      {
+        "markerId": "Salle de classe mystère (a côté HB6) HB7",
+        "position": LatLng(14.699569792087336, -17.451251484453678),
+        "title": "Salle HB7",
+        "rotation": -20.0,
+      },
+      {
+        "markerId": "salle HB8?",
+        "position": LatLng(14.699631409539332, -17.451135143637657),
+        "title": "Salle HB8",
+        "rotation": 73.0,
+      },
+      {
+        "markerId": "salle HB1",
+        "position": LatLng(14.7000585152944, -17.451403364539146),
+        "title": "Salle HB1",
+        "rotation": 73.0,
+      },
+      {
+        "markerId": "salle mystère admin",
+        "position": LatLng(14.699995600755758, -17.451235055923462),
+        "title": "Salle mystère",
+        "rotation": 73.0,
+      },
+      {
+        "markerId": "salle HB9 - Cyber",
+        "position": LatLng(14.699784804489017, -17.451064065098763),
+        "title": "Salle Cyber - HB9",
+        "rotation": 73.0,
+      },
+      // Vous pouvez ajouter plus de marqueurs ici
+    ];
+
+    for (var data in markerData) {
+      Marker marker = await createTextMarker(
+        data["markerId"],
+        data["rotation"],
+        data["position"],
+        data["title"],
+      );
+      setState(() {
+        _levelOneMarkers2.add(marker);
+      });
+    }
+  }
 }
 
-class MapFloatingButton extends StatelessWidget {
-  const MapFloatingButton({
-    super.key,
-    required this.iconUrl,
-    required this.onTap,
-    this.backgroundColor,
-    required this.isUpper,
-  });
+// class Map extends StatelessWidget {
+//   const Map(
+//       {Key? key,
+//       required this.bsKey,
+//       this.foundPlace,
+//       required this.gMapController,
+//       required this.controller,
+//       required this.mapStyle,
+//       required this.setGMapController})
+//       : super(key: key);
+//
+//   final GlobalKey<ExpandableBottomSheetState> bsKey;
+//   final Place? foundPlace;
+//   final GoogleMapController gMapController;
+//   final Completer<GoogleMapController> controller;
+//   final String mapStyle;
+//   final Function(GoogleMapController controller) setGMapController;
+//
+//   @override
+//   Widget build(BuildContext context) {
+//     return
+//   }
+// }
 
-  final String iconUrl;
-  final Color? backgroundColor;
-  final Function onTap;
-  final bool isUpper;
+class NearbyUserInfoDisplayer extends StatelessWidget {
+  const NearbyUserInfoDisplayer({
+    super.key,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      height: 50,
-      width: 50,
-      decoration: BoxDecoration(
-          color: backgroundColor ?? Colors.white,
-          borderRadius: BorderRadius.circular(15),
-          boxShadow: [
-            BoxShadow(
-                spreadRadius: 1,
-                blurRadius: 5,
-                offset: const Offset(0, 1.5),
-                color: Colors.black.withOpacity(.3))
-          ]),
-      child: Material(
-        color: backgroundColor ?? Colors.white,
-        borderRadius: BorderRadius.circular(15),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(15),
-          onTap: () => onTap(),
-          child: Center(
-            child: Image.asset(
-              iconUrl,
-              height: 16,
-              width: 16,
+    return SizedBox(
+      width: AppConstants.screenWidth,
+      child: Column(
+        children: [
+          Text(
+            "Vous êtes à l'ESMT",
+            style: TextStyle(
+                fontSize: 16,
+                color: AppColors.primaryText,
+                fontWeight: FontWeight.w400),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class NextBusItemMarker extends StatelessWidget {
+  final String busLine;
+
+  final BusState busState;
+  final String busDest;
+  final String busCompany;
+  final String time;
+  final String hour;
+  final bool isAccessible;
+  const NextBusItemMarker({
+    super.key,
+    required this.busLine,
+    required this.busState,
+    required this.busDest,
+    required this.busCompany,
+    required this.time,
+    required this.hour,
+    required this.isAccessible,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.white,
+      child: InkWell(
+        onTap: () {
+          ScaffoldMessenger.of(context).showSnackBar(
+            buildCustomSnackBar(
+              context,
+              "Fonctionnalité disponible prochainement 😉",
+              SnackBarType.info,
+              showCloseIcon: false,
             ),
+          );
+        },
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: Column(
+            children: [
+              const SizedBox(
+                height: 15,
+              ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          BusIconInfo(
+                            lineNumber: busLine,
+                            busState: busState,
+                          ),
+                          // BusMarkerIcon(
+                          //   lineNumber: busLine,
+                          //   state: busState,
+                          //   height: 40,
+                          //   width: 40,
+                          //   fontSize: 8.5,
+                          // ),
+                          const SizedBox(
+                            width: 10,
+                          ),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(busDest),
+                              Row(
+                                children: [
+                                  Text(
+                                    "$busCompany •",
+                                    style: TextStyle(
+                                        color: AppColors.secondaryText,
+                                        fontWeight: FontWeight.w400,
+                                        fontSize: 13),
+                                  ),
+                                  SizedBox(
+                                    width: 35,
+                                    child: Text(
+                                      " $hour",
+                                      maxLines: 1,
+                                      style: TextStyle(
+                                          color: AppColors.secondaryText,
+                                          fontWeight: FontWeight.w400,
+                                          overflow: TextOverflow.ellipsis,
+                                          fontSize: 13),
+                                    ),
+                                  ),
+                                  if (isAccessible) ...[
+                                    Padding(
+                                      padding: const EdgeInsets.only(
+                                          bottom: 2, left: 5, right: 3),
+                                      child: Image.asset(
+                                        "assets/icons/accessibility.png",
+                                        height: 13,
+                                        width: 13,
+                                      ),
+                                    ),
+                                  ]
+                                ],
+                              )
+                            ],
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                  Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      time.length > 2
+                          ? Text(time,
+                              style: const TextStyle(
+                                  fontSize: 33,
+                                  height: 0,
+                                  fontWeight: FontWeight.w400))
+                          : RichText(
+                              textAlign: TextAlign.end,
+                              text: TextSpan(
+                                  text: "$time \n",
+                                  style: const TextStyle(
+                                      fontSize: 33,
+                                      height: 0.8,
+                                      color: Colors.black,
+                                      fontWeight: FontWeight.normal),
+                                  children: [
+                                    TextSpan(
+                                      text: "mins",
+                                      style: TextStyle(
+                                          color: AppColors.secondaryText,
+                                          fontSize: 13),
+                                    ),
+                                  ]),
+                            ),
+                    ],
+                  ),
+                ],
+              ),
+              Divider(
+                height: 18,
+                color: AppColors.secondaryText,
+                thickness: 0.2,
+              )
+            ],
           ),
         ),
       ),
@@ -4499,122 +4799,1025 @@ class MapFloatingButton extends StatelessWidget {
   }
 }
 
-class FloorFloatingButton extends StatefulWidget {
-  const FloorFloatingButton({
+class PlaceInfoDisplayer extends StatelessWidget {
+  final SheetPositionPair sheetPosition;
+
+  const PlaceInfoDisplayer({
     super.key,
-    required this.updateFloorLevel,
-    required this.initialFloorLevel,
+    required this.sheetPosition,
   });
-
-  final Function(int level) updateFloorLevel;
-  final int initialFloorLevel;
-
-  @override
-  _FloorFloatingButtonState createState() => _FloorFloatingButtonState();
-}
-
-class _FloorFloatingButtonState extends State<FloorFloatingButton> {
-  late int localFloorLevel;
-
-  @override
-  void initState() {
-    super.initState();
-    // Initialiser localFloorLevel avec initialFloorLevel
-    localFloorLevel = widget.initialFloorLevel;
-  }
-
-  void updateLocalFloorLevel(int level) {
-    // Mettre à jour localement le floorLevel et appeler updateFloorLevel
-    setState(() {
-      localFloorLevel = level;
-    });
-
-    widget.updateFloorLevel(level);
-  }
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      height: 110,
-      width: 60,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(15),
-        boxShadow: [
-          BoxShadow(
-            spreadRadius: 1,
-            blurRadius: 5,
-            offset: const Offset(0, 1.5),
-            color: Colors.black.withOpacity(.3),
-          ),
-        ],
-      ),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Expanded(
-            child: Material(
-              color: localFloorLevel == 1 ? Color(0xFFE7E7E7) : Colors.white,
-              borderRadius: BorderRadius.only(
-                topRight: Radius.circular(15),
-                topLeft: Radius.circular(15),
+          if (sheetPosition.gSheetPosition >= 0.16) ...[
+            const ImageSwiper(
+              isLikeable: true,
+              images: [
+                "assets/images/esmt_1.png",
+                "assets/images/esmt_2.png",
+                "assets/images/esmt_3.png"
+              ],
+            ),
+            Container(
+              margin: const EdgeInsets.only(top: 10),
+              height: 39,
+              child: Text(
+                "Ecole Supérieure Multinationale Des Télécommunications (ESMT)",
+                style: TextStyle(
+                    color: AppColors.primaryText,
+                    fontWeight: FontWeight.w400,
+                    fontSize: AppConstants.screenWidth >= 342 ? 14 : 13),
               ),
-              child: InkWell(
-                borderRadius: BorderRadius.only(
-                  topRight: Radius.circular(15),
-                  topLeft: Radius.circular(15),
+            ),
+            SizedBox(
+              height: AppConstants.screenWidth >= 342 ? 8 : 4,
+            ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    Text(
+                      "Ecole •",
+                      style: TextStyle(
+                          color: AppColors.secondaryText,
+                          fontWeight: FontWeight.w400,
+                          fontSize: AppConstants.screenWidth >= 342 ? 14 : 13),
+                    ),
+                    Padding(
+                      padding:
+                          const EdgeInsets.only(bottom: 2, left: 5, right: 3),
+                      child: Image.asset(
+                        "assets/icons/bus_grey.png",
+                        height: 14,
+                        width: 14,
+                      ),
+                    ),
+                    Text(
+                      "22 min",
+                      style: TextStyle(
+                          color: AppColors.secondaryText,
+                          fontWeight: FontWeight.w400,
+                          fontSize: AppConstants.screenWidth >= 342 ? 14 : 13),
+                    ),
+                  ],
                 ),
-                onTap: () => updateLocalFloorLevel(1),
-                child: Center(
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(15),
+                      border: Border.all(color: AppColors.bootstrapGreen)),
                   child: Text(
-                    "1",
-                    style: TextStyle(fontSize: 15),
+                    "Ouvert",
+                    style: TextStyle(
+                        color: AppColors.bootstrapGreen,
+                        fontWeight: FontWeight.w400,
+                        fontSize: 13),
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(
+              height: AppConstants.screenWidth >= 342 ? 20 : 8,
+            ),
+            Material(
+              color: AppColors.primaryColor,
+              borderRadius: BorderRadius.circular(17),
+              child: InkWell(
+                borderRadius: BorderRadius.circular(17),
+                onTap: () {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    buildCustomSnackBar(
+                      context,
+                      "Fonctionnalité disponible prochainement 😉",
+                      SnackBarType.info,
+                      showCloseIcon: false,
+                    ),
+                  );
+                },
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        "Itinéraires",
+                        style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w400,
+                            fontSize:
+                                AppConstants.screenWidth >= 342 ? 15 : 14),
+                      ),
+                      const SizedBox(
+                        width: 7,
+                      ),
+                      Image.asset(
+                        "assets/icons/direction.png",
+                        height: 12,
+                        width: 12,
+                      ),
+                    ],
                   ),
                 ),
               ),
-            ),
-          ),
-          Expanded(
-            child: Material(
-              color: localFloorLevel == 0 ? Color(0xFFE7E7E7) : Colors.white,
-              borderRadius: BorderRadius.only(
-                bottomRight: Radius.circular(15),
-                bottomLeft: Radius.circular(15),
-              ),
-              child: InkWell(
-                borderRadius: BorderRadius.only(
-                  bottomRight: Radius.circular(15),
-                  bottomLeft: Radius.circular(15),
-                ),
-                onTap: () => updateLocalFloorLevel(0),
-                child: Center(
-                  child: Text(
-                    "0",
-                    style: TextStyle(fontSize: 15),
+            )
+          ] else ...[
+            SizedBox(
+              // width: AppConstants.screenWidth,
+              height: 0.15 * (AppConstants.screenHeight - 130),
+              // color: Colors.red,
+              child: Row(
+                children: [
+                  Container(
+                    height: 60,
+                    width: 60,
+                    decoration: BoxDecoration(
+                        image: const DecorationImage(
+                          image: AssetImage('assets/images/esmt_1.png'),
+                          fit: BoxFit.cover,
+                        ),
+                        borderRadius: BorderRadius.circular(15)
+                        // color: Colors.blue,
+                        ),
                   ),
-                ),
+                  const SizedBox(
+                    width: 12,
+                  ),
+                  Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      FittedBox(
+                        // width: 1.sw - 114,
+                        child: Text(
+                          "École supérieur multination...",
+                          style: TextStyle(
+                              color: AppColors.primaryText,
+                              fontWeight: FontWeight.w400,
+                              fontSize: 14),
+                        ),
+                      ),
+                      const SizedBox(
+                        height: 5,
+                      ),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.start,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 3),
+                            decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(15),
+                                border: Border.all(
+                                    color: AppColors.bootstrapGreen)),
+                            child: Text(
+                              "Ouvert",
+                              style: TextStyle(
+                                  color: AppColors.bootstrapGreen,
+                                  fontWeight: FontWeight.w400,
+                                  fontSize: 14),
+                            ),
+                          ),
+                          const SizedBox(
+                            width: 7,
+                          ),
+                          Text(
+                            "Ecole •",
+                            style: TextStyle(
+                                color: AppColors.secondaryText,
+                                fontWeight: FontWeight.w400,
+                                fontSize: 14),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.only(
+                                bottom: 2, left: 5, right: 3),
+                            child: Image.asset(
+                              "assets/icons/bus_grey.png",
+                              height: 14,
+                              width: 14,
+                            ),
+                          ),
+                          Text(
+                            "22 min",
+                            style: TextStyle(
+                                color: AppColors.secondaryText,
+                                fontWeight: FontWeight.w400,
+                                fontSize: 14),
+                          ),
+                        ],
+                      )
+                    ],
+                  )
+                ],
               ),
-            ),
-          ),
+            )
+          ]
         ],
       ),
     );
   }
 }
 
-class BottomSheetExpandableContent extends StatefulWidget {
-  const BottomSheetExpandableContent({
-    Key? key,
-    required this.bsKey,
-    required this.pagingController,
-    required this.toggleDetailsPage,
-  }) : super(key: key);
+class RatingBar extends StatelessWidget {
+  final double ratingLevel;
 
-  final PagingController<int, SearchHitEntity> pagingController;
-  final GlobalKey<ExpandableBottomSheetState> bsKey;
-  final Function(MainPlace detailsPage) toggleDetailsPage;
+  final String ratingTitle;
+  const RatingBar({
+    super.key,
+    required this.ratingLevel,
+    required this.ratingTitle,
+  });
+
   @override
-  State<BottomSheetExpandableContent> createState() =>
-      _BottomSheetExpandableContentState();
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        SizedBox(
+          width: 7,
+          child: Text(
+            ratingTitle,
+            style: const TextStyle(fontSize: 12),
+          ),
+        ),
+        const SizedBox(
+          width: 12,
+        ),
+        Expanded(
+            child: Container(
+          alignment: Alignment.centerLeft,
+          height: 10,
+          decoration: BoxDecoration(
+              color: AppColors.secondaryText.withOpacity(.2),
+              borderRadius: BorderRadius.circular(5)),
+          child: FractionallySizedBox(
+            widthFactor: ratingLevel,
+            child: Container(
+              // height: 12,
+              decoration: BoxDecoration(
+                  color: AppColors.primaryVar0,
+                  borderRadius: BorderRadius.circular(5)),
+            ),
+          ),
+        ))
+      ],
+    );
+  }
+}
+
+class RatingsStars extends StatelessWidget {
+  const RatingsStars({
+    super.key,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      flex: 3, // 40% de la largeur disponible
+      child: SizedBox(
+        height: 100,
+        // color: Colors.red,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SizedBox(
+              height: 95,
+              width: 110,
+              child: Stack(children: [
+                const Text(
+                  "4.7",
+                  // textHeightBehavior: TextHeightBehavior(),
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 62,
+                    height: 1.0,
+                    fontWeight: FontWeight.w500,
+                    textBaseline: TextBaseline.ideographic,
+                  ),
+                ),
+                Align(
+                  alignment: Alignment.bottomLeft,
+                  heightFactor: 4.3,
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.star,
+                        color: AppColors.primaryVar0,
+                        size: 17.0,
+                      ),
+                      Icon(
+                        Icons.star,
+                        color: AppColors.primaryVar0,
+                        size: 17.0,
+                      ),
+                      Icon(
+                        Icons.star,
+                        color: AppColors.primaryVar0,
+                        size: 17.0,
+                      ),
+                      Icon(
+                        Icons.star_half_outlined,
+                        color: AppColors.primaryVar0,
+                        size: 17.0,
+                      ),
+                      Icon(
+                        Icons.star_border,
+                        color: AppColors.primaryVar0,
+                        size: 17.0,
+                      ),
+                    ],
+                  ),
+                ),
+                Align(
+                  alignment: Alignment.bottomLeft,
+                  heightFactor: 7,
+                  child: Text(
+                    "25.000 avis",
+                    style: TextStyle(
+                        fontSize: 12,
+                        color: AppColors.secondaryText.withOpacity(.9)),
+                  ),
+                ),
+              ]),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class RatingsStats extends StatelessWidget {
+  const RatingsStats({
+    super.key,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return const Expanded(
+      flex: 5, // 70% de la largeur disponible
+      child: SizedBox(
+        height: 100,
+        // color: Colors.green,
+        child: Column(
+          children: [
+            RatingBar(ratingTitle: "5", ratingLevel: 0.8),
+            SizedBox(height: 1),
+            RatingBar(ratingTitle: "4", ratingLevel: 0.5),
+            SizedBox(height: 1),
+            RatingBar(ratingTitle: "3", ratingLevel: 0.3),
+            SizedBox(height: 1),
+            RatingBar(ratingTitle: "2", ratingLevel: 0.1),
+            SizedBox(height: 1),
+            RatingBar(ratingTitle: "1", ratingLevel: 0.1),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class SectionTitle extends StatelessWidget {
+  final String title;
+
+  final String? subtitle;
+  final Widget? rightItem;
+  const SectionTitle(
+      {super.key, required this.title, this.subtitle, this.rightItem});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              title,
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w400,
+              ),
+              textAlign: TextAlign.start,
+            ),
+            if (rightItem != null) ...[rightItem!]
+          ],
+        ),
+        if (subtitle != null) ...[
+          Text(
+            subtitle!,
+            style: TextStyle(
+                fontSize: 12,
+                // fontWeight: FontWeight.w500,
+                color: AppColors.secondaryText),
+            textAlign: TextAlign.start,
+          ),
+        ]
+      ],
+    );
+  }
+}
+
+class StopContributeCard extends StatelessWidget {
+  final String icon;
+
+  final String title;
+  const StopContributeCard({
+    super.key,
+    required this.icon,
+    required this.title,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: Container(
+        height: 130,
+        // width: 5,
+        decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(15),
+            color: Colors.white,
+            boxShadow: [
+              BoxShadow(
+                  spreadRadius: 0.3,
+                  blurRadius: 5,
+                  offset: const Offset(0, 1.5),
+                  color: Colors.grey.withOpacity(.3))
+            ]),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Image.asset(
+              icon,
+              height: 26,
+              width: 26,
+            ),
+            const SizedBox(
+              height: 7,
+            ),
+            Text(title, textAlign: TextAlign.center)
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class StopInfoDisplayer extends StatelessWidget {
+  final SheetPositionPair sheetPosition;
+
+  const StopInfoDisplayer({
+    super.key,
+    required this.sheetPosition,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20.0),
+          child: Column(
+            children: [
+              AnimatedContainer(
+                height: sheetPosition.gSheetPosition >= 0.95
+                    ? MediaQuery.of(context).padding.top - 10
+                    : 0,
+                duration: const Duration(milliseconds: 100),
+              ),
+              Row(
+                mainAxisAlignment: sheetPosition.gSheetPosition > 0.6
+                    ? MainAxisAlignment.spaceBetween
+                    : MainAxisAlignment.center,
+                children: [
+                  Row(
+                    children: [
+                      Image.asset("assets/icons/stop_empty.png",
+                          width: sheetPosition.gSheetPosition > 0.6 ? 26 : 22,
+                          height: sheetPosition.gSheetPosition > 0.6 ? 26 : 22),
+                      const SizedBox(
+                        width: 5,
+                      ),
+                      Text(
+                        "Arrêt bus dardanelles",
+                        style: sheetPosition.gSheetPosition > 0.6
+                            ? const TextStyle(
+                                fontSize: 19, fontWeight: FontWeight.w400)
+                            : null,
+                      ),
+                    ],
+                  ),
+                  if (sheetPosition.gSheetPosition > 0.6) ...[
+                    Container(
+                      margin: const EdgeInsets.only(top: 2),
+                      height: 30,
+                      width: 30,
+                      decoration: const BoxDecoration(
+                        color: Colors.white,
+                        shape: BoxShape.circle,
+                        // borderRadius: BorderRadius.circular(15)
+                      ),
+                      child: Center(
+                        child: Image.asset(
+                          "assets/icons/filled_heart.png",
+                          height: 15,
+                          width: 15,
+                        ),
+                      ),
+                    )
+                  ]
+
+                  // const SizedBox(
+                  //   width: 15,
+                  // ),
+                ],
+              ),
+              if (sheetPosition.gSheetPosition > 0.6) ...[
+                Column(
+                  children: [
+                    const SizedBox(
+                      height: 10,
+                    ),
+                    SizedBox(
+                      height: 30,
+                      child: ListView(
+                        clipBehavior: Clip.none,
+                        scrollDirection: Axis.horizontal,
+                        children: const [
+                          InfoCard(
+                            title: "En activité",
+                            image: "assets/icons/valid_check.png",
+                          ),
+                          SizedBox(
+                            width: 10,
+                          ),
+                          InfoCard(
+                            title: "Siège disponible",
+                            image: "assets/icons/seat_blue.png",
+                          ),
+                          SizedBox(
+                            width: 10,
+                          ),
+                          InfoCard(
+                            title: "Accessible",
+                            image: "assets/icons/accessibility_blue.png",
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(
+                  height: 10,
+                ),
+              ],
+            ],
+          ),
+        ),
+        RepaintBoundary(
+          child: DefaultTabController(
+              length: 2,
+              child: Column(
+                children: [
+                  TabBar(
+                    labelPadding: EdgeInsets.zero,
+                    dividerHeight: 0.0,
+                    indicator: UnderlineTabIndicator(
+                      borderSide:
+                          BorderSide(width: 2.0, color: AppColors.primaryVar0),
+                      // insets: EdgeInsets.symmetric(horizontal:-23.0)
+                    ),
+                    padding: EdgeInsets.zero,
+                    indicatorSize: TabBarIndicatorSize.tab,
+                    indicatorColor: AppColors.primaryVar0,
+                    onTap: (index) {
+                      if (index == 1) {}
+                    },
+                    tabs: [
+                      Tab(
+                        child: Text(
+                          "Prochains départs",
+                          style: TextStyle(
+                              color: Colors.black,
+                              fontSize:
+                                  AppConstants.screenWidth >= 342 ? 14 : 12.5,
+                              fontWeight: FontWeight.normal),
+                        ),
+                      ),
+                      Tab(
+                        child: Text(
+                          "À propos",
+                          style: TextStyle(
+                              color: Colors.black,
+                              fontSize:
+                                  AppConstants.screenWidth >= 342 ? 14 : 12.5,
+                              fontWeight: FontWeight.normal),
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(
+                    height: AppConstants.screenHeight - 270,
+                    child: TabBarView(
+                      children: [
+                        ListView(
+                          primary: false,
+                          padding: EdgeInsets.only(top: 2),
+                          physics: sheetPosition.gSheetPosition <= 0.6
+                              ? NeverScrollableScrollPhysics()
+                              : AlwaysScrollableScrollPhysics(),
+                          children: const [
+                            NextBusItemMarker(
+                              busLine: '007',
+                              busState: BusState.EMPTY,
+                              busDest: 'Palais',
+                              busCompany: 'Dakar Dem Dikk',
+                              time: '05',
+                              hour: '17:24',
+                              isAccessible: true,
+                            ),
+                            SizedBox(
+                              height: 7,
+                            ),
+                            NextBusItemMarker(
+                              busLine: '217',
+                              busState: BusState.HALFCROWDED,
+                              busDest: 'Parcelles Assainies',
+                              busCompany: 'GIE AFTU',
+                              time: '25',
+                              hour: '17:51',
+                              isAccessible: false,
+                            ),
+                            SizedBox(
+                              height: 7,
+                            ),
+                            NextBusItemMarker(
+                              busLine: '219',
+                              busState: BusState.CROWDED,
+                              busDest: 'Liberté 6',
+                              busCompany: 'Dakar Dem Dikk',
+                              time: '30',
+                              hour: '17:56',
+                              isAccessible: false,
+                            ),
+                            SizedBox(
+                              height: 7,
+                            ),
+                            NextBusItemMarker(
+                              busLine: '319',
+                              busState: BusState.CROWDED,
+                              busDest: 'Hann Maristes',
+                              busCompany: 'Dakar Dem Dikk',
+                              time: '18:34',
+                              hour: '18:34',
+                              isAccessible: false,
+                            ),
+                            SizedBox(
+                              height: 7,
+                            ),
+                            NextBusItemMarker(
+                              busLine: '049',
+                              busState: BusState.UNKNOWN,
+                              busDest: 'Liberté 6',
+                              busCompany: 'Dakar Dem Dikk',
+                              time: '18:34',
+                              hour: '18:34',
+                              isAccessible: false,
+                            ),
+                            SizedBox(
+                              height: 7,
+                            ),
+                            NextBusItemMarker(
+                              busLine: '049',
+                              busState: BusState.UNKNOWN,
+                              busDest: 'Liberté 6',
+                              busCompany: 'Dakar Dem Dikk',
+                              time: '18:34',
+                              hour: '18:34',
+                              isAccessible: false,
+                            ),
+                            SizedBox(
+                              height: 7,
+                            ),
+                            NextBusItemMarker(
+                              busLine: '049',
+                              busState: BusState.UNKNOWN,
+                              busDest: 'Liberté 6',
+                              busCompany: 'Dakar Dem Dikk',
+                              time: '18:34',
+                              hour: '18:34',
+                              isAccessible: false,
+                            ),
+                            SizedBox(
+                              height: 7,
+                            ),
+                            NextBusItemMarker(
+                              busLine: '049',
+                              busState: BusState.UNKNOWN,
+                              busDest: 'Liberté 6',
+                              busCompany: 'Dakar Dem Dikk',
+                              time: '18:34',
+                              hour: '18:34',
+                              isAccessible: false,
+                            ),
+                          ],
+                        ),
+                        // sheetPosition.gSheetPosition > 0.6 ?
+                        SingleChildScrollView(
+                          child: Padding(
+                            padding:
+                                const EdgeInsets.symmetric(horizontal: 20.0),
+                            child: Column(
+                              children: [
+                                const SizedBox(
+                                  height: 10,
+                                ),
+                                if (sheetPosition.gSheetPosition <= 0.6) ...[
+                                  SizedBox(
+                                    height: 30,
+                                    child: ListView(
+                                      clipBehavior: Clip.none,
+                                      scrollDirection: Axis.horizontal,
+                                      children: const [
+                                        InfoCard(
+                                          title: "En activité",
+                                          image: "assets/icons/valid_check.png",
+                                        ),
+                                        SizedBox(
+                                          width: 10,
+                                        ),
+                                        InfoCard(
+                                          title: "Siège disponible",
+                                          image: "assets/icons/seat_blue.png",
+                                        ),
+                                        SizedBox(
+                                          width: 10,
+                                        ),
+                                        InfoCard(
+                                          title: "Accessible",
+                                          image:
+                                              "assets/icons/accessibility_blue.png",
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  const SizedBox(
+                                    height: 7,
+                                  ),
+                                ],
+                                const SizedBox(
+                                  height: 10,
+                                ),
+                                ImageSwiper(
+                                  isLikeable:
+                                      sheetPosition.gSheetPosition <= 0.6,
+                                  images: const [
+                                    "assets/images/arrêt_2.png",
+                                    "assets/images/arrêt_3.png",
+                                    "assets/images/arrêt_1.png"
+                                  ],
+                                ),
+                                if (sheetPosition.gSheetPosition > 0.6) ...[
+                                  const SizedBox(
+                                    height: 22,
+                                  ),
+                                  SizedBox(
+                                    width: AppConstants.screenWidth,
+                                    child: const Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        SectionTitle(
+                                            title: "Donnez votre avis",
+                                            subtitle:
+                                                "Partagez votre vécu pour aider les autres"),
+                                        SizedBox(
+                                          height: 10,
+                                        ),
+                                        Row(
+                                          children: [
+                                            StopContributeCard(
+                                              icon:
+                                                  "assets/icons/comment_rating_blue.png",
+                                              title:
+                                                  "Suggérer une modification",
+                                            ),
+                                            SizedBox(
+                                              width: 15,
+                                            ),
+                                            StopContributeCard(
+                                              icon:
+                                                  "assets/icons/star_rating_blue.png",
+                                              title:
+                                                  "Attribuer une note à l'arrêt",
+                                            ),
+                                          ],
+                                        )
+                                      ],
+                                    ),
+                                  ),
+                                  const SizedBox(
+                                    height: 30,
+                                  ),
+                                  const FractionallySizedBox(
+                                    widthFactor: 1.0,
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        SectionTitle(
+                                          title: "Note et commentaires",
+                                          subtitle:
+                                              "Ce que pensent les gens de cet arrêt",
+                                        ),
+                                        SizedBox(
+                                          height: 10,
+                                        ),
+                                        MapEntityRating(),
+                                        SizedBox(
+                                          height: 15,
+                                        ),
+                                        CommentSection(),
+                                      ],
+                                    ),
+                                  )
+                                ] else ...[
+                                  const SizedBox(
+                                    height: 4,
+                                  ),
+                                  const EntityRating(),
+                                ]
+                              ],
+                            ),
+                          ),
+                        )
+                        // Padding(
+                        //   padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                        //   child: Column(
+                        //     children: [
+                        //       const SizedBox(
+                        //         height: 10,
+                        //       ),
+                        //       SizedBox(
+                        //         height: 30,
+                        //         child: ListView(
+                        //           clipBehavior: Clip.none,
+                        //           scrollDirection: Axis.horizontal,
+                        //           children: const [
+                        //             InfoCard(
+                        //               title: "En activité",
+                        //               image: "assets/icons/valid_check.png",
+                        //             ),
+                        //             SizedBox(
+                        //               width: 10,
+                        //             ),
+                        //             InfoCard(
+                        //               title: "Siège disponible",
+                        //               image: "assets/icons/seat_blue.png",
+                        //             ),
+                        //             SizedBox(
+                        //               width: 10,
+                        //             ),
+                        //             InfoCard(
+                        //               title: "Accessible",
+                        //               image:
+                        //               "assets/icons/accessibility_blue.png",
+                        //             ),
+                        //           ],
+                        //         ),
+                        //       ),
+                        //       const SizedBox(
+                        //         height: 15,
+                        //       ),
+                        //       const ImageSwiper(
+                        //         isLikeable: false,
+                        //         images: ["assets/images/arrêt_1.png","assets/images/arrêt_2.png","assets/images/arrêt_3.png"],
+                        //       ),
+                        //       const SizedBox(
+                        //         height: 4,
+                        //       ),
+                        //       const EntityRating(),
+                        //     ],
+                        //   ),
+                        // )
+                      ],
+                    ),
+                  )
+                ],
+              )),
+        ),
+      ],
+    );
+  }
+}
+
+class UserComment extends StatelessWidget {
+  final String username;
+
+  final String userPicture;
+  final String userComment;
+  const UserComment({
+    super.key,
+    required this.username,
+    required this.userPicture,
+    required this.userComment,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Row(
+              children: [
+                Container(
+                    height: 40,
+                    width: 40,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      image: DecorationImage(
+                        image: AssetImage(userPicture),
+                        fit: BoxFit.cover,
+                      ),
+                      // color: Colors.blue,
+                    )),
+                const SizedBox(
+                  width: 10,
+                ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(username),
+                    Row(
+                      children: [
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.star,
+                              color: AppColors.primaryVar0,
+                              size: 17.0,
+                            ),
+                            Icon(
+                              Icons.star,
+                              color: AppColors.primaryVar0,
+                              size: 17.0,
+                            ),
+                            Icon(
+                              Icons.star,
+                              color: AppColors.primaryVar0,
+                              size: 17.0,
+                            ),
+                            Icon(
+                              Icons.star_half_outlined,
+                              color: AppColors.primaryVar0,
+                              size: 17.0,
+                            ),
+                            Icon(
+                              Icons.star_border,
+                              color: AppColors.primaryVar0,
+                              size: 17.0,
+                            ),
+                          ],
+                        ),
+                        const SizedBox(
+                          width: 5,
+                        ),
+                        Text("07/03/2023",
+                            style: TextStyle(color: AppColors.secondaryText))
+                      ],
+                    ),
+                  ],
+                )
+              ],
+            ),
+            Icon(
+              Icons.more_vert,
+              color: AppColors.secondaryText,
+            ),
+          ],
+        ),
+        const SizedBox(
+          height: 7,
+        ),
+        const SizedBox(
+          height: 7,
+        ),
+        Text(userComment, style: const TextStyle(fontSize: 13))
+      ],
+    );
+  }
 }
 
 class _BottomSheetExpandableContentState
@@ -4769,149 +5972,146 @@ class _BottomSheetExpandableContentState
                                 sheetPosition: sheetPosition,
                                 pagingController: widget.pagingController,
                                 onTapSuggestion: (mapEntity, searchHitEntity) {
-                                  if (searchHitEntity != null) {
-                                    if (searchHitEntity.entityType == "place") {
-                                      context
-                                          .read<MapBloc>()
-                                          .add(const SetSelectedMapEntity(Place(
-                                            entityName:
-                                                'Ecole supérieure multinationale des télécommunications (ESMT)',
-                                            placeName:
-                                                'Ecole supérieure multinationale des télécommunications (ESMT)',
-                                            entityPosition: LatLng(
-                                                14.700029517700326,
-                                                -17.451019219831917),
-                                          )));
-                                    } else if (searchHitEntity.entityType ==
-                                        "stop") {
-                                      context.read<MapBloc>().add(
-                                            const SetSelectedMapEntity(
-                                              Stop(
-                                                  entityName:
-                                                      'Arrêt Dardanelles',
-                                                  stopName: 'Arrêt Dardanelles',
-                                                  entityPosition: LatLng(
-                                                      14.695223067123997,
-                                                      -17.44946546833327)),
-                                            ),
-                                          );
-                                    } else {
-                                      context.read<MapBloc>().add(
-                                            const SetSelectedMapEntity(Bus(
-                                                entityName:
-                                                    "Ligne 001 - Dakar Dem Dikk",
-                                                state: BusState.UNKNOWN,
-                                                capacity: 45,
-                                                line: Line(
-                                                  arrival: 'LECLERC',
-                                                  departure:
-                                                      'PARCELLES ASSAINIES',
-                                                  lineNumber: "001",
-                                                  description:
-                                                      'Cette ligne couvre la distance PARCELLES ASSAINIES-LECLERC',
-                                                  rating: 5,
-                                                  fareRange: '200-300',
-                                                  onwardShape: [
-                                                    LatLng(14.76033717791818,
-                                                        -17.438687495664922),
-                                                    LatLng(14.763940762120395,
-                                                        -17.441183406746163),
-                                                    LatLng(14.762826227208505,
-                                                        -17.446516269735618),
-                                                    LatLng(14.75983177074642,
-                                                        -17.44810450812752),
-                                                    LatLng(14.758248455408173,
-                                                        -17.44776497933181),
-                                                    LatLng(14.756328841098107,
-                                                        -17.44733680657224),
-                                                    LatLng(14.754299800845413,
-                                                        -17.446884226197255),
-                                                    LatLng(14.750523231135967,
-                                                        -17.446540219732984),
-                                                    LatLng(14.750049793921685,
-                                                        -17.44799082092741),
-                                                    LatLng(14.7502938867721,
-                                                        -17.44962752085666),
-                                                    LatLng(14.750618183071591,
-                                                        -17.451216308405563),
-                                                    LatLng(14.751908674768655,
-                                                        -17.45432092949277),
-                                                    LatLng(14.751323779488551,
-                                                        -17.45614723355753),
-                                                    LatLng(14.750277612687961,
-                                                        -17.45788510152128),
-                                                    LatLng(14.746394954969995,
-                                                        -17.466588512861758),
-                                                    LatLng(14.744905821864554,
-                                                        -17.46887636539269),
-                                                    LatLng(14.740497732127464,
-                                                        -17.471505759915615),
-                                                    LatLng(14.735673214191454,
-                                                        -17.473247964998105),
-                                                    LatLng(14.729655629460476,
-                                                        -17.472863237737428),
-                                                    LatLng(14.72590576002534,
-                                                        -17.471812771657483),
-                                                    LatLng(14.722566078908324,
-                                                        -17.471226477452866),
-                                                    LatLng(14.719750523903995,
-                                                        -17.47138906188038),
-                                                    LatLng(14.712284520605824,
-                                                        -17.471902590631213),
-                                                    LatLng(14.709249652444962,
-                                                        -17.471284811984475),
-                                                    LatLng(14.70503495422966,
-                                                        -17.470293948214813),
-                                                    LatLng(14.700211986761264,
-                                                        -17.468850235517714),
-                                                    LatLng(14.695885291241627,
-                                                        -17.465384372683875),
-                                                    LatLng(14.69356583153468,
-                                                        -17.46262004957258),
-                                                    LatLng(14.691573627552767,
-                                                        -17.460203620061222),
-                                                    LatLng(14.689322117315578,
-                                                        -17.457816311477483),
-                                                    LatLng(14.686677185172137,
-                                                        -17.45551296891371),
-                                                    LatLng(14.683540150827751,
-                                                        -17.452373935181324),
-                                                    LatLng(14.68151197255026,
-                                                        -17.450238695218715),
-                                                    LatLng(14.679699854072759,
-                                                        -17.4482861599848),
-                                                    LatLng(14.678560024739568,
-                                                        -17.447046170035282),
-                                                    LatLng(14.675097340711405,
-                                                        -17.443518609858753),
-                                                    LatLng(14.670725088433215,
-                                                        -17.440326509804457),
-                                                    LatLng(14.669173822827892,
-                                                        -17.43795000330283),
-                                                    LatLng(14.6693667259859,
-                                                        -17.434781353950044),
-                                                    LatLng(14.669498559521607,
-                                                        -17.432615841203198),
-                                                    LatLng(14.669904854641885,
-                                                        -17.43170395936341),
-                                                    LatLng(14.6742458189469,
-                                                        -17.43261082618835),
-                                                    LatLng(14.673962216827931,
-                                                        -17.43167132154245),
-                                                    LatLng(14.671892986596275,
-                                                        -17.42734131811217),
-                                                    LatLng(14.67212311504506,
-                                                        -17.42733760332219),
-                                                  ],
-                                                  lineId: 1,
-                                                ),
-                                                isAccessible: false,
+                                  if (searchHitEntity.entityType == "place") {
+                                    context
+                                        .read<MapBloc>()
+                                        .add(const SetSelectedMapEntity(Place(
+                                          entityName:
+                                              'Ecole supérieure multinationale des télécommunications (ESMT)',
+                                          placeName:
+                                              'Ecole supérieure multinationale des télécommunications (ESMT)',
+                                          entityPosition: LatLng(
+                                              14.700029517700326,
+                                              -17.451019219831917),
+                                        )));
+                                  } else if (searchHitEntity.entityType ==
+                                      "stop") {
+                                    context.read<MapBloc>().add(
+                                          const SetSelectedMapEntity(
+                                            Stop(
+                                                entityName: 'Arrêt Dardanelles',
+                                                stopName: 'Arrêt Dardanelles',
                                                 entityPosition: LatLng(
-                                                    14.67212311504506,
-                                                    -17.42733760332219))),
-                                            // Ajoutez d'autres éléments de la liste ici
-                                          );
-                                    }
+                                                    14.695223067123997,
+                                                    -17.44946546833327)),
+                                          ),
+                                        );
+                                  } else {
+                                    context.read<MapBloc>().add(
+                                          const SetSelectedMapEntity(Bus(
+                                              entityName:
+                                                  "Ligne 001 - Dakar Dem Dikk",
+                                              state: BusState.UNKNOWN,
+                                              capacity: 45,
+                                              line: Line(
+                                                arrival: 'LECLERC',
+                                                departure:
+                                                    'PARCELLES ASSAINIES',
+                                                lineNumber: "001",
+                                                description:
+                                                    'Cette ligne couvre la distance PARCELLES ASSAINIES-LECLERC',
+                                                rating: 5,
+                                                fareRange: '200-300',
+                                                onwardShape: [
+                                                  LatLng(14.76033717791818,
+                                                      -17.438687495664922),
+                                                  LatLng(14.763940762120395,
+                                                      -17.441183406746163),
+                                                  LatLng(14.762826227208505,
+                                                      -17.446516269735618),
+                                                  LatLng(14.75983177074642,
+                                                      -17.44810450812752),
+                                                  LatLng(14.758248455408173,
+                                                      -17.44776497933181),
+                                                  LatLng(14.756328841098107,
+                                                      -17.44733680657224),
+                                                  LatLng(14.754299800845413,
+                                                      -17.446884226197255),
+                                                  LatLng(14.750523231135967,
+                                                      -17.446540219732984),
+                                                  LatLng(14.750049793921685,
+                                                      -17.44799082092741),
+                                                  LatLng(14.7502938867721,
+                                                      -17.44962752085666),
+                                                  LatLng(14.750618183071591,
+                                                      -17.451216308405563),
+                                                  LatLng(14.751908674768655,
+                                                      -17.45432092949277),
+                                                  LatLng(14.751323779488551,
+                                                      -17.45614723355753),
+                                                  LatLng(14.750277612687961,
+                                                      -17.45788510152128),
+                                                  LatLng(14.746394954969995,
+                                                      -17.466588512861758),
+                                                  LatLng(14.744905821864554,
+                                                      -17.46887636539269),
+                                                  LatLng(14.740497732127464,
+                                                      -17.471505759915615),
+                                                  LatLng(14.735673214191454,
+                                                      -17.473247964998105),
+                                                  LatLng(14.729655629460476,
+                                                      -17.472863237737428),
+                                                  LatLng(14.72590576002534,
+                                                      -17.471812771657483),
+                                                  LatLng(14.722566078908324,
+                                                      -17.471226477452866),
+                                                  LatLng(14.719750523903995,
+                                                      -17.47138906188038),
+                                                  LatLng(14.712284520605824,
+                                                      -17.471902590631213),
+                                                  LatLng(14.709249652444962,
+                                                      -17.471284811984475),
+                                                  LatLng(14.70503495422966,
+                                                      -17.470293948214813),
+                                                  LatLng(14.700211986761264,
+                                                      -17.468850235517714),
+                                                  LatLng(14.695885291241627,
+                                                      -17.465384372683875),
+                                                  LatLng(14.69356583153468,
+                                                      -17.46262004957258),
+                                                  LatLng(14.691573627552767,
+                                                      -17.460203620061222),
+                                                  LatLng(14.689322117315578,
+                                                      -17.457816311477483),
+                                                  LatLng(14.686677185172137,
+                                                      -17.45551296891371),
+                                                  LatLng(14.683540150827751,
+                                                      -17.452373935181324),
+                                                  LatLng(14.68151197255026,
+                                                      -17.450238695218715),
+                                                  LatLng(14.679699854072759,
+                                                      -17.4482861599848),
+                                                  LatLng(14.678560024739568,
+                                                      -17.447046170035282),
+                                                  LatLng(14.675097340711405,
+                                                      -17.443518609858753),
+                                                  LatLng(14.670725088433215,
+                                                      -17.440326509804457),
+                                                  LatLng(14.669173822827892,
+                                                      -17.43795000330283),
+                                                  LatLng(14.6693667259859,
+                                                      -17.434781353950044),
+                                                  LatLng(14.669498559521607,
+                                                      -17.432615841203198),
+                                                  LatLng(14.669904854641885,
+                                                      -17.43170395936341),
+                                                  LatLng(14.6742458189469,
+                                                      -17.43261082618835),
+                                                  LatLng(14.673962216827931,
+                                                      -17.43167132154245),
+                                                  LatLng(14.671892986596275,
+                                                      -17.42734131811217),
+                                                  LatLng(14.67212311504506,
+                                                      -17.42733760332219),
+                                                ],
+                                                lineId: 1,
+                                              ),
+                                              isAccessible: false,
+                                              entityPosition: LatLng(
+                                                  14.67212311504506,
+                                                  -17.42733760332219))),
+                                          // Ajoutez d'autres éléments de la liste ici
+                                        );
                                   }
                                   context.read<MapBloc>().add(
                                       AddSearchHitToCache(
@@ -5157,16 +6357,6 @@ class _BottomSheetExpandableContentState
       },
     );
   }
-}
-
-class BusInfoDisplayer extends StatefulWidget {
-  const BusInfoDisplayer({Key? key, required this.sheetPosition})
-      : super(key: key);
-
-  final SheetPositionPair sheetPosition;
-
-  @override
-  State<BusInfoDisplayer> createState() => _BusInfoDisplayerState();
 }
 
 class _BusInfoDisplayerState extends State<BusInfoDisplayer> {
@@ -5750,1613 +6940,96 @@ class _BusInfoDisplayerState extends State<BusInfoDisplayer> {
   }
 }
 
-class LineSchedule extends StatelessWidget {
-  const LineSchedule({
-    super.key,
-    required this.day,
-    required this.schedule,
-  });
-
-  final String day;
-  final String schedule;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(day, style: const TextStyle(fontSize: 13)),
-            Text(schedule, style: const TextStyle(fontSize: 13))
-          ],
-        ),
-        Divider(
-          thickness: 0.2,
-          height: 0.8,
-          color: AppColors.secondaryText,
-        )
-      ],
-    );
-  }
-}
-
-class LineStop extends StatelessWidget {
-  const LineStop({
-    super.key,
-    required this.isNextStop,
-    required this.stopTitle,
-    required this.stopAddress,
-    this.isFinal = false,
-  });
-
-  final bool isNextStop;
-  final String stopTitle;
-  final String stopAddress;
-  final bool isFinal;
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: Colors.white,
-      child: InkWell(
-        onTap: () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            buildCustomSnackBar(
-              context,
-              "Fonctionnalité disponible prochainement 😉",
-              SnackBarType.info,
-              showCloseIcon: false,
-            ),
-          );
-        },
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20),
-          child: SizedBox(
-            height: 75,
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Row(
-                  children: [
-                    Column(
-                      children: [
-                        Container(
-                          height: 30,
-                          width: 30,
-                          decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: isNextStop
-                                  ? AppColors.lightRed
-                                  : AppColors.primaryVar1),
-                        ),
-                        if (!isFinal) ...[
-                          Expanded(
-                            child: Center(
-                                child: Container(
-                                    width: 1.0,
-                                    color: isNextStop
-                                        ? AppColors.lightRed
-                                        : AppColors.primaryVar1)),
-                          )
-                        ]
-                      ],
-                    ),
-                    const SizedBox(
-                      width: 13,
-                    ),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(stopTitle),
-                        // const SizedBox(height: 10,),
-                        Text(
-                          stopAddress,
-                          style: TextStyle(
-                              color: AppColors.secondaryText,
-                              fontWeight: FontWeight.w400,
-                              fontSize: 13),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-                if (isNextStop) ...[
-                  Container(
-                    padding:
-                        EdgeInsets.symmetric(horizontal: 7.0, vertical: 1.0),
-                    height: 33,
-                    decoration: BoxDecoration(
-                        color: AppColors.lightRed,
-                        borderRadius: BorderRadius.circular(15)),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.only(bottom: 1.0),
-                          child: Image.asset(
-                            "assets/icons/clock_white.png",
-                            height: 17,
-                            width: 17,
-                          ),
-                        ),
-                        const SizedBox(
-                          width: 5,
-                        ),
-                        Text(
-                          "6 mins",
-                          style: TextStyle(color: Colors.white, fontSize: 12.0),
-                        )
-                      ],
-                    ),
-                  )
-                ]
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class StopInfoDisplayer extends StatelessWidget {
-  const StopInfoDisplayer({
-    super.key,
-    required this.sheetPosition,
-  });
-
-  final SheetPositionPair sheetPosition;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20.0),
-          child: Column(
-            children: [
-              AnimatedContainer(
-                height: sheetPosition.gSheetPosition >= 0.95
-                    ? MediaQuery.of(context).padding.top - 10
-                    : 0,
-                duration: const Duration(milliseconds: 100),
-              ),
-              Row(
-                mainAxisAlignment: sheetPosition.gSheetPosition > 0.6
-                    ? MainAxisAlignment.spaceBetween
-                    : MainAxisAlignment.center,
-                children: [
-                  Row(
-                    children: [
-                      Image.asset("assets/icons/stop_empty.png",
-                          width: sheetPosition.gSheetPosition > 0.6 ? 26 : 22,
-                          height: sheetPosition.gSheetPosition > 0.6 ? 26 : 22),
-                      const SizedBox(
-                        width: 5,
-                      ),
-                      Text(
-                        "Arrêt bus dardanelles",
-                        style: sheetPosition.gSheetPosition > 0.6
-                            ? const TextStyle(
-                                fontSize: 19, fontWeight: FontWeight.w400)
-                            : null,
-                      ),
-                    ],
-                  ),
-                  if (sheetPosition.gSheetPosition > 0.6) ...[
-                    Container(
-                      margin: const EdgeInsets.only(top: 2),
-                      height: 30,
-                      width: 30,
-                      decoration: const BoxDecoration(
-                        color: Colors.white,
-                        shape: BoxShape.circle,
-                        // borderRadius: BorderRadius.circular(15)
-                      ),
-                      child: Center(
-                        child: Image.asset(
-                          "assets/icons/filled_heart.png",
-                          height: 15,
-                          width: 15,
-                        ),
-                      ),
-                    )
-                  ]
-
-                  // const SizedBox(
-                  //   width: 15,
-                  // ),
-                ],
-              ),
-              if (sheetPosition.gSheetPosition > 0.6) ...[
-                Column(
-                  children: [
-                    const SizedBox(
-                      height: 10,
-                    ),
-                    SizedBox(
-                      height: 30,
-                      child: ListView(
-                        clipBehavior: Clip.none,
-                        scrollDirection: Axis.horizontal,
-                        children: const [
-                          InfoCard(
-                            title: "En activité",
-                            image: "assets/icons/valid_check.png",
-                          ),
-                          SizedBox(
-                            width: 10,
-                          ),
-                          InfoCard(
-                            title: "Siège disponible",
-                            image: "assets/icons/seat_blue.png",
-                          ),
-                          SizedBox(
-                            width: 10,
-                          ),
-                          InfoCard(
-                            title: "Accessible",
-                            image: "assets/icons/accessibility_blue.png",
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(
-                  height: 10,
-                ),
-              ],
-            ],
-          ),
-        ),
-        RepaintBoundary(
-          child: DefaultTabController(
-              length: 2,
-              child: Column(
-                children: [
-                  TabBar(
-                    labelPadding: EdgeInsets.zero,
-                    dividerHeight: 0.0,
-                    indicator: UnderlineTabIndicator(
-                      borderSide:
-                          BorderSide(width: 2.0, color: AppColors.primaryVar0),
-                      // insets: EdgeInsets.symmetric(horizontal:-23.0)
-                    ),
-                    padding: EdgeInsets.zero,
-                    indicatorSize: TabBarIndicatorSize.tab,
-                    indicatorColor: AppColors.primaryVar0,
-                    onTap: (index) {
-                      if (index == 1) {}
-                    },
-                    tabs: [
-                      Tab(
-                        child: Text(
-                          "Prochains départs",
-                          style: TextStyle(
-                              color: Colors.black,
-                              fontSize:
-                                  AppConstants.screenWidth >= 342 ? 14 : 12.5,
-                              fontWeight: FontWeight.normal),
-                        ),
-                      ),
-                      Tab(
-                        child: Text(
-                          "À propos",
-                          style: TextStyle(
-                              color: Colors.black,
-                              fontSize:
-                                  AppConstants.screenWidth >= 342 ? 14 : 12.5,
-                              fontWeight: FontWeight.normal),
-                        ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(
-                    height: AppConstants.screenHeight - 270,
-                    child: TabBarView(
-                      children: [
-                        ListView(
-                          primary: false,
-                          padding: EdgeInsets.only(top: 2),
-                          physics: sheetPosition.gSheetPosition <= 0.6
-                              ? NeverScrollableScrollPhysics()
-                              : AlwaysScrollableScrollPhysics(),
-                          children: const [
-                            NextBusItemMarker(
-                              busLine: '007',
-                              busState: BusState.EMPTY,
-                              busDest: 'Palais',
-                              busCompany: 'Dakar Dem Dikk',
-                              time: '05',
-                              hour: '17:24',
-                              isAccessible: true,
-                            ),
-                            SizedBox(
-                              height: 7,
-                            ),
-                            NextBusItemMarker(
-                              busLine: '217',
-                              busState: BusState.HALFCROWDED,
-                              busDest: 'Parcelles Assainies',
-                              busCompany: 'GIE AFTU',
-                              time: '25',
-                              hour: '17:51',
-                              isAccessible: false,
-                            ),
-                            SizedBox(
-                              height: 7,
-                            ),
-                            NextBusItemMarker(
-                              busLine: '219',
-                              busState: BusState.CROWDED,
-                              busDest: 'Liberté 6',
-                              busCompany: 'Dakar Dem Dikk',
-                              time: '30',
-                              hour: '17:56',
-                              isAccessible: false,
-                            ),
-                            SizedBox(
-                              height: 7,
-                            ),
-                            NextBusItemMarker(
-                              busLine: '319',
-                              busState: BusState.CROWDED,
-                              busDest: 'Hann Maristes',
-                              busCompany: 'Dakar Dem Dikk',
-                              time: '18:34',
-                              hour: '18:34',
-                              isAccessible: false,
-                            ),
-                            SizedBox(
-                              height: 7,
-                            ),
-                            NextBusItemMarker(
-                              busLine: '049',
-                              busState: BusState.UNKNOWN,
-                              busDest: 'Liberté 6',
-                              busCompany: 'Dakar Dem Dikk',
-                              time: '18:34',
-                              hour: '18:34',
-                              isAccessible: false,
-                            ),
-                            SizedBox(
-                              height: 7,
-                            ),
-                            NextBusItemMarker(
-                              busLine: '049',
-                              busState: BusState.UNKNOWN,
-                              busDest: 'Liberté 6',
-                              busCompany: 'Dakar Dem Dikk',
-                              time: '18:34',
-                              hour: '18:34',
-                              isAccessible: false,
-                            ),
-                            SizedBox(
-                              height: 7,
-                            ),
-                            NextBusItemMarker(
-                              busLine: '049',
-                              busState: BusState.UNKNOWN,
-                              busDest: 'Liberté 6',
-                              busCompany: 'Dakar Dem Dikk',
-                              time: '18:34',
-                              hour: '18:34',
-                              isAccessible: false,
-                            ),
-                            SizedBox(
-                              height: 7,
-                            ),
-                            NextBusItemMarker(
-                              busLine: '049',
-                              busState: BusState.UNKNOWN,
-                              busDest: 'Liberté 6',
-                              busCompany: 'Dakar Dem Dikk',
-                              time: '18:34',
-                              hour: '18:34',
-                              isAccessible: false,
-                            ),
-                          ],
-                        ),
-                        // sheetPosition.gSheetPosition > 0.6 ?
-                        SingleChildScrollView(
-                          child: Padding(
-                            padding:
-                                const EdgeInsets.symmetric(horizontal: 20.0),
-                            child: Column(
-                              children: [
-                                const SizedBox(
-                                  height: 10,
-                                ),
-                                if (sheetPosition.gSheetPosition <= 0.6) ...[
-                                  SizedBox(
-                                    height: 30,
-                                    child: ListView(
-                                      clipBehavior: Clip.none,
-                                      scrollDirection: Axis.horizontal,
-                                      children: const [
-                                        InfoCard(
-                                          title: "En activité",
-                                          image: "assets/icons/valid_check.png",
-                                        ),
-                                        SizedBox(
-                                          width: 10,
-                                        ),
-                                        InfoCard(
-                                          title: "Siège disponible",
-                                          image: "assets/icons/seat_blue.png",
-                                        ),
-                                        SizedBox(
-                                          width: 10,
-                                        ),
-                                        InfoCard(
-                                          title: "Accessible",
-                                          image:
-                                              "assets/icons/accessibility_blue.png",
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  const SizedBox(
-                                    height: 7,
-                                  ),
-                                ],
-                                const SizedBox(
-                                  height: 10,
-                                ),
-                                ImageSwiper(
-                                  isLikeable:
-                                      sheetPosition.gSheetPosition <= 0.6,
-                                  images: const [
-                                    "assets/images/arrêt_2.png",
-                                    "assets/images/arrêt_3.png",
-                                    "assets/images/arrêt_1.png"
-                                  ],
-                                ),
-                                if (sheetPosition.gSheetPosition > 0.6) ...[
-                                  const SizedBox(
-                                    height: 22,
-                                  ),
-                                  SizedBox(
-                                    width: AppConstants.screenWidth,
-                                    child: const Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        SectionTitle(
-                                            title: "Donnez votre avis",
-                                            subtitle:
-                                                "Partagez votre vécu pour aider les autres"),
-                                        SizedBox(
-                                          height: 10,
-                                        ),
-                                        Row(
-                                          children: [
-                                            StopContributeCard(
-                                              icon:
-                                                  "assets/icons/comment_rating_blue.png",
-                                              title:
-                                                  "Suggérer une modification",
-                                            ),
-                                            SizedBox(
-                                              width: 15,
-                                            ),
-                                            StopContributeCard(
-                                              icon:
-                                                  "assets/icons/star_rating_blue.png",
-                                              title:
-                                                  "Attribuer une note à l'arrêt",
-                                            ),
-                                          ],
-                                        )
-                                      ],
-                                    ),
-                                  ),
-                                  const SizedBox(
-                                    height: 30,
-                                  ),
-                                  const FractionallySizedBox(
-                                    widthFactor: 1.0,
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        SectionTitle(
-                                          title: "Note et commentaires",
-                                          subtitle:
-                                              "Ce que pensent les gens de cet arrêt",
-                                        ),
-                                        SizedBox(
-                                          height: 10,
-                                        ),
-                                        MapEntityRating(),
-                                        SizedBox(
-                                          height: 15,
-                                        ),
-                                        CommentSection(),
-                                      ],
-                                    ),
-                                  )
-                                ] else ...[
-                                  const SizedBox(
-                                    height: 4,
-                                  ),
-                                  const EntityRating(),
-                                ]
-                              ],
-                            ),
-                          ),
-                        )
-                        // Padding(
-                        //   padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                        //   child: Column(
-                        //     children: [
-                        //       const SizedBox(
-                        //         height: 10,
-                        //       ),
-                        //       SizedBox(
-                        //         height: 30,
-                        //         child: ListView(
-                        //           clipBehavior: Clip.none,
-                        //           scrollDirection: Axis.horizontal,
-                        //           children: const [
-                        //             InfoCard(
-                        //               title: "En activité",
-                        //               image: "assets/icons/valid_check.png",
-                        //             ),
-                        //             SizedBox(
-                        //               width: 10,
-                        //             ),
-                        //             InfoCard(
-                        //               title: "Siège disponible",
-                        //               image: "assets/icons/seat_blue.png",
-                        //             ),
-                        //             SizedBox(
-                        //               width: 10,
-                        //             ),
-                        //             InfoCard(
-                        //               title: "Accessible",
-                        //               image:
-                        //               "assets/icons/accessibility_blue.png",
-                        //             ),
-                        //           ],
-                        //         ),
-                        //       ),
-                        //       const SizedBox(
-                        //         height: 15,
-                        //       ),
-                        //       const ImageSwiper(
-                        //         isLikeable: false,
-                        //         images: ["assets/images/arrêt_1.png","assets/images/arrêt_2.png","assets/images/arrêt_3.png"],
-                        //       ),
-                        //       const SizedBox(
-                        //         height: 4,
-                        //       ),
-                        //       const EntityRating(),
-                        //     ],
-                        //   ),
-                        // )
-                      ],
-                    ),
-                  )
-                ],
-              )),
-        ),
-      ],
-    );
-  }
-}
-
-class CommentSection extends StatelessWidget {
-  const CommentSection({
-    super.key,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        UserComment(
-          username: "Adji Sonko",
-          userPicture: "assets/images/adji_sonko.png",
-          userComment:
-              "J'ai pris la ligne 007 plusieurs fois pour me déplacer à travers Dakar et je suis vraiment satisfait du service. Les bus sont généralement propres et bien entretenus...",
-        ),
-        SizedBox(
-          height: 10,
-        ),
-        UserComment(
-            username: "Ousmane Sarr",
-            userPicture: "assets/images/ousmane_sarr.png",
-            userComment:
-                "En tant que personne handicapée, je suis ravi de constater à quel point la ligne 007 est accessible. Les bus sont équipés de rampes d'accès pour fauteuils roulants, ce qui facilite grandement...")
-      ],
-    );
-  }
-}
-
-class UserComment extends StatelessWidget {
-  const UserComment({
-    super.key,
-    required this.username,
-    required this.userPicture,
-    required this.userComment,
-  });
-
-  final String username;
-  final String userPicture;
-  final String userComment;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Row(
-              children: [
-                Container(
-                    height: 40,
-                    width: 40,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      image: DecorationImage(
-                        image: AssetImage(userPicture),
-                        fit: BoxFit.cover,
-                      ),
-                      // color: Colors.blue,
-                    )),
-                const SizedBox(
-                  width: 10,
-                ),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(username),
-                    Row(
-                      children: [
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.star,
-                              color: AppColors.primaryVar0,
-                              size: 17.0,
-                            ),
-                            Icon(
-                              Icons.star,
-                              color: AppColors.primaryVar0,
-                              size: 17.0,
-                            ),
-                            Icon(
-                              Icons.star,
-                              color: AppColors.primaryVar0,
-                              size: 17.0,
-                            ),
-                            Icon(
-                              Icons.star_half_outlined,
-                              color: AppColors.primaryVar0,
-                              size: 17.0,
-                            ),
-                            Icon(
-                              Icons.star_border,
-                              color: AppColors.primaryVar0,
-                              size: 17.0,
-                            ),
-                          ],
-                        ),
-                        const SizedBox(
-                          width: 5,
-                        ),
-                        Text("07/03/2023",
-                            style: TextStyle(color: AppColors.secondaryText))
-                      ],
-                    ),
-                  ],
-                )
-              ],
-            ),
-            Icon(
-              Icons.more_vert,
-              color: AppColors.secondaryText,
-            ),
-          ],
-        ),
-        const SizedBox(
-          height: 7,
-        ),
-        const SizedBox(
-          height: 7,
-        ),
-        Text(userComment, style: const TextStyle(fontSize: 13))
-      ],
-    );
-  }
-}
-
-class MapEntityRating extends StatelessWidget {
-  const MapEntityRating({
-    super.key,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return const Row(
-      children: [
-        RatingsStars(),
-        RatingsStats(),
-      ],
-    );
-  }
-}
-
-class RatingsStars extends StatelessWidget {
-  const RatingsStars({
-    super.key,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Expanded(
-      flex: 3, // 40% de la largeur disponible
-      child: SizedBox(
-        height: 100,
-        // color: Colors.red,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.start,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            SizedBox(
-              height: 95,
-              width: 110,
-              child: Stack(children: [
-                const Text(
-                  "4.7",
-                  // textHeightBehavior: TextHeightBehavior(),
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 62,
-                    height: 1.0,
-                    fontWeight: FontWeight.w500,
-                    textBaseline: TextBaseline.ideographic,
-                  ),
-                ),
-                Align(
-                  alignment: Alignment.bottomLeft,
-                  heightFactor: 4.3,
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.star,
-                        color: AppColors.primaryVar0,
-                        size: 17.0,
-                      ),
-                      Icon(
-                        Icons.star,
-                        color: AppColors.primaryVar0,
-                        size: 17.0,
-                      ),
-                      Icon(
-                        Icons.star,
-                        color: AppColors.primaryVar0,
-                        size: 17.0,
-                      ),
-                      Icon(
-                        Icons.star_half_outlined,
-                        color: AppColors.primaryVar0,
-                        size: 17.0,
-                      ),
-                      Icon(
-                        Icons.star_border,
-                        color: AppColors.primaryVar0,
-                        size: 17.0,
-                      ),
-                    ],
-                  ),
-                ),
-                Align(
-                  alignment: Alignment.bottomLeft,
-                  heightFactor: 7,
-                  child: Text(
-                    "25.000 avis",
-                    style: TextStyle(
-                        fontSize: 12,
-                        color: AppColors.secondaryText.withOpacity(.9)),
-                  ),
-                ),
-              ]),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class RatingsStats extends StatelessWidget {
-  const RatingsStats({
-    super.key,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return const Expanded(
-      flex: 5, // 70% de la largeur disponible
-      child: SizedBox(
-        height: 100,
-        // color: Colors.green,
-        child: Column(
-          children: [
-            RatingBar(ratingTitle: "5", ratingLevel: 0.8),
-            SizedBox(height: 1),
-            RatingBar(ratingTitle: "4", ratingLevel: 0.5),
-            SizedBox(height: 1),
-            RatingBar(ratingTitle: "3", ratingLevel: 0.3),
-            SizedBox(height: 1),
-            RatingBar(ratingTitle: "2", ratingLevel: 0.1),
-            SizedBox(height: 1),
-            RatingBar(ratingTitle: "1", ratingLevel: 0.1),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class RatingBar extends StatelessWidget {
-  const RatingBar({
-    super.key,
-    required this.ratingLevel,
-    required this.ratingTitle,
-  });
-
-  final double ratingLevel;
-  final String ratingTitle;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        SizedBox(
-          width: 7,
-          child: Text(
-            ratingTitle,
-            style: const TextStyle(fontSize: 12),
-          ),
-        ),
-        const SizedBox(
-          width: 12,
-        ),
-        Expanded(
-            child: Container(
-          alignment: Alignment.centerLeft,
-          height: 10,
-          decoration: BoxDecoration(
-              color: AppColors.secondaryText.withOpacity(.2),
-              borderRadius: BorderRadius.circular(5)),
-          child: FractionallySizedBox(
-            widthFactor: ratingLevel,
-            child: Container(
-              // height: 12,
-              decoration: BoxDecoration(
-                  color: AppColors.primaryVar0,
-                  borderRadius: BorderRadius.circular(5)),
-            ),
-          ),
-        ))
-      ],
-    );
-  }
-}
-
-class SectionTitle extends StatelessWidget {
-  const SectionTitle(
-      {super.key, required this.title, this.subtitle, this.rightItem});
-
-  final String title;
-  final String? subtitle;
-  final Widget? rightItem;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              title,
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w400,
-              ),
-              textAlign: TextAlign.start,
-            ),
-            if (rightItem != null) ...[rightItem!]
-          ],
-        ),
-        if (subtitle != null) ...[
-          Text(
-            subtitle!,
-            style: TextStyle(
-                fontSize: 12,
-                // fontWeight: FontWeight.w500,
-                color: AppColors.secondaryText),
-            textAlign: TextAlign.start,
-          ),
-        ]
-      ],
-    );
-  }
-}
-
-class StopContributeCard extends StatelessWidget {
-  const StopContributeCard({
-    super.key,
-    required this.icon,
-    required this.title,
-  });
-
-  final String icon;
-  final String title;
-
-  @override
-  Widget build(BuildContext context) {
-    return Expanded(
-      child: Container(
-        height: 130,
-        // width: 5,
-        decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(15),
-            color: Colors.white,
-            boxShadow: [
-              BoxShadow(
-                  spreadRadius: 0.3,
-                  blurRadius: 5,
-                  offset: const Offset(0, 1.5),
-                  color: Colors.grey.withOpacity(.3))
-            ]),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Image.asset(
-              icon,
-              height: 26,
-              width: 26,
-            ),
-            const SizedBox(
-              height: 7,
-            ),
-            Text(title, textAlign: TextAlign.center)
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class BusIconInfo extends StatelessWidget {
-  const BusIconInfo({
-    super.key,
-    required this.lineNumber,
-    required this.busState,
-  });
-
-  final String lineNumber;
-  final BusState busState;
+class _FloorFloatingButtonState extends State<FloorFloatingButton> {
+  late int localFloorLevel;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 40,
-      width: 40,
+      height: 110,
+      width: 60,
       decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color: busState == BusState.EMPTY
-              ? AppColors.bootstrapGreen
-              : busState == BusState.CROWDED
-                  ? AppColors.bootstrapRed
-                  : busState == BusState.HALFCROWDED
-                      ? AppColors.bootstrapYellow
-                      : AppColors.secondaryText.withOpacity(.5)),
-      child: Stack(
-        children: [
-          Align(
-            alignment: Alignment.bottomCenter,
-            heightFactor: 1.7,
-            child: Image.asset(
-              // "assets/icons/single_bus_green.png",
-              busState == BusState.EMPTY
-                  ? "assets/icons/single_bus_green.png"
-                  : busState == BusState.CROWDED
-                      ? "assets/icons/single_bus_red.png"
-                      : busState == BusState.HALFCROWDED
-                          ? "assets/icons/single_bus_yellow.png"
-                          : "assets/icons/single_bus_unknown.png",
-              height: 18,
-              width: 18,
-            ),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(15),
+        boxShadow: [
+          BoxShadow(
+            spreadRadius: 1,
+            blurRadius: 5,
+            offset: const Offset(0, 1.5),
+            color: Colors.black.withOpacity(.3),
           ),
-          Align(
-              alignment: Alignment.topCenter,
-              child: Container(
-                width: 25,
-                height: 10,
-                decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(15)),
+        ],
+      ),
+      child: Column(
+        children: [
+          Expanded(
+            child: Material(
+              color: localFloorLevel == 1 ? Color(0xFFE7E7E7) : Colors.white,
+              borderRadius: BorderRadius.only(
+                topRight: Radius.circular(15),
+                topLeft: Radius.circular(15),
+              ),
+              child: InkWell(
+                borderRadius: BorderRadius.only(
+                  topRight: Radius.circular(15),
+                  topLeft: Radius.circular(15),
+                ),
+                onTap: () => updateLocalFloorLevel(1),
                 child: Center(
                   child: Text(
-                    lineNumber,
-                    style: const TextStyle(
-                        fontWeight: FontWeight.w500, fontSize: 8, height: 0.8),
+                    "1",
+                    style: TextStyle(fontSize: 15),
                   ),
                 ),
-              ))
-        ],
-      ),
-    );
-  }
-}
-
-class InfoCard extends StatelessWidget {
-  const InfoCard({
-    super.key,
-    required this.title,
-    required this.image,
-  });
-
-  final String title;
-  final String image;
-
-  @override
-  Widget build(BuildContext context) {
-    return PhysicalModel(
-      color: Colors.white,
-      shadowColor: Colors.grey.withOpacity(.2),
-      elevation: 4,
-      borderRadius: BorderRadius.circular(15),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 9.0),
-        child: Center(
-            child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Image.asset(
-              image,
-              height: 16,
-              width: 16,
-            ),
-            const SizedBox(
-              width: 5,
-            ),
-            Text(
-              title,
-              style: const TextStyle(height: 1.32),
-            ),
-          ],
-        )),
-      ),
-    );
-  }
-}
-
-class EntityRating extends StatelessWidget {
-  const EntityRating({
-    super.key,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Row(
-          children: [
-            Icon(
-              Icons.star,
-              color: AppColors.primaryVar0,
-              size: 20.0,
-            ),
-            Icon(
-              Icons.star,
-              color: AppColors.primaryVar0,
-              size: 20.0,
-            ),
-            Icon(
-              Icons.star,
-              color: AppColors.primaryVar0,
-              size: 20.0,
-            ),
-            Icon(
-              Icons.star_half_outlined,
-              color: AppColors.primaryVar0,
-              size: 20.0,
-            ),
-            Icon(
-              Icons.star_border,
-              color: AppColors.primaryVar0,
-              size: 20.0,
-            ),
-            const SizedBox(
-              width: 3,
-            ),
-            Text(
-              "4.7/5",
-              style: TextStyle(
-                  color: AppColors.secondaryText,
-                  fontWeight: FontWeight.w400,
-                  height: 1.8,
-                  fontSize: 14),
-            ),
-          ],
-        ),
-        Text(
-          "(25 avis)",
-          style: TextStyle(
-              color: AppColors.secondaryText,
-              fontWeight: FontWeight.w400,
-              height: 1.8,
-              fontSize: 14),
-        ),
-      ],
-    );
-  }
-}
-
-class NextBusItemMarker extends StatelessWidget {
-  const NextBusItemMarker({
-    super.key,
-    required this.busLine,
-    required this.busState,
-    required this.busDest,
-    required this.busCompany,
-    required this.time,
-    required this.hour,
-    required this.isAccessible,
-  });
-
-  final String busLine;
-  final BusState busState;
-  final String busDest;
-  final String busCompany;
-  final String time;
-  final String hour;
-  final bool isAccessible;
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: Colors.white,
-      child: InkWell(
-        onTap: () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            buildCustomSnackBar(
-              context,
-              "Fonctionnalité disponible prochainement 😉",
-              SnackBarType.info,
-              showCloseIcon: false,
-            ),
-          );
-        },
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20),
-          child: Column(
-            children: [
-              const SizedBox(
-                height: 15,
               ),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          BusIconInfo(
-                            lineNumber: busLine,
-                            busState: busState,
-                          ),
-                          // BusMarkerIcon(
-                          //   lineNumber: busLine,
-                          //   state: busState,
-                          //   height: 40,
-                          //   width: 40,
-                          //   fontSize: 8.5,
-                          // ),
-                          const SizedBox(
-                            width: 10,
-                          ),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(busDest),
-                              Row(
-                                children: [
-                                  Text(
-                                    "$busCompany •",
-                                    style: TextStyle(
-                                        color: AppColors.secondaryText,
-                                        fontWeight: FontWeight.w400,
-                                        fontSize: 13),
-                                  ),
-                                  SizedBox(
-                                    width: 35,
-                                    child: Text(
-                                      " $hour",
-                                      maxLines: 1,
-                                      style: TextStyle(
-                                          color: AppColors.secondaryText,
-                                          fontWeight: FontWeight.w400,
-                                          overflow: TextOverflow.ellipsis,
-                                          fontSize: 13),
-                                    ),
-                                  ),
-                                  if (isAccessible) ...[
-                                    Padding(
-                                      padding: const EdgeInsets.only(
-                                          bottom: 2, left: 5, right: 3),
-                                      child: Image.asset(
-                                        "assets/icons/accessibility.png",
-                                        height: 13,
-                                        width: 13,
-                                      ),
-                                    ),
-                                  ]
-                                ],
-                              )
-                            ],
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                  Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      time.length > 2
-                          ? Text(time,
-                              style: const TextStyle(
-                                  fontSize: 33,
-                                  height: 0,
-                                  fontWeight: FontWeight.w400))
-                          : RichText(
-                              textAlign: TextAlign.end,
-                              text: TextSpan(
-                                  text: "$time \n",
-                                  style: const TextStyle(
-                                      fontSize: 33,
-                                      height: 0.8,
-                                      color: Colors.black,
-                                      fontWeight: FontWeight.normal),
-                                  children: [
-                                    TextSpan(
-                                      text: "mins",
-                                      style: TextStyle(
-                                          color: AppColors.secondaryText,
-                                          fontSize: 13),
-                                    ),
-                                  ]),
-                            ),
-                    ],
-                  ),
-                ],
-              ),
-              Divider(
-                height: 18,
-                color: AppColors.secondaryText,
-                thickness: 0.2,
-              )
-            ],
+            ),
           ),
-        ),
-      ),
-    );
-  }
-}
-
-// class Map extends StatelessWidget {
-//   const Map(
-//       {Key? key,
-//       required this.bsKey,
-//       this.foundPlace,
-//       required this.gMapController,
-//       required this.controller,
-//       required this.mapStyle,
-//       required this.setGMapController})
-//       : super(key: key);
-//
-//   final GlobalKey<ExpandableBottomSheetState> bsKey;
-//   final Place? foundPlace;
-//   final GoogleMapController gMapController;
-//   final Completer<GoogleMapController> controller;
-//   final String mapStyle;
-//   final Function(GoogleMapController controller) setGMapController;
-//
-//   @override
-//   Widget build(BuildContext context) {
-//     return
-//   }
-// }
-
-class NearbyUserInfoDisplayer extends StatelessWidget {
-  const NearbyUserInfoDisplayer({
-    super.key,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: AppConstants.screenWidth,
-      child: Column(
-        children: [
-          Text(
-            "Vous êtes à l'ESMT",
-            style: TextStyle(
-                fontSize: 16,
-                color: AppColors.primaryText,
-                fontWeight: FontWeight.w400),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class PlaceInfoDisplayer extends StatelessWidget {
-  const PlaceInfoDisplayer({
-    super.key,
-    required this.sheetPosition,
-  });
-
-  final SheetPositionPair sheetPosition;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (sheetPosition.gSheetPosition >= 0.16) ...[
-            const ImageSwiper(
-              isLikeable: true,
-              images: [
-                "assets/images/esmt_1.png",
-                "assets/images/esmt_2.png",
-                "assets/images/esmt_3.png"
-              ],
-            ),
-            Container(
-              margin: const EdgeInsets.only(top: 10),
-              height: 39,
-              child: Text(
-                "Ecole Supérieure Multinationale Des Télécommunications (ESMT)",
-                style: TextStyle(
-                    color: AppColors.primaryText,
-                    fontWeight: FontWeight.w400,
-                    fontSize: AppConstants.screenWidth >= 342 ? 14 : 13),
+          Expanded(
+            child: Material(
+              color: localFloorLevel == 0 ? Color(0xFFE7E7E7) : Colors.white,
+              borderRadius: BorderRadius.only(
+                bottomRight: Radius.circular(15),
+                bottomLeft: Radius.circular(15),
               ),
-            ),
-            SizedBox(
-              height: AppConstants.screenWidth >= 342 ? 8 : 4,
-            ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Row(
-                  children: [
-                    Text(
-                      "Ecole •",
-                      style: TextStyle(
-                          color: AppColors.secondaryText,
-                          fontWeight: FontWeight.w400,
-                          fontSize: AppConstants.screenWidth >= 342 ? 14 : 13),
-                    ),
-                    Padding(
-                      padding:
-                          const EdgeInsets.only(bottom: 2, left: 5, right: 3),
-                      child: Image.asset(
-                        "assets/icons/bus_grey.png",
-                        height: 14,
-                        width: 14,
-                      ),
-                    ),
-                    Text(
-                      "22 min",
-                      style: TextStyle(
-                          color: AppColors.secondaryText,
-                          fontWeight: FontWeight.w400,
-                          fontSize: AppConstants.screenWidth >= 342 ? 14 : 13),
-                    ),
-                  ],
-                ),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                  decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(15),
-                      border: Border.all(color: AppColors.bootstrapGreen)),
-                  child: Text(
-                    "Ouvert",
-                    style: TextStyle(
-                        color: AppColors.bootstrapGreen,
-                        fontWeight: FontWeight.w400,
-                        fontSize: 13),
-                  ),
-                ),
-              ],
-            ),
-            SizedBox(
-              height: AppConstants.screenWidth >= 342 ? 20 : 8,
-            ),
-            Material(
-              color: AppColors.primaryColor,
-              borderRadius: BorderRadius.circular(17),
               child: InkWell(
-                borderRadius: BorderRadius.circular(17),
-                onTap: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    buildCustomSnackBar(
-                      context,
-                      "Fonctionnalité disponible prochainement 😉",
-                      SnackBarType.info,
-                      showCloseIcon: false,
-                    ),
-                  );
-                },
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        "Itinéraires",
-                        style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w400,
-                            fontSize:
-                                AppConstants.screenWidth >= 342 ? 15 : 14),
-                      ),
-                      const SizedBox(
-                        width: 7,
-                      ),
-                      Image.asset(
-                        "assets/icons/direction.png",
-                        height: 12,
-                        width: 12,
-                      ),
-                    ],
+                borderRadius: BorderRadius.only(
+                  bottomRight: Radius.circular(15),
+                  bottomLeft: Radius.circular(15),
+                ),
+                onTap: () => updateLocalFloorLevel(0),
+                child: Center(
+                  child: Text(
+                    "0",
+                    style: TextStyle(fontSize: 15),
                   ),
                 ),
               ),
-            )
-          ] else ...[
-            SizedBox(
-              // width: AppConstants.screenWidth,
-              height: 0.15 * (AppConstants.screenHeight - 130),
-              // color: Colors.red,
-              child: Row(
-                children: [
-                  Container(
-                    height: 60,
-                    width: 60,
-                    decoration: BoxDecoration(
-                        image: const DecorationImage(
-                          image: AssetImage('assets/images/esmt_1.png'),
-                          fit: BoxFit.cover,
-                        ),
-                        borderRadius: BorderRadius.circular(15)
-                        // color: Colors.blue,
-                        ),
-                  ),
-                  const SizedBox(
-                    width: 12,
-                  ),
-                  Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      FittedBox(
-                        // width: 1.sw - 114,
-                        child: Text(
-                          "École supérieur multination...",
-                          style: TextStyle(
-                              color: AppColors.primaryText,
-                              fontWeight: FontWeight.w400,
-                              fontSize: 14),
-                        ),
-                      ),
-                      const SizedBox(
-                        height: 5,
-                      ),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.start,
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 8, vertical: 3),
-                            decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(15),
-                                border: Border.all(
-                                    color: AppColors.bootstrapGreen)),
-                            child: Text(
-                              "Ouvert",
-                              style: TextStyle(
-                                  color: AppColors.bootstrapGreen,
-                                  fontWeight: FontWeight.w400,
-                                  fontSize: 14),
-                            ),
-                          ),
-                          const SizedBox(
-                            width: 7,
-                          ),
-                          Text(
-                            "Ecole •",
-                            style: TextStyle(
-                                color: AppColors.secondaryText,
-                                fontWeight: FontWeight.w400,
-                                fontSize: 14),
-                          ),
-                          Padding(
-                            padding: const EdgeInsets.only(
-                                bottom: 2, left: 5, right: 3),
-                            child: Image.asset(
-                              "assets/icons/bus_grey.png",
-                              height: 14,
-                              width: 14,
-                            ),
-                          ),
-                          Text(
-                            "22 min",
-                            style: TextStyle(
-                                color: AppColors.secondaryText,
-                                fontWeight: FontWeight.w400,
-                                fontSize: 14),
-                          ),
-                        ],
-                      )
-                    ],
-                  )
-                ],
-              ),
-            )
-          ]
+            ),
+          ),
         ],
       ),
     );
   }
-}
-
-class ImageSwiper extends StatefulWidget {
-  const ImageSwiper({Key? key, required this.isLikeable, required this.images})
-      : super(key: key);
-
-  final bool isLikeable;
-  final List<String> images;
 
   @override
-  State<ImageSwiper> createState() => _ImageSwiperState();
+  void initState() {
+    super.initState();
+    // Initialiser localFloorLevel avec initialFloorLevel
+    localFloorLevel = widget.initialFloorLevel;
+  }
+
+  void updateLocalFloorLevel(int level) {
+    // Mettre à jour localement le floorLevel et appeler updateFloorLevel
+    setState(() {
+      localFloorLevel = level;
+    });
+
+    widget.updateFloorLevel(level);
+  }
 }
 
 class _ImageSwiperState extends State<ImageSwiper> {
   final PageController _controller = PageController();
-
-  @override
-  void dispose() {
-    // TODO: implement dispose
-    super.dispose();
-    _controller.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -7458,141 +7131,453 @@ class _ImageSwiperState extends State<ImageSwiper> {
       ),
     );
   }
+
+  @override
+  void dispose() {
+    // TODO: implement dispose
+    super.dispose();
+    _controller.dispose();
+  }
 }
 
-class BusMarkerIcon extends StatelessWidget {
-  const BusMarkerIcon(
-      {super.key,
-      required this.lineNumber,
-      required this.state,
-      this.height,
-      this.width,
-      this.fontSize});
+class _MapScreenState extends State<MapScreen> {
+  final GlobalKey<ExpandableBottomSheetState> key = GlobalKey();
+  final GlobalKey<MapWState> mapKey = GlobalKey();
+  // Je le déclare ici parce que c'est déjà stateful mais on verra dans le futur
+  // ça fonctionne mais bon on pourra toujours y revenir, perso ça me va.
 
-  final String lineNumber;
-  final BusState state;
-  final double? height;
-  final double? width;
-  final double? fontSize;
+  final PagingController<int, SearchHitEntity> _pagingController =
+      PagingController(firstPageKey: 0);
+  final TextEditingController textEditingController = TextEditingController();
+  late MapBloc mapBloc;
+
+  int floorLevel = 0;
+
+  MainPlace? detailsPage = null;
 
   @override
   Widget build(BuildContext context) {
-    String imagePath = "assets/images/empty_bus.png"; // Valeur par défaut
+    return WillPopScope(
+      onWillPop: () async {
+        if (widget.searchMode != null && mapBloc.state.isSearchModeEnabled) {
+          // Peut-être qu'autre chose qu'un push aurait été plus adapté ?
+          // Navigator.push(
+          //     context,
+          //     PageTransition(
+          //         type: PageTransitionType.fade,
+          //         duration: const Duration(milliseconds: 200),
+          //         child: HomeScreen(rootContext: context,)));
+          //
+          // return false;
+          debugPrint("Popped here !");
 
-    if (state == BusState.CROWDED) {
-      imagePath = "assets/images/crowded_bus.png";
-    } else if (state == BusState.HALFCROWDED) {
-      imagePath = "assets/images/half_crowded_bus.png";
-    } else if (state == BusState.UNKNOWN) {
-      imagePath = "assets/images/unknown_bus.png";
-    }
+          return true;
+        }
 
-    return SizedBox(
-      height: height ?? 82,
-      width: width ?? 78,
-      child: Stack(
-        children: [
-          Image(
-            image: AssetImage(imagePath),
-            width: 82,
-            height: 82,
-          ),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
+        if (widget.searchMode == null && mapBloc.state.isSearchModeEnabled) {
+          mapBloc.add(const UpdateSearchMode(newSearchMode: false));
+
+          return false;
+        }
+
+        return true;
+      },
+      child: AnnotatedRegion<SystemUiOverlayStyle>(
+        value: const SystemUiOverlayStyle(
+          statusBarColor: Colors.transparent,
+          statusBarIconBrightness: Brightness.dark,
+        ),
+        child: BlocProvider(
+          create: (_) {
+            // mapBloc.
+
+            if (widget.searchMode == true) {
+              mapBloc.add(const UpdateSearchMode(newSearchMode: true));
+            }
+            // mapBloc.add(const SetSelectedMapEntity(Place(
+            //   placeName:
+            //       'Ecole supérieure multinationale des télécommunications (ESMT)',
+            //   entityPosition: LatLng(14.700029517700326, -17.451019219831917),
+            // )));
+
+            // mapBloc.add(const SetSelectedMapEntity(Stop(
+            //     entityName: 'Arrêt Dardanelles',
+            //     stopName: 'Arrêt Dardanelles',
+            //     entityPosition: LatLng(14.695223067123997, -17.44946546833327))));
+
+            return mapBloc;
+          },
+          child: Stack(
             children: [
-              Text(
-                lineNumber,
-                style: TextStyle(
-                    fontSize: fontSize ?? 15,
-                    color: AppColors.primaryText,
-                    fontWeight: FontWeight.w400),
+              Scaffold(
+                backgroundColor: Colors.white,
+                resizeToAvoidBottomInset: false,
+                body: SafeArea(
+                  top: false,
+                  child: ExpandableBottomSheet(
+                      key: key,
+                      initialDraggableState: true,
+                      isLazyModeEnabled: true,
+                      onIsExtendedCallback: () => {
+                            if (mapBloc.state.selectedEntity == null &&
+                                mapBloc.state.isSearchModeEnabled == false)
+                              {
+                                mapBloc.add(
+                                    const UpdateSearchMode(newSearchMode: true))
+                              }
+                          },
+                      onIsContractedCallback: () => {
+                            // mapBloc.state.selectedEntity == null
+                            if (mapBloc.state.isSearchModeEnabled == true)
+                              {
+                                mapBloc.add(const UpdateSearchMode(
+                                    newSearchMode: false)),
+                                mapBloc.add(UpdatePrompt(newPrompt: ""))
+                              }
+                          },
+                      animationDurationExtend:
+                          const Duration(milliseconds: 150),
+                      animationDurationContract:
+                          const Duration(milliseconds: 250),
+                      animationCurveExpand: Curves.easeInOut,
+                      animationCurveContract: Curves.easeInOut,
+
+                      // Il faudra prendre en compte ceci pour l'animation des floating button
+                      persistentContentHeight: 0,
+                      initialPos: widget.searchMode == true ? 1.0 : 0.06,
+                      // 0.06
+                      initialMaxExpandableHeight: 1.0,
+                      initialMinExpandableHeight: 0.06,
+                      background: GMap(
+                          key: mapKey,
+                          floorLevel: floorLevel,
+                          isTrafficModeEnabled: widget.trafficMode ?? false),
+
+                      // persistentHeader: const PersistentHeaderContent(),
+
+                      expandableContent: BottomSheetExpandableContent(
+                        bsKey: key,
+                        pagingController: _pagingController,
+                        toggleDetailsPage: (newDetailsPage) {
+                          setState(() {
+                            detailsPage = newDetailsPage;
+                          });
+                        },
+                      ),
+                      lowerLeftFloatingButtons: FloatingButtonsContainer(
+                          isUpper: false,
+                          floatingButton1: MapFloatingButton(
+                            iconUrl: "assets/icons/back_left_icon_black.png",
+                            isUpper: false,
+                            onTap: () {
+                              mapBloc.add(const SetSelectedMapEntity(null));
+                            },
+                          )),
+                      lowerRightFloatingButtons: FloorFloatingButton(
+                          updateFloorLevel: (level) {
+                            setState(() {
+                              floorLevel = level;
+                            });
+
+                            print("Yahallooo, new floor : " +
+                                floorLevel.toString());
+                          },
+                          initialFloorLevel: floorLevel),
+                      upperRightFloatingButtons: FloatingButtonsContainer(
+                        isUpper: true,
+                        floatingButton2: MapFloatingButton(
+                          iconUrl: "assets/icons/map_level.png",
+                          isUpper: true,
+                          onTap: () {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              buildCustomSnackBar(
+                                context,
+                                "Fonctionnalité disponible prochainement 😉",
+                                SnackBarType.info,
+                                showCloseIcon: false,
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                      upperLeftFloatingButtons: FloatingButtonsContainer(
+                        floatingButton2: MapFloatingButton(
+                          iconUrl: "assets/icons/more_fav_white.png",
+                          isUpper: true,
+                          backgroundColor: AppColors.primaryVar0,
+                          onTap: () {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              buildCustomSnackBar(
+                                context,
+                                "Fonctionnalité disponible prochainement 😉",
+                                SnackBarType.info,
+                                showCloseIcon: false,
+                              ),
+                            );
+                          },
+                        ),
+                        floatingButton1: MapFloatingButton(
+                          iconUrl: "assets/icons/map_settings_white.png",
+                          backgroundColor: AppColors.primaryVar0,
+                          isUpper: true,
+                          onTap: () {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              buildCustomSnackBar(
+                                context,
+                                "Fonctionnalité disponible prochainement 😉",
+                                SnackBarType.info,
+                                showCloseIcon: false,
+                              ),
+                            );
+                          },
+                        ),
+                        isUpper: true,
+                        // isUpperButtonActive: mapBloc.state.selectedEntity == null || mapBloc.state.isSearchModeEnabled,
+                        // bsKey: key,
+                      ),
+                      topBar: BlocBuilder<MapBloc, MapState>(
+                          builder: (context, mapState) {
+                        return BsTopBar(
+                          isActive: mapBloc.state.isSearchModeEnabled,
+                          rootContext: context,
+                          textValue: mapBloc.state.userPrompt,
+                          selectedEntityTitle:
+                              mapBloc.state.selectedEntity is MainPlace
+                                  ? (mapBloc.state.selectedEntity as MainPlace)
+                                      .placeName
+                                  : mapBloc.state.selectedEntity?.entityName,
+                          onTap: () {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              buildCustomSnackBar(
+                                context,
+                                "Fonctionnalité disponible prochainement 😉",
+                                SnackBarType.info,
+                                showCloseIcon: false,
+                              ),
+                            );
+                            // mapBloc.add(const UpdateSearchMode(newSearchMode: true));
+                          },
+                          onCancelSearch: () {
+                            // mapBloc.add(const UpdateSearchMode(newSearchMode: false));
+                            if (mapBloc.state.selectedEntity != null) {
+                              mapBloc.add(const SetSelectedMapEntity(null));
+                            } else {
+                              mapBloc.add(const UpdatePrompt(newPrompt: ""));
+                            }
+                            textEditingController.clear();
+                          },
+                          onSubmitValue: (String text) {
+                            mapBloc.add(AddSearchHitToCache(
+                                searchHitEntity:
+                                    mapBloc.state.filteredSearchHits.first));
+                            var searchHitEntity =
+                                mapBloc.state.searchHitsPage?.items.first;
+                            if (searchHitEntity != null) {
+                              if (searchHitEntity.entityType == "place") {
+                                context
+                                    .read<MapBloc>()
+                                    .add(const SetSelectedMapEntity(Place(
+                                      entityName:
+                                          'Ecole supérieure multinationale des télécommunications (ESMT)',
+                                      placeName:
+                                          'Ecole supérieure multinationale des télécommunications (ESMT)',
+                                      entityPosition: LatLng(14.700029517700326,
+                                          -17.451019219831917),
+                                    )));
+                              } else if (searchHitEntity.entityType == "stop") {
+                                context.read<MapBloc>().add(
+                                      const SetSelectedMapEntity(
+                                        Stop(
+                                            entityName: 'Arrêt Dardanelles',
+                                            stopName: 'Arrêt Dardanelles',
+                                            entityPosition: LatLng(
+                                                14.695223067123997,
+                                                -17.44946546833327)),
+                                      ),
+                                    );
+                              } else {
+                                context.read<MapBloc>().add(
+                                      const SetSelectedMapEntity(Bus(
+                                          entityName:
+                                              "Ligne 001 - Dakar Dem Dikk",
+                                          state: BusState.UNKNOWN,
+                                          capacity: 45,
+                                          line: Line(
+                                            arrival: 'LECLERC',
+                                            departure: 'PARCELLES ASSAINIES',
+                                            lineNumber: "001",
+                                            description:
+                                                'Cette ligne couvre la distance PARCELLES ASSAINIES-LECLERC',
+                                            rating: 5,
+                                            fareRange: '200-300',
+                                            onwardShape: [
+                                              LatLng(14.76033717791818,
+                                                  -17.438687495664922),
+                                              LatLng(14.763940762120395,
+                                                  -17.441183406746163),
+                                              LatLng(14.762826227208505,
+                                                  -17.446516269735618),
+                                              LatLng(14.75983177074642,
+                                                  -17.44810450812752),
+                                              LatLng(14.758248455408173,
+                                                  -17.44776497933181),
+                                              LatLng(14.756328841098107,
+                                                  -17.44733680657224),
+                                              LatLng(14.754299800845413,
+                                                  -17.446884226197255),
+                                              LatLng(14.750523231135967,
+                                                  -17.446540219732984),
+                                              LatLng(14.750049793921685,
+                                                  -17.44799082092741),
+                                              LatLng(14.7502938867721,
+                                                  -17.44962752085666),
+                                              LatLng(14.750618183071591,
+                                                  -17.451216308405563),
+                                              LatLng(14.751908674768655,
+                                                  -17.45432092949277),
+                                              LatLng(14.751323779488551,
+                                                  -17.45614723355753),
+                                              LatLng(14.750277612687961,
+                                                  -17.45788510152128),
+                                              LatLng(14.746394954969995,
+                                                  -17.466588512861758),
+                                              LatLng(14.744905821864554,
+                                                  -17.46887636539269),
+                                              LatLng(14.740497732127464,
+                                                  -17.471505759915615),
+                                              LatLng(14.735673214191454,
+                                                  -17.473247964998105),
+                                              LatLng(14.729655629460476,
+                                                  -17.472863237737428),
+                                              LatLng(14.72590576002534,
+                                                  -17.471812771657483),
+                                              LatLng(14.722566078908324,
+                                                  -17.471226477452866),
+                                              LatLng(14.719750523903995,
+                                                  -17.47138906188038),
+                                              LatLng(14.712284520605824,
+                                                  -17.471902590631213),
+                                              LatLng(14.709249652444962,
+                                                  -17.471284811984475),
+                                              LatLng(14.70503495422966,
+                                                  -17.470293948214813),
+                                              LatLng(14.700211986761264,
+                                                  -17.468850235517714),
+                                              LatLng(14.695885291241627,
+                                                  -17.465384372683875),
+                                              LatLng(14.69356583153468,
+                                                  -17.46262004957258),
+                                              LatLng(14.691573627552767,
+                                                  -17.460203620061222),
+                                              LatLng(14.689322117315578,
+                                                  -17.457816311477483),
+                                              LatLng(14.686677185172137,
+                                                  -17.45551296891371),
+                                              LatLng(14.683540150827751,
+                                                  -17.452373935181324),
+                                              LatLng(14.68151197255026,
+                                                  -17.450238695218715),
+                                              LatLng(14.679699854072759,
+                                                  -17.4482861599848),
+                                              LatLng(14.678560024739568,
+                                                  -17.447046170035282),
+                                              LatLng(14.675097340711405,
+                                                  -17.443518609858753),
+                                              LatLng(14.670725088433215,
+                                                  -17.440326509804457),
+                                              LatLng(14.669173822827892,
+                                                  -17.43795000330283),
+                                              LatLng(14.6693667259859,
+                                                  -17.434781353950044),
+                                              LatLng(14.669498559521607,
+                                                  -17.432615841203198),
+                                              LatLng(14.669904854641885,
+                                                  -17.43170395936341),
+                                              LatLng(14.6742458189469,
+                                                  -17.43261082618835),
+                                              LatLng(14.673962216827931,
+                                                  -17.43167132154245),
+                                              LatLng(14.671892986596275,
+                                                  -17.42734131811217),
+                                              LatLng(14.67212311504506,
+                                                  -17.42733760332219),
+                                            ],
+                                            lineId: 1,
+                                          ),
+                                          isAccessible: false,
+                                          entityPosition: LatLng(
+                                              14.67212311504506,
+                                              -17.42733760332219))),
+                                      // Ajoutez d'autres éléments de la liste ici
+                                    );
+                              }
+                            }
+                            // mapBloc.add(const UpdateSearchMode(newSearchMode: true));
+                          },
+                          onBackPressed: onPop,
+                          onTextChanged: (String value) {
+                            mapBloc.add(UpdatePrompt(newPrompt: value));
+                          },
+                          bsKey: key,
+                          textEditingController: textEditingController,
+                        );
+                      })),
+                ),
               ),
+              AnimatedSwitcher(
+                  duration: Duration(milliseconds: 300),
+                  child: detailsPage != null
+                      ? Container(
+                          width: 1.sw,
+                          height: 1.sh,
+                          child: DetailsScreen(
+                              placeDetails: detailsPage!,
+                              closeDetails: () {
+                                setState(() {
+                                  detailsPage = null;
+                                });
+                              }),
+                        )
+                      : null),
             ],
-          )
-        ],
+          ),
+        ),
       ),
     );
   }
-}
-
-class FloatingButtonsContainer extends StatelessWidget {
-  const FloatingButtonsContainer({
-    super.key,
-    this.floatingButton1,
-    this.floatingButton2,
-    required this.isUpper,
-  });
-
-  final bool isUpper;
-  final Widget? floatingButton1;
-  final Widget? floatingButton2;
 
   @override
-  Widget build(BuildContext context) {
-    return Container(
-      constraints: const BoxConstraints(minHeight: 110),
-      child: Column(
-        mainAxisAlignment:
-            isUpper ? MainAxisAlignment.start : MainAxisAlignment.end,
-        children: [
-          if (floatingButton2 != null) ...[
-            floatingButton2!,
-          ],
-          if (floatingButton1 != null) ...[
-            const SizedBox(height: 15),
-            floatingButton1!
-          ]
-        ],
-      ),
-    );
+  void dispose() {
+    // mapBloc.state.gMapController?.dispose();
+    textEditingController.dispose();
+    _pagingController.dispose();
+    mapBloc.close();
+    super.dispose();
   }
-}
-
-class FloatingButtonsContainerReverso extends StatelessWidget {
-  const FloatingButtonsContainerReverso({
-    super.key,
-    this.floatingButton1,
-    this.floatingButton2,
-    required this.bsKey,
-    required this.isUpperButtonActive,
-  });
-
-  // final bool isUpper;
-  final Widget? floatingButton1;
-  final bool isUpperButtonActive;
-  final GlobalKey<ExpandableBottomSheetState> bsKey;
-  final Widget? floatingButton2;
 
   @override
-  Widget build(BuildContext context) {
-    return ValueListenableBuilder<SheetPositionPair>(
-        valueListenable: bsKey.currentState!.sheetPosition,
-        builder: (context, sheetPosition, child) {
-          return SizedBox(
-            height: 110,
-            width: AppConstants.screenWidth,
-            child: Stack(
-              // mainAxisAlignment: isUpper ? MainAxisAlignment.start : MainAxisAlignment.end,
-              children: [
-                if (floatingButton2 != null) ...[
-                  AnimatedPositioned(
-                      duration: const Duration(milliseconds: 100),
-                      left: sheetPosition.gSheetPosition >= 0.50 &&
-                              !isUpperButtonActive
-                          ? -50.0
-                          : 20.0,
-                      child: floatingButton2!)
-                ],
-                if (floatingButton1 != null) ...[
-                  AnimatedPositioned(
-                      duration: const Duration(milliseconds: 100),
-                      top: 55,
-                      left: sheetPosition.gSheetPosition >= 0.50 ? -50.0 : 20.0,
-                      child: floatingButton1!)
-                ]
-              ],
-            ),
-          );
-        });
+  void initState() {
+    // J'essaye d'update à partir d'ici mais je ne suis pas sur de si c'est convenable
+    // on verra.
+    mapBloc = MapBloc();
+    // _pagingController.addPageRequestListener(
+    //         (pageKey) => mapBloc.add(ApplyAlgoliaState(stateUpdater: (state) => state.copyWith(
+    //           page: pageKey,
+    //         )))
+    // );
+    textEditingController.addListener(
+      () {
+        mapBloc.add(UpdatePrompt(newPrompt: textEditingController.text));
+      },
+    );
+    super.initState();
+  }
+
+  onPop() {
+    if (mapBloc.state.selectedEntity != null) {
+      mapBloc.add(SetSelectedMapEntity(null));
+      return;
+    }
+    Navigator.of(context).maybePop();
   }
 }

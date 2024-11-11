@@ -1,16 +1,19 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter/widgets.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:gif/gif.dart';
-import 'dart:math' as math;
-import 'package:lottie/lottie.dart';
 import 'package:page_transition/page_transition.dart';
 import 'package:yeebus_filthy_mvp/main_feature/presentation/new_welcome_screen/widgets/human_message_widget.dart';
 
 import '../../../core/commons/theme/app_colors.dart';
 import '../../../core/commons/utils/custom_elastic_curve.dart';
 import 'main_onboarding_screen.dart';
+
+double degToRad(double deg) {
+  return deg * math.pi / 180;
+}
 
 class NewWelcomeScreen extends StatefulWidget {
   const NewWelcomeScreen({super.key});
@@ -19,48 +22,10 @@ class NewWelcomeScreen extends StatefulWidget {
   State<NewWelcomeScreen> createState() => _NewWelcomeScreenState();
 }
 
-double degToRad(double deg) {
-  return deg * math.pi / 180;
-}
-
 class _NewWelcomeScreenState extends State<NewWelcomeScreen>
     with SingleTickerProviderStateMixin {
   double animationLevel = 0;
   late final GifController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = GifController(vsync: this);
-    debugPrint(
-        "Screen width and height : " + 1.sw.toString() + " " + 1.sh.toString());
-    // _startAnimation();
-  }
-
-  Future<void> _startAnimation() async {
-    await Future.delayed(const Duration(milliseconds: 800));
-
-    setState(() {
-      animationLevel = 1;
-    });
-    await Future.delayed(const Duration(milliseconds: 800));
-
-    setState(() {
-      animationLevel = 2;
-    });
-
-    await Future.delayed(const Duration(milliseconds: 800));
-
-    setState(() {
-      animationLevel = 3;
-    });
-
-    await Future.delayed(const Duration(milliseconds: 800));
-
-    setState(() {
-      animationLevel = 4;
-    });
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -371,5 +336,39 @@ class _NewWelcomeScreenState extends State<NewWelcomeScreen>
         ),
       ),
     );
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = GifController(vsync: this);
+    debugPrint(
+        "Screen width and height : " + 1.sw.toString() + " " + 1.sh.toString());
+    // _startAnimation();
+  }
+
+  Future<void> _startAnimation() async {
+    await Future.delayed(const Duration(milliseconds: 800));
+
+    setState(() {
+      animationLevel = 1;
+    });
+    await Future.delayed(const Duration(milliseconds: 800));
+
+    setState(() {
+      animationLevel = 2;
+    });
+
+    await Future.delayed(const Duration(milliseconds: 800));
+
+    setState(() {
+      animationLevel = 3;
+    });
+
+    await Future.delayed(const Duration(milliseconds: 800));
+
+    setState(() {
+      animationLevel = 4;
+    });
   }
 }

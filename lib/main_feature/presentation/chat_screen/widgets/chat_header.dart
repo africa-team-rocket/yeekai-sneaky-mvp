@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'dart:ui';
 
 import 'package:animated_switcher_plus/animated_switcher_plus.dart';
@@ -37,8 +36,7 @@ class _ChatScreenHeaderState extends State<ChatScreenHeader> {
             blurRadius: 16,
             offset: const Offset(0, 0),
             blurStyle: BlurStyle.outer,
-            color: Colors.grey.withOpacity(.25)
-        )
+            color: Colors.grey.withOpacity(.25))
       ]),
       child: ClipRRect(
         child: BackdropFilter(
@@ -394,7 +392,8 @@ class _ChatScreenHeaderState extends State<ChatScreenHeader> {
                                         SnackBarType.info,
                                         showCloseIcon: false,
                                       ),
-                                    );},
+                                    );
+                                  },
                                   child: SizedBox(
                                     height: 60,
                                     // width: 42,
