@@ -1,21 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:flutter_swipe_action_cell/core/cell.dart';
-import 'package:super_context_menu/super_context_menu.dart';
 
 import '../../../../core/commons/theme/app_colors.dart';
 
 class HumanMessageWidget extends StatelessWidget {
+  final String text;
+
+  final double rotation;
+  final MainAxisAlignment mainAxis;
   const HumanMessageWidget({
     Key? key,
     required this.text,
     required this.rotation,
     required this.mainAxis,
   }) : super(key: key);
-
-  final String text;
-  final double rotation;
-  final MainAxisAlignment mainAxis;
 
   @override
   Widget build(BuildContext context) {
@@ -70,16 +68,16 @@ class HumanMessageWidget extends StatelessWidget {
 }
 
 class PlaceholderMessageWidget extends StatelessWidget {
+  final String text;
+
+  final double rotation;
+  final MainAxisAlignment mainAxis;
   const PlaceholderMessageWidget({
     Key? key,
     required this.text,
     required this.rotation,
     required this.mainAxis,
   }) : super(key: key);
-
-  final String text;
-  final double rotation;
-  final MainAxisAlignment mainAxis;
 
   @override
   Widget build(BuildContext context) {

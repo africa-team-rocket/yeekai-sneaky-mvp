@@ -1,14 +1,13 @@
 // import 'package:algolia_helper_flutter/algolia_helper_flutter.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:yeebus_filthy_mvp/map_feature/domain/model/search_hit_entity.dart';
 // import 'package:yeebus_thesis_app/feature_main/domain/model/search_hit_entity.dart';
 
 class HitsPage {
-  const HitsPage(this.items, this.pageKey, this.nextPageKey);
-
   final List<SearchHitEntity> items;
+
   final int pageKey;
   final int? nextPageKey;
+  const HitsPage(this.items, this.pageKey, this.nextPageKey);
 
   // factory HitsPage.fromResponse(SearchResponse response) {
   //   debugPrint("Voici la hitsPage :");

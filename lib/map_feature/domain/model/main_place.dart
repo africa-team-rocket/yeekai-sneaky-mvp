@@ -2,6 +2,23 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 import 'map_entity.dart';
 
+class Classroom extends MainPlace {
+  const Classroom({
+    required super.placeType,
+    required super.placeName,
+    required super.shortDescription,
+    required super.rating,
+    required super.floor,
+    required super.building,
+    required super.timeDetail,
+    required super.about,
+    required super.isOpen,
+    required super.entityPosition,
+    required super.entityName,
+    required super.photos,
+  });
+}
+
 // Classe représentant les endroits clés du campus (labos, resto, etc.)
 class MainPlace extends MapEntity {
   final String placeName;
@@ -9,27 +26,25 @@ class MainPlace extends MapEntity {
   final String shortDescription;
   final String rating;
   final String floor;
-  final String building;        
-  final String timeDetail;       
-  final String about;            
+  final String building;
+  final String timeDetail;
+  final String about;
   final bool isOpen;
   final List<String> photos;
 
-  const MainPlace({
-    required this.placeType,
-    required this.placeName,
-    required this.shortDescription,
-    required this.rating,
-    required this.floor,
-    required this.building,
-    required this.timeDetail,
-    required this.about,
-    required this.isOpen,
-    required super.entityPosition,
-    required super.entityName,
-    required this.photos
-
-  });
+  const MainPlace(
+      {required this.placeType,
+      required this.placeName,
+      required this.shortDescription,
+      required this.rating,
+      required this.floor,
+      required this.building,
+      required this.timeDetail,
+      required this.about,
+      required this.isOpen,
+      required super.entityPosition,
+      required super.entityName,
+      required this.photos});
 
   MainPlace copyWith({
     String? entityName,
@@ -57,66 +72,6 @@ class MainPlace extends MapEntity {
       entityPosition: entityPosition ?? this.entityPosition,
       entityName: entityName ?? this.entityName,
       photos: photos ?? this.photos,
-    );
-  }
-}
-
-class Restroom extends MainPlace {
-  final String occupancyLevel;
-  final String urinalsAvailable;
-  final String cleanlinessLevel;
-
-  const Restroom({
-    required this.occupancyLevel,
-    required this.urinalsAvailable,
-    required this.cleanlinessLevel,
-    required super.placeName,
-    required super.shortDescription,
-    required super.entityPosition,
-    required super.entityName,
-    required super.rating,
-    required super.floor,
-    required super.building,
-    required super.timeDetail,
-    required super.about,
-    required super.isOpen,
-    required super.photos,
-    required super.placeType,
-  });
-
-  Restroom copyWith({
-    String? occupancyLevel,
-    String? urinalsAvailable,
-    String? cleanlinessLevel,
-    String? placeName,
-    String? shortDescription,
-    LatLng? entityPosition,
-    String? entityName,
-    String? rating,
-    String? floor,
-    String? building,
-    String? timeDetail,
-    String? about,
-    bool? isOpen,
-    List<String>? photos,
-    String? placeType,
-  }) {
-    return Restroom(
-      occupancyLevel: occupancyLevel ?? this.occupancyLevel,
-      urinalsAvailable: urinalsAvailable ?? this.urinalsAvailable,
-      cleanlinessLevel: cleanlinessLevel ?? this.cleanlinessLevel,
-      placeName: placeName ?? this.placeName,
-      shortDescription: shortDescription ?? this.shortDescription,
-      entityPosition: entityPosition ?? this.entityPosition,
-      entityName: entityName ?? this.entityName,
-      rating: rating ?? this.rating,
-      floor: floor ?? this.floor,
-      building: building ?? this.building,
-      timeDetail: timeDetail ?? this.timeDetail,
-      about: about ?? this.about,
-      isOpen: isOpen ?? this.isOpen,
-      photos: photos ?? this.photos,
-      placeType: placeType ?? this.placeType,
     );
   }
 }
@@ -211,19 +166,62 @@ class Responsable {
   });
 }
 
-class Classroom extends MainPlace {
-  const Classroom({
-    required super.placeType,
+class Restroom extends MainPlace {
+  final String occupancyLevel;
+  final String urinalsAvailable;
+  final String cleanlinessLevel;
+
+  const Restroom({
+    required this.occupancyLevel,
+    required this.urinalsAvailable,
+    required this.cleanlinessLevel,
     required super.placeName,
     required super.shortDescription,
+    required super.entityPosition,
+    required super.entityName,
     required super.rating,
     required super.floor,
     required super.building,
     required super.timeDetail,
     required super.about,
     required super.isOpen,
-    required super.entityPosition,
-    required super.entityName,
     required super.photos,
+    required super.placeType,
   });
+
+  Restroom copyWith({
+    String? occupancyLevel,
+    String? urinalsAvailable,
+    String? cleanlinessLevel,
+    String? placeName,
+    String? shortDescription,
+    LatLng? entityPosition,
+    String? entityName,
+    String? rating,
+    String? floor,
+    String? building,
+    String? timeDetail,
+    String? about,
+    bool? isOpen,
+    List<String>? photos,
+    String? placeType,
+  }) {
+    return Restroom(
+      occupancyLevel: occupancyLevel ?? this.occupancyLevel,
+      urinalsAvailable: urinalsAvailable ?? this.urinalsAvailable,
+      cleanlinessLevel: cleanlinessLevel ?? this.cleanlinessLevel,
+      placeName: placeName ?? this.placeName,
+      shortDescription: shortDescription ?? this.shortDescription,
+      entityPosition: entityPosition ?? this.entityPosition,
+      entityName: entityName ?? this.entityName,
+      rating: rating ?? this.rating,
+      floor: floor ?? this.floor,
+      building: building ?? this.building,
+      timeDetail: timeDetail ?? this.timeDetail,
+      about: about ?? this.about,
+      isOpen: isOpen ?? this.isOpen,
+      photos: photos ?? this.photos,
+      placeType: placeType ?? this.placeType,
+    );
+  }
 }

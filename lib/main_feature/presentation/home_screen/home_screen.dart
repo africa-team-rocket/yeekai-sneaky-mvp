@@ -1,18 +1,13 @@
-import 'dart:io';
 import 'dart:math';
 import 'dart:ui';
 
-import 'package:animated_switcher_plus/animated_switcher_plus.dart';
 import 'package:confetti/confetti.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/painting.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter/widgets.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
-import 'package:http/http.dart';
 import 'package:page_transition/page_transition.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:transparent_pointer/transparent_pointer.dart';
@@ -20,13 +15,170 @@ import 'package:yeebus_filthy_mvp/main_feature/presentation/home_screen/widgets/
 
 import '../../../core/commons/theme/app_colors.dart';
 import '../../../core/di/locator.dart';
-import '../../../core/domain/models/chatbot_conversation.dart';
 import '../../../core/presentation/app_global_widgets.dart';
 import '../../../map_feature/presentation/map_screen/map_screen.dart';
 import '../../domain/model/yeeguide.dart';
 import '../catalog_screen/catalog_screen.dart';
 import '../chat_screen/chat_screen.dart';
 import '../profile_screen/profile_screen.dart';
+
+class CompanyChannel extends StatelessWidget {
+  final String companyLogo;
+
+  final String companyName;
+  final String date;
+  final String notification;
+  final String message;
+  final String? image;
+  const CompanyChannel({
+    super.key,
+    required this.companyLogo,
+    required this.companyName,
+    required this.date,
+    required this.notification,
+    required this.message,
+    this.image,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+          // borderRadius: BorderRadius.circular(30),
+          onTap: () {
+            ScaffoldMessenger.of(context).showSnackBar(
+              buildCustomSnackBar(
+                context,
+                "Fonctionnalité disponible prochainement 😉",
+                SnackBarType.info,
+                showCloseIcon: false,
+              ),
+            );
+          },
+          child: Container(
+            padding: EdgeInsets.only(
+                left: 20.0, right: 15.0, top: 10.0, bottom: 10.0),
+            width: 1.sw,
+            // height: 75,
+            // color: Colors.red,
+            child: Column(
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        Image.asset(
+                          companyLogo,
+                          width: 35,
+                          height: 35,
+                        ),
+                        const SizedBox(width: 8),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              companyName,
+                              style: TextStyle(
+                                  fontSize: 13.5,
+                                  fontWeight: FontWeight.w500,
+                                  color: AppColors.primaryText),
+                            ),
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                Text(
+                                  date + (notification != "" ? " ⸱" : ""),
+                                  style: TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: notification == ""
+                                          ? FontWeight.normal
+                                          : FontWeight.w400,
+                                      color: notification == ""
+                                          ? AppColors.secondaryText
+                                          : AppColors.primaryVar0),
+                                ),
+                                const SizedBox(
+                                  width: 5,
+                                ),
+                                if (notification != "") ...[
+                                  Container(
+                                    height: 14,
+                                    width: 14,
+                                    decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        color: AppColors.primaryVar0),
+                                    child: Center(
+                                      child: Text(
+                                        notification,
+                                        style: TextStyle(
+                                            color: Colors.white, fontSize: 10),
+                                      ),
+                                    ),
+                                  )
+                                ]
+                              ],
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                    Icon(
+                      size: 22,
+                      Icons.more_vert,
+                      color: AppColors.primaryText,
+                    )
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  message,
+                  style: TextStyle(
+                    color: AppColors.primaryText,
+                    fontSize: 12.5,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  maxLines: 2,
+                ),
+                if (image != null) ...[
+                  const SizedBox(height: 8),
+                  Container(
+                      width: double.infinity,
+                      height: 300,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(15),
+                        image: DecorationImage(
+                          image: AssetImage(
+                              // Met /assets quand on reviendra sur mobile
+                              // statusImage
+                              image!),
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                      child: Container(
+                        width: double.infinity,
+                        height: double.infinity,
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [
+                              Colors.transparent,
+                              Colors.black.withOpacity(0.30),
+                            ],
+                          ),
+                          borderRadius: BorderRadius.circular(15),
+                        ),
+                      ))
+                ]
+              ],
+            ),
+          )),
+    );
+  }
+}
+
 // /!\ TODO : Je pense que le main_feature ne devrait contenir que la page d'accueil et les éléments intermédiaires
 // en gros le coeur de l'appli, la page de messagerie sera un feature à part, la carte aussi, l'onboarding également, le changement de yeeguide et le profil aussi si tu veux
 
@@ -40,6 +192,91 @@ class CompanyData {
     required this.statusImage,
     required this.statusNumber,
   });
+}
+
+class CompanyStatus extends StatelessWidget {
+  final String companyName;
+
+  final String statusNumber;
+  final String statusImage;
+  const CompanyStatus({
+    super.key,
+    required this.companyName,
+    required this.statusNumber,
+    required this.statusImage,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 100,
+      // height: 150,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(15),
+        image: DecorationImage(
+          image: AssetImage(
+              // Met /assets quand on reviendra sur mobile
+              statusImage
+              // "assets/images/logo_ddd.png"
+              ),
+          fit: BoxFit.cover,
+        ),
+      ),
+      child: Container(
+        width: double.infinity,
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Colors.transparent,
+              Colors.black.withOpacity(0.80),
+            ],
+          ),
+          borderRadius: BorderRadius.circular(15),
+        ),
+        child: Material(
+          borderRadius: BorderRadius.circular(15),
+          color: Colors.transparent,
+          child: InkWell(
+            splashColor: Colors.black.withOpacity(.6),
+            onTap: () {},
+            borderRadius: BorderRadius.circular(15),
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: 7, vertical: 7),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  if (statusNumber != "0") ...[
+                    Container(
+                      height: 16,
+                      width: 16,
+                      decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Colors.black.withOpacity(.3)),
+                      child: Center(
+                        child: Text(
+                          statusNumber,
+                          style: TextStyle(color: Colors.white, fontSize: 10),
+                        ),
+                      ),
+                    ),
+                  ] else ...[
+                    const SizedBox()
+                  ],
+                  Text(
+                    companyName,
+                    style: TextStyle(color: Colors.white, fontSize: 10),
+                  )
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 class HomeScreen extends StatefulWidget {
@@ -136,185 +373,16 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
   final _scrollViewController = ScrollController();
 
-  @override
-  void dispose() {
-
-    _controllerCenterRight.dispose();
-    _controllerCenterLeft.dispose();
-
-    _scrollViewController.dispose();
-    _bsController.dispose();
-    mainTabController.dispose();
-    _scrollViewController.removeListener(_handleScroll);
-    super.dispose();
-  }
-
   // PageStorageBucket _mainBucket = PageStorageBucket();
 
   var tab1Key = PageStorageKey("tab1");
 
-  double getTabBarPosition() {
-    // Obtenez le nombre total d'onglets
-    int tabCount = mainTabController.length;
-
-    // Calculez la position de l'onglet actuel en utilisant l'offset et l'index
-    double position = mainTabController.offset + mainTabController.index;
-
-    // Si la position est négative (on est avant le premier onglet), retournez 0
-    if (position < 0) {
-      return 0;
-    }
-    // Si la position est supérieure au nombre d'onglets - 1 (on est après le dernier onglet), retournez le nombre d'onglets - 1
-    else if (position > tabCount - 1) {
-      return tabCount - 1;
-    }
-    // Sinon, retournez la position telle quelle
-    else {
-      return position;
-    }
-  }
-
   late ConfettiController _controllerCenterRight;
+
   late ConfettiController _controllerCenterLeft;
-
-  Future<void> _startAnimation() async {
-    await Future.delayed(const Duration(milliseconds: 200));
-
-    _controllerCenterLeft.play();
-    _controllerCenterRight.play();
-
-    await Future.delayed(const Duration(milliseconds: 200));
-
-
-    locator.get<SharedPreferences>().setBool("isOldUser", true);
-
-  }
-
-  @override
-  void initState() {
-    super.initState();
-
-
-
-    _controllerCenterRight =
-        ConfettiController(duration: const Duration(milliseconds: 400));
-    _controllerCenterLeft =
-        ConfettiController(duration: const Duration(milliseconds: 400));
-
-    if(locator
-        .get<SharedPreferences>()
-        .getBool("isOldUser") !=
-        true){
-
-      _startAnimation();
-
-    }
-
-
-
-    mainTabController = TabController(
-      vsync: this,
-      initialIndex: 0,
-      length: 2,
-    );
-    // if (_scrollViewController.hasClients) {
-      _scrollViewController.addListener(_handleScroll);
-    // }
-
-    mainTabController.animation!.addListener(() {
-      // Faites quelque chose en fonction de l'onglet actif
-      double value = getTabBarPosition();
-      // print("Offset : ${value}");
-
-      if (tabBarOffset <= 0.1) {
-        // if (_scrollViewController.hasClients) {
-          _scrollViewController.animateTo(0.0,
-              curve: Curves.linear, duration: Duration(microseconds: 1));
-        // }
-      }
-
-      if (tabBarOffset != value) {
-        setState(() {
-          tabBarOffset = value;
-        });
-        if (tabBarOffset < 0.5 && _bsController.value == 1.0) {
-          _bsController.reverse();
-          if (headerPos != 0.0) {
-            setState(() {
-              headerPos = 0.0;
-            });
-          }
-
-          // setState(() {
-          //   isBsUp = true;
-          // });
-        } else if (tabBarOffset > 0.5 && _bsController.value == 0.0) {
-          _bsController.forward();
-        }
-      }
-    });
-  }
 
   double _initialScrollPosition = 0.0;
   ScrollDirection _previousScrollSense = ScrollDirection.reverse;
-
-  void _handleScroll() {
-    final maxScroll = _scrollViewController.position.maxScrollExtent;
-    final currentScroll = _scrollViewController.position.pixels;
-
-    if (_scrollViewController.position.userScrollDirection !=
-        _previousScrollSense) {
-      debugPrint("Current scroll: $currentScroll");
-      setState(() {
-        _initialScrollPosition = currentScroll;
-      });
-    }
-
-    if (_scrollViewController.position.userScrollDirection ==
-        ScrollDirection.reverse) {
-      final scrollDelta = currentScroll - _initialScrollPosition;
-      final scrollRange = 20.0;
-      final tweenRange = Tween<double>(begin: 00.0, end: -55.0);
-
-      setState(() {
-        _previousScrollSense = ScrollDirection.reverse;
-        headerPos =
-            tweenRange.lerp((scrollDelta / scrollRange).clamp(0.0, 1.0));
-      });
-    } else if (_scrollViewController.position.userScrollDirection ==
-        ScrollDirection.forward) {
-      final scrollDelta = currentScroll - _initialScrollPosition;
-      final scrollRange = 30.0;
-      final tweenRange = Tween<double>(begin: 00.0, end: -65.0);
-
-      setState(() {
-        _previousScrollSense = ScrollDirection.forward;
-        headerPos =
-            tweenRange.lerp((scrollDelta / scrollRange).clamp(0.0, 1.0));
-      });
-    }
-
-    // }
-
-    // final scrollDelta = currentScroll - _initialScrollPosition;
-    // final scrollRange = 30.0;
-    //
-    // setState(() {
-    //   _headerHeight = lerpDouble(
-    //     10.0,
-    //     70.0,
-    //     scrollDelta.clamp(0.0, scrollRange) / scrollRange,
-    //   )!;
-    // });
-  }
-
-  void toggleBs() {
-    if (_bsController.value == 1.0) {
-      _bsController.forward();
-    } else {
-      _bsController.reverse();
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -333,7 +401,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             height: 1.sh,
             child: Stack(
               children: [
-
                 Align(
                   alignment: Alignment.bottomCenter,
                   child: SizedBox(
@@ -429,21 +496,22 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                     height: 5,
                                   ),
                                   CompanyChannel(
-                                    companyLogo: "assets/images/logo_infos.png",
-                                    companyName: "Flash-info ESMT",
-                                    date: "il y'a 12 heures",
-                                    notification: "1",
-                                    message:
-                                      "Bonjour à tous, la date limite pour les inscriptions pour la filière LPTI est repoussée jusqu'au 15 Octobre veui..."
-                                  ),
+                                      companyLogo:
+                                          "assets/images/logo_infos.png",
+                                      companyName: "Flash-info ESMT",
+                                      date: "il y'a 12 heures",
+                                      notification: "1",
+                                      message:
+                                          "Bonjour à tous, la date limite pour les inscriptions pour la filière LPTI est repoussée jusqu'au 15 Octobre veui..."),
                                   CompanyChannel(
-                                    companyLogo: "assets/images/logo_opportunities.png",
-                                    companyName: "Opportunités Stage & Emploi",
-                                    date: "il y'a 4 jours",
-                                    notification: "",
-                                    message:
-                                      "STAGE : Une entreprise de la place cherche 3 profils développeurs junior + 1 business analyst pou..."
-                                  ),
+                                      companyLogo:
+                                          "assets/images/logo_opportunities.png",
+                                      companyName:
+                                          "Opportunités Stage & Emploi",
+                                      date: "il y'a 4 jours",
+                                      notification: "",
+                                      message:
+                                          "STAGE : Une entreprise de la place cherche 3 profils développeurs junior + 1 business analyst pou..."),
                                   CompanyChannel(
                                       companyLogo:
                                           "assets/images/logo_market.png",
@@ -1055,7 +1123,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                                         BorderRadius.circular(
                                                             10),
                                                     onTap: () {
-                                                      ScaffoldMessenger.of(context).showSnackBar(
+                                                      ScaffoldMessenger.of(
+                                                              context)
+                                                          .showSnackBar(
                                                         buildCustomSnackBar(
                                                           context,
                                                           "Fonctionnalité disponible prochainement 😉",
@@ -1144,245 +1214,162 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       ),
     );
   }
-}
-
-class CompanyChannel extends StatelessWidget {
-  const CompanyChannel({
-    super.key,
-    required this.companyLogo,
-    required this.companyName,
-    required this.date,
-    required this.notification,
-    required this.message,
-    this.image,
-  });
-
-  final String companyLogo;
-  final String companyName;
-  final String date;
-  final String notification;
-  final String message;
-  final String? image;
 
   @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-          // borderRadius: BorderRadius.circular(30),
-          onTap: () {
-            ScaffoldMessenger.of(context).showSnackBar(
-              buildCustomSnackBar(
-                context,
-                "Fonctionnalité disponible prochainement 😉",
-                SnackBarType.info,
-                showCloseIcon: false,
-              ),
-            );},
-          child: Container(
-            padding: EdgeInsets.only(
-                left: 20.0, right: 15.0, top: 10.0, bottom: 10.0),
-            width: 1.sw,
-            // height: 75,
-            // color: Colors.red,
-            child: Column(
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Row(
-                      children: [
-                        Image.asset(
-                          companyLogo,
-                          width: 35,
-                          height: 35,
-                        ),
-                        const SizedBox(width: 8),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              companyName,
-                              style: TextStyle(
-                                  fontSize: 13.5,
-                                  fontWeight: FontWeight.w500,
-                                  color: AppColors.primaryText),
-                            ),
-                            Row(
-                              crossAxisAlignment: CrossAxisAlignment.center,
-                              children: [
-                                Text(
-                                  date + (notification != "" ? " ⸱" : ""),
-                                  style: TextStyle(
-                                      fontSize: 13,
-                                      fontWeight: notification == ""
-                                          ? FontWeight.normal
-                                          : FontWeight.w400,
-                                      color: notification == ""
-                                          ? AppColors.secondaryText
-                                          : AppColors.primaryVar0),
-                                ),
-                                const SizedBox(
-                                  width: 5,
-                                ),
-                                if (notification != "") ...[
-                                  Container(
-                                    height: 14,
-                                    width: 14,
-                                    decoration: BoxDecoration(
-                                        shape: BoxShape.circle,
-                                        color: AppColors.primaryVar0),
-                                    child: Center(
-                                      child: Text(
-                                        notification,
-                                        style: TextStyle(
-                                            color: Colors.white, fontSize: 10),
-                                      ),
-                                    ),
-                                  )
-                                ]
-                              ],
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                    Icon(
-                      size: 22,
-                      Icons.more_vert,
-                      color: AppColors.primaryText,
-                    )
-                  ],
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  message,
-                  style: TextStyle(
-                    color: AppColors.primaryText,
-                    fontSize: 12.5,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  maxLines: 2,
-                ),
-                if (image != null) ...[
-                  const SizedBox(height: 8),
-                  Container(
-                      width: double.infinity,
-                      height: 300,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(15),
-                        image: DecorationImage(
-                          image: AssetImage(
-                              // Met /assets quand on reviendra sur mobile
-                              // statusImage
-                              image!),
-                          fit: BoxFit.cover,
-                        ),
-                      ),
-                      child: Container(
-                        width: double.infinity,
-                        height: double.infinity,
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.topCenter,
-                            end: Alignment.bottomCenter,
-                            colors: [
-                              Colors.transparent,
-                              Colors.black.withOpacity(0.30),
-                            ],
-                          ),
-                          borderRadius: BorderRadius.circular(15),
-                        ),
-                      ))
-                ]
-              ],
-            ),
-          )),
-    );
+  void dispose() {
+    _controllerCenterRight.dispose();
+    _controllerCenterLeft.dispose();
+
+    _scrollViewController.dispose();
+    _bsController.dispose();
+    mainTabController.dispose();
+    _scrollViewController.removeListener(_handleScroll);
+    super.dispose();
   }
-}
 
-class CompanyStatus extends StatelessWidget {
-  const CompanyStatus({
-    super.key,
-    required this.companyName,
-    required this.statusNumber,
-    required this.statusImage,
-  });
+  double getTabBarPosition() {
+    // Obtenez le nombre total d'onglets
+    int tabCount = mainTabController.length;
 
-  final String companyName;
-  final String statusNumber;
-  final String statusImage;
+    // Calculez la position de l'onglet actuel en utilisant l'offset et l'index
+    double position = mainTabController.offset + mainTabController.index;
+
+    // Si la position est négative (on est avant le premier onglet), retournez 0
+    if (position < 0) {
+      return 0;
+    }
+    // Si la position est supérieure au nombre d'onglets - 1 (on est après le dernier onglet), retournez le nombre d'onglets - 1
+    else if (position > tabCount - 1) {
+      return tabCount - 1;
+    }
+    // Sinon, retournez la position telle quelle
+    else {
+      return position;
+    }
+  }
 
   @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 100,
-      // height: 150,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(15),
-        image: DecorationImage(
-          image: AssetImage(
-              // Met /assets quand on reviendra sur mobile
-              statusImage
-              // "assets/images/logo_ddd.png"
-              ),
-          fit: BoxFit.cover,
-        ),
-      ),
-      child: Container(
-        width: double.infinity,
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Colors.transparent,
-              Colors.black.withOpacity(0.80),
-            ],
-          ),
-          borderRadius: BorderRadius.circular(15),
-        ),
-        child: Material(
-          borderRadius: BorderRadius.circular(15),
-          color: Colors.transparent,
-          child: InkWell(
-            splashColor: Colors.black.withOpacity(.6),
-            onTap: () {},
-            borderRadius: BorderRadius.circular(15),
-            child: Padding(
-              padding: EdgeInsets.symmetric(horizontal: 7, vertical: 7),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  if (statusNumber != "0") ...[
-                    Container(
-                      height: 16,
-                      width: 16,
-                      decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: Colors.black.withOpacity(.3)),
-                      child: Center(
-                        child: Text(
-                          statusNumber,
-                          style: TextStyle(color: Colors.white, fontSize: 10),
-                        ),
-                      ),
-                    ),
-                  ] else ...[
-                    const SizedBox()
-                  ],
-                  Text(
-                    companyName,
-                    style: TextStyle(color: Colors.white, fontSize: 10),
-                  )
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
+  void initState() {
+    super.initState();
+
+    _controllerCenterRight =
+        ConfettiController(duration: const Duration(milliseconds: 400));
+    _controllerCenterLeft =
+        ConfettiController(duration: const Duration(milliseconds: 400));
+
+    if (locator.get<SharedPreferences>().getBool("isOldUser") != true) {
+      _startAnimation();
+    }
+
+    mainTabController = TabController(
+      vsync: this,
+      initialIndex: 0,
+      length: 2,
     );
+    // if (_scrollViewController.hasClients) {
+    _scrollViewController.addListener(_handleScroll);
+    // }
+
+    mainTabController.animation!.addListener(() {
+      // Faites quelque chose en fonction de l'onglet actif
+      double value = getTabBarPosition();
+      // print("Offset : ${value}");
+
+      if (tabBarOffset <= 0.1) {
+        // if (_scrollViewController.hasClients) {
+        _scrollViewController.animateTo(0.0,
+            curve: Curves.linear, duration: Duration(microseconds: 1));
+        // }
+      }
+
+      if (tabBarOffset != value) {
+        setState(() {
+          tabBarOffset = value;
+        });
+        if (tabBarOffset < 0.5 && _bsController.value == 1.0) {
+          _bsController.reverse();
+          if (headerPos != 0.0) {
+            setState(() {
+              headerPos = 0.0;
+            });
+          }
+
+          // setState(() {
+          //   isBsUp = true;
+          // });
+        } else if (tabBarOffset > 0.5 && _bsController.value == 0.0) {
+          _bsController.forward();
+        }
+      }
+    });
+  }
+
+  void toggleBs() {
+    if (_bsController.value == 1.0) {
+      _bsController.forward();
+    } else {
+      _bsController.reverse();
+    }
+  }
+
+  void _handleScroll() {
+    final maxScroll = _scrollViewController.position.maxScrollExtent;
+    final currentScroll = _scrollViewController.position.pixels;
+
+    if (_scrollViewController.position.userScrollDirection !=
+        _previousScrollSense) {
+      debugPrint("Current scroll: $currentScroll");
+      setState(() {
+        _initialScrollPosition = currentScroll;
+      });
+    }
+
+    if (_scrollViewController.position.userScrollDirection ==
+        ScrollDirection.reverse) {
+      final scrollDelta = currentScroll - _initialScrollPosition;
+      final scrollRange = 20.0;
+      final tweenRange = Tween<double>(begin: 00.0, end: -55.0);
+
+      setState(() {
+        _previousScrollSense = ScrollDirection.reverse;
+        headerPos =
+            tweenRange.lerp((scrollDelta / scrollRange).clamp(0.0, 1.0));
+      });
+    } else if (_scrollViewController.position.userScrollDirection ==
+        ScrollDirection.forward) {
+      final scrollDelta = currentScroll - _initialScrollPosition;
+      final scrollRange = 30.0;
+      final tweenRange = Tween<double>(begin: 00.0, end: -65.0);
+
+      setState(() {
+        _previousScrollSense = ScrollDirection.forward;
+        headerPos =
+            tweenRange.lerp((scrollDelta / scrollRange).clamp(0.0, 1.0));
+      });
+    }
+
+    // }
+
+    // final scrollDelta = currentScroll - _initialScrollPosition;
+    // final scrollRange = 30.0;
+    //
+    // setState(() {
+    //   _headerHeight = lerpDouble(
+    //     10.0,
+    //     70.0,
+    //     scrollDelta.clamp(0.0, scrollRange) / scrollRange,
+    //   )!;
+    // });
+  }
+
+  Future<void> _startAnimation() async {
+    await Future.delayed(const Duration(milliseconds: 200));
+
+    _controllerCenterLeft.play();
+    _controllerCenterRight.play();
+
+    await Future.delayed(const Duration(milliseconds: 200));
+
+    locator.get<SharedPreferences>().setBool("isOldUser", true);
   }
 }

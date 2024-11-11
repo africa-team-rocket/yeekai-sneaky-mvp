@@ -1,12 +1,12 @@
-
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
-import '../../../../core/domain/models/user_position.dart';
 import '../../../domain/model/bus_nearby.dart';
 import '../../../domain/model/hits_page.dart';
 import '../../../domain/model/map_entity.dart';
 import '../../../domain/model/search_hit_entity.dart';
 import '../../../domain/model/user_position.dart';
+
+enum FilterValues { stop, routes, places, all }
 
 class MapState {
   // Search section :
@@ -25,23 +25,41 @@ class MapState {
   final List<BusNearby> busesNearby;
   final GoogleMapController? gMapController;
 
-  const MapState({
-    // Search section
-    this.userPrompt = "",
-    this.isSearchModeEnabled = false,
-    this.searchHitsPage,
-    this.searchFilter = FilterValues.all,
-    this.searchLoading = const SearchLoading(),
-    this.searchHistory = const [],
+  const MapState(
+      {
+      // Search section
+      this.userPrompt = "",
+      this.isSearchModeEnabled = false,
+      this.searchHitsPage,
+      this.searchFilter = FilterValues.all,
+      this.searchLoading = const SearchLoading(),
+      this.searchHistory = const [],
+      this.gMapController,
+      this.userCurrentLocation,
+      this.selectedEntity,
+      this.cachedEntity,
+      this.busesNearby = const [],
+      this.markersSet = const {},
+      this.polylinesSet = const {}});
 
-    this.gMapController,
-    this.userCurrentLocation,
-    this.selectedEntity,
-    this.cachedEntity,
-    this.busesNearby = const [],
-    this.markersSet = const {},
-    this.polylinesSet = const {}
-  });
+  List<SearchHitEntity> get filteredSearchHits {
+    // Filtrer la liste en fonction de la valeur de searchFilter
+    if (searchHitsPage == null) {
+      return List.empty();
+    }
+
+    return searchHitsPage!.items.where((item) {
+      if (searchFilter == FilterValues.stop) {
+        return item.entityType == 'stop';
+      } else if (searchFilter == FilterValues.places) {
+        return item.entityType == 'place';
+      } else if (searchFilter == FilterValues.routes) {
+        return item.entityType == 'route';
+      }
+      // Pour FilterValues.all, ne pas filtrer, retourner tous les éléments.
+      return true;
+    }).toList();
+  }
 
   MapState copyWith({
     // Search section :
@@ -51,8 +69,6 @@ class MapState {
     HitsPage? searchHitsPage,
     List<SearchHitEntity>? searchHistory,
     SearchLoading? searchLoading,
-
-
     GoogleMapController? gMapController,
     UserPosition? userCurrentLocation,
     MapEntity? selectedEntity,
@@ -61,7 +77,6 @@ class MapState {
     Set<Marker>? markersSet,
     Set<Polyline>? polylinesSet,
     FilterValues? searchFilter,
-
   }) {
     return MapState(
       // Search mode :
@@ -91,43 +106,16 @@ class MapState {
     bool resetPolylinesSet = false,
   }) {
     return MapState(
-      userCurrentLocation: userCurrentLocation,
-      busesNearby: busesNearby,
-      selectedEntity: resetSelectedEntity ? null : this.selectedEntity,
-      cachedEntity: resetCachedEntity ? null : this.cachedEntity,
-      markersSet: resetMarkersSet ? {} : markersSet,
-      polylinesSet: resetPolylinesSet ? {} : polylinesSet,
-      searchHitsPage: searchHitsPage,
-      searchFilter: searchFilter
-    );
+        userCurrentLocation: userCurrentLocation,
+        busesNearby: busesNearby,
+        selectedEntity: resetSelectedEntity ? null : this.selectedEntity,
+        cachedEntity: resetCachedEntity ? null : this.cachedEntity,
+        markersSet: resetMarkersSet ? {} : markersSet,
+        polylinesSet: resetPolylinesSet ? {} : polylinesSet,
+        searchHitsPage: searchHitsPage,
+        searchFilter: searchFilter);
   }
-
-  List<SearchHitEntity> get filteredSearchHits {
-    // Filtrer la liste en fonction de la valeur de searchFilter
-    if(searchHitsPage == null) {
-      return List.empty();
-    }
-
-    return searchHitsPage!.items.where((item) {
-      if (searchFilter == FilterValues.stop) {
-        return item.entityType == 'stop';
-      } else if (searchFilter == FilterValues.places) {
-        return item.entityType == 'place';
-      } else if (searchFilter == FilterValues.routes) {
-        return item.entityType == 'route';
-      }
-      // Pour FilterValues.all, ne pas filtrer, retourner tous les éléments.
-      return true;
-    }).toList();
-  }
-
-
-
 }
-
-
-
-enum FilterValues { stop, routes, places, all }
 
 class SearchLoading {
   final bool isSuggestionsLoading;

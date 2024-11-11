@@ -1,15 +1,8 @@
-import 'dart:io';
 import 'dart:math';
 
-import 'package:animated_size_and_fade/animated_size_and_fade.dart';
-import 'package:animated_text_kit/animated_text_kit.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter/widgets.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:local_hero/local_hero.dart';
-import 'package:lottie/lottie.dart';
 import 'package:page_transition/page_transition.dart';
 import 'package:yeebus_filthy_mvp/main_feature/presentation/new_welcome_screen/widgets/human_message_widget.dart';
 import 'package:yeebus_filthy_mvp/main_feature/presentation/new_welcome_screen/widgets/intro_message_onboarding.dart';
@@ -38,57 +31,6 @@ class _MainOnboardingScreenState extends State<MainOnboardingScreen> {
     "Je suis nouveau à Dakar, quels sont les moyens de transports les plus adaptés ?",
     "Il arrive quand le bus de la ligne 7 ?"
   ];
-
-  @override
-  void initState() {
-    super.initState();
-    debugPrint(
-        "Screen width and height : " + 1.sw.toString() + " " + 1.sh.toString());
-    _startAnimation();
-  }
-
-  Future<void> _startAnimation() async {
-    await Future.delayed(const Duration(milliseconds: 200));
-
-    setState(() {
-      animationLevel = 0.5;
-    });
-
-    await Future.delayed(const Duration(milliseconds: 500));
-
-    setState(() {
-      animationLevel = 1;
-    });
-    await Future.delayed(const Duration(milliseconds: 800));
-
-    setState(() {
-      animationLevel = 2;
-    });
-
-    await Future.delayed(const Duration(milliseconds: 500));
-
-    _continueAnimation();
-  }
-
-  Future<void> _continueAnimation() async {
-    await Future.delayed(const Duration(milliseconds: 500));
-
-    setState(() {
-      animationLevel = 3;
-    });
-
-    await Future.delayed(const Duration(milliseconds: 1400));
-
-    setState(() {
-      animationLevel = 3.5;
-    });
-
-    // await Future.delayed(const Duration(milliseconds: 1500));
-
-    // setState(() {
-    //   animationLevel = 4;
-    // });
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -699,5 +641,56 @@ class _MainOnboardingScreenState extends State<MainOnboardingScreen> {
         ),
       ),
     );
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    debugPrint(
+        "Screen width and height : " + 1.sw.toString() + " " + 1.sh.toString());
+    _startAnimation();
+  }
+
+  Future<void> _continueAnimation() async {
+    await Future.delayed(const Duration(milliseconds: 500));
+
+    setState(() {
+      animationLevel = 3;
+    });
+
+    await Future.delayed(const Duration(milliseconds: 1400));
+
+    setState(() {
+      animationLevel = 3.5;
+    });
+
+    // await Future.delayed(const Duration(milliseconds: 1500));
+
+    // setState(() {
+    //   animationLevel = 4;
+    // });
+  }
+
+  Future<void> _startAnimation() async {
+    await Future.delayed(const Duration(milliseconds: 200));
+
+    setState(() {
+      animationLevel = 0.5;
+    });
+
+    await Future.delayed(const Duration(milliseconds: 500));
+
+    setState(() {
+      animationLevel = 1;
+    });
+    await Future.delayed(const Duration(milliseconds: 800));
+
+    setState(() {
+      animationLevel = 2;
+    });
+
+    await Future.delayed(const Duration(milliseconds: 500));
+
+    _continueAnimation();
   }
 }

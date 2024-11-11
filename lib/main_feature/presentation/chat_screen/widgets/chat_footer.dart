@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -12,6 +10,12 @@ import '../bloc/chat_event.dart';
 import '../chat_screen.dart';
 
 class ChatScreenFooter extends StatefulWidget {
+  final ChatBloc chatBloc;
+
+  final bool shouldOpenKeyboard;
+  final InitialPrompt? initialPrompt;
+  // On aurait aussi pu écouter l'évènement de l'autre côté mais on va simplement vite, on verra après
+  final ScrollController scrollController;
   const ChatScreenFooter(
       {Key? key,
       required this.chatBloc,
@@ -19,12 +23,6 @@ class ChatScreenFooter extends StatefulWidget {
       required this.shouldOpenKeyboard,
       this.initialPrompt})
       : super(key: key);
-
-  final ChatBloc chatBloc;
-  final bool shouldOpenKeyboard;
-  final InitialPrompt? initialPrompt;
-  // On aurait aussi pu écouter l'évènement de l'autre côté mais on va simplement vite, on verra après
-  final ScrollController scrollController;
 
   @override
   State<ChatScreenFooter> createState() => _ChatScreenFooterState();
@@ -36,53 +34,12 @@ class _ChatScreenFooterState extends State<ChatScreenFooter> {
   FocusNode _focusNode = FocusNode();
 
   @override
-  void initState() {
-    // TODO: implement initState
-    super.initState();
-    if (widget.initialPrompt != null) {
-      if (widget.initialPrompt!.shouldSendInitialPrompt) {
-        Future.delayed(const Duration(milliseconds: 300), () {
-          widget.chatBloc.add(SendMessageByStream(
-              message: widget.initialPrompt!.text,
-              yeeguideId:
-                  locator.get<SharedPreferences>().getString("yeeguide_id") ??
-                      "raruto"));
-          // FocusScope.of(context).unfocus();
-          _chatTextController.text = "";
-          widget.scrollController.animateTo(0.0,
-              duration: const Duration(milliseconds: 200),
-              curve: Curves.easeInOut);
-        });
-      } else {
-        _chatTextController.text = widget.initialPrompt!.text;
-      }
-    }
-    if (widget.shouldOpenKeyboard) {
-      Future.delayed(const Duration(milliseconds: 500), () {
-        _focusNode.requestFocus();
-      });
-    }
-    _chatTextController.addListener(() {
-      setState(() {
-        _chatText = _chatTextController.text;
-      });
-    });
-  }
-
-  @override
-  void dispose() {
-    // TODO: implement dispose
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
     return Material(
       color: Colors.transparent,
       child: Container(
-
-        padding:
-            EdgeInsets.only(top: 15.0, bottom: 15.0 + MediaQuery.of(context).padding.bottom),
+        padding: EdgeInsets.only(
+            top: 15.0, bottom: 15.0 + MediaQuery.of(context).padding.bottom),
         margin: const EdgeInsets.only(top: 0),
         decoration: BoxDecoration(color: Colors.white, boxShadow: [
           BoxShadow(
@@ -261,5 +218,45 @@ class _ChatScreenFooterState extends State<ChatScreenFooter> {
         ),
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    // TODO: implement dispose
+    super.dispose();
+  }
+
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    if (widget.initialPrompt != null) {
+      if (widget.initialPrompt!.shouldSendInitialPrompt) {
+        Future.delayed(const Duration(milliseconds: 300), () {
+          widget.chatBloc.add(SendMessageByStream(
+              message: widget.initialPrompt!.text,
+              yeeguideId:
+                  locator.get<SharedPreferences>().getString("yeeguide_id") ??
+                      "raruto"));
+          // FocusScope.of(context).unfocus();
+          _chatTextController.text = "";
+          widget.scrollController.animateTo(0.0,
+              duration: const Duration(milliseconds: 200),
+              curve: Curves.easeInOut);
+        });
+      } else {
+        _chatTextController.text = widget.initialPrompt!.text;
+      }
+    }
+    if (widget.shouldOpenKeyboard) {
+      Future.delayed(const Duration(milliseconds: 500), () {
+        _focusNode.requestFocus();
+      });
+    }
+    _chatTextController.addListener(() {
+      setState(() {
+        _chatText = _chatTextController.text;
+      });
+    });
   }
 }

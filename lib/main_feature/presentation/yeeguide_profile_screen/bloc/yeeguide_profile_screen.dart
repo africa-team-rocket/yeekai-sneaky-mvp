@@ -1,20 +1,105 @@
 import 'dart:ui';
 
-import 'package:animated_switcher_plus/animated_switcher_plus.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter/widgets.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:local_hero/local_hero.dart';
-import 'package:page_transition/page_transition.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../../core/commons/theme/app_colors.dart';
 import '../../../../core/di/locator.dart';
 import '../../../../core/presentation/app_global_widgets.dart';
 import '../../../domain/model/yeeguide.dart';
+
+class ProfileSection extends StatelessWidget {
+  final String title;
+
+  final String? icon;
+  final bool? isTrueTopOrBottomFalse;
+  final void Function() onTap;
+  const ProfileSection({
+    super.key,
+    required this.title,
+    this.icon,
+    this.isTrueTopOrBottomFalse,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.only(bottom: 1),
+      child: Material(
+        borderRadius: isTrueTopOrBottomFalse != null
+            ? BorderRadius.only(
+                topLeft:
+                    isTrueTopOrBottomFalse! ? Radius.circular(10) : Radius.zero,
+                topRight:
+                    isTrueTopOrBottomFalse! ? Radius.circular(10) : Radius.zero,
+                bottomLeft:
+                    isTrueTopOrBottomFalse! ? Radius.zero : Radius.circular(10),
+                bottomRight:
+                    isTrueTopOrBottomFalse! ? Radius.zero : Radius.circular(10))
+            : BorderRadius.zero,
+
+        // borderRadius: BorderRadius.only(
+        //     topLeft: Radius.circular(10),
+        //     topRight: Radius.circular(10)),
+        color: Colors.white,
+        child: InkWell(
+          borderRadius: isTrueTopOrBottomFalse != null
+              ? BorderRadius.only(
+                  topLeft: isTrueTopOrBottomFalse!
+                      ? Radius.circular(10)
+                      : Radius.zero,
+                  topRight: isTrueTopOrBottomFalse!
+                      ? Radius.circular(10)
+                      : Radius.zero,
+                  bottomLeft: isTrueTopOrBottomFalse!
+                      ? Radius.zero
+                      : Radius.circular(10),
+                  bottomRight: isTrueTopOrBottomFalse!
+                      ? Radius.zero
+                      : Radius.circular(10))
+              : BorderRadius.zero,
+          // borderRadius: BorderRadius.only(
+          //     topLeft: Radius.circular(10),
+          //     topRight: Radius.circular(10)),
+          onTap: onTap,
+          child: Container(
+            width: 1.sw,
+            height: 40,
+            decoration: BoxDecoration(
+                // color: Colors.white,
+                borderRadius: isTrueTopOrBottomFalse != null
+                    ? BorderRadius.only(
+                        topLeft: isTrueTopOrBottomFalse!
+                            ? Radius.circular(10)
+                            : Radius.zero,
+                        topRight: isTrueTopOrBottomFalse!
+                            ? Radius.circular(10)
+                            : Radius.zero,
+                        bottomLeft: isTrueTopOrBottomFalse!
+                            ? Radius.zero
+                            : Radius.circular(10),
+                        bottomRight: isTrueTopOrBottomFalse!
+                            ? Radius.zero
+                            : Radius.circular(10))
+                    : BorderRadius.zero),
+            child: Center(
+                child: Row(
+              children: [
+                const SizedBox(
+                  width: 15,
+                ),
+                Text(title),
+              ],
+            )),
+          ),
+        ),
+      ),
+    );
+  }
+}
 
 class YeeguideProfileScreen extends StatefulWidget {
   const YeeguideProfileScreen({super.key});
@@ -26,35 +111,6 @@ class YeeguideProfileScreen extends StatefulWidget {
 class _YeeguideProfileScreenState extends State<YeeguideProfileScreen> {
   final ScrollController scrollController = ScrollController();
   bool isProfilePicVisible = true;
-
-  @override
-  void initState() {
-    // TODO: implement initState
-    scrollController.addListener(() {
-      debugPrint(
-          "Current scroll:" + scrollController.position.pixels.toString());
-      if (scrollController.position.pixels > 295 && isProfilePicVisible) {
-        setState(() {
-          isProfilePicVisible = false;
-        });
-      } else if (scrollController.position.pixels < 295 &&
-          !isProfilePicVisible) {
-        setState(() {
-          isProfilePicVisible = true;
-        });
-      }
-    });
-
-    super.initState();
-  }
-
-  @override
-  void dispose() {
-    // TODO: implement dispose
-    scrollController.dispose();
-    scrollController.removeListener(() {});
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext initialContext) {
@@ -73,7 +129,10 @@ class _YeeguideProfileScreenState extends State<YeeguideProfileScreen> {
                     SingleChildScrollView(
                       controller: scrollController,
                       child: Padding(
-                        padding: EdgeInsets.only(left: 20.0, right: 20.0, bottom: 30 + MediaQuery.of(context).padding.bottom),
+                        padding: EdgeInsets.only(
+                            left: 20.0,
+                            right: 20.0,
+                            bottom: 30 + MediaQuery.of(context).padding.bottom),
                         child: Column(
                           children: [
                             SizedBox(
@@ -123,7 +182,6 @@ class _YeeguideProfileScreenState extends State<YeeguideProfileScreen> {
                                               fontSize: 22,
                                               fontWeight: FontWeight.w500),
                                         ),
-
                                         Text(
                                           Yeeguide.getById(locator
                                                       .get<SharedPreferences>()
@@ -152,15 +210,17 @@ class _YeeguideProfileScreenState extends State<YeeguideProfileScreen> {
                                   borderRadius: BorderRadius.circular(15),
                                   child: InkWell(
                                     borderRadius: BorderRadius.circular(15),
-                                    onTap: () { 
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              buildCustomSnackBar(
-                                context,
-                                "Fonctionnalité disponible prochainement 😉",
-                                SnackBarType.info,
-                                showCloseIcon: false,
-                              ),
-                            );},
+                                    onTap: () {
+                                      ScaffoldMessenger.of(context)
+                                          .showSnackBar(
+                                        buildCustomSnackBar(
+                                          context,
+                                          "Fonctionnalité disponible prochainement 😉",
+                                          SnackBarType.info,
+                                          showCloseIcon: false,
+                                        ),
+                                      );
+                                    },
                                     child: Container(
                                       height: 64,
                                       decoration: BoxDecoration(
@@ -190,15 +250,17 @@ class _YeeguideProfileScreenState extends State<YeeguideProfileScreen> {
                                   borderRadius: BorderRadius.circular(15),
                                   child: InkWell(
                                     borderRadius: BorderRadius.circular(15),
-                                    onTap: () { 
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              buildCustomSnackBar(
-                                context,
-                                "Fonctionnalité disponible prochainement 😉",
-                                SnackBarType.info,
-                                showCloseIcon: false,
-                              ),
-                            );},
+                                    onTap: () {
+                                      ScaffoldMessenger.of(context)
+                                          .showSnackBar(
+                                        buildCustomSnackBar(
+                                          context,
+                                          "Fonctionnalité disponible prochainement 😉",
+                                          SnackBarType.info,
+                                          showCloseIcon: false,
+                                        ),
+                                      );
+                                    },
                                     child: Container(
                                       height: 64,
                                       decoration: BoxDecoration(
@@ -242,76 +304,82 @@ class _YeeguideProfileScreenState extends State<YeeguideProfileScreen> {
                                 ProfileSection(
                                   title: "Gestion du focus",
                                   isTrueTopOrBottomFalse: true,
-                                  onTap: () { 
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              buildCustomSnackBar(
-                                context,
-                                "Fonctionnalité disponible prochainement 😉",
-                                SnackBarType.info,
-                                showCloseIcon: false,
-                              ),
-                            );},
+                                  onTap: () {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      buildCustomSnackBar(
+                                        context,
+                                        "Fonctionnalité disponible prochainement 😉",
+                                        SnackBarType.info,
+                                        showCloseIcon: false,
+                                      ),
+                                    );
+                                  },
                                 ),
                                 ProfileSection(
                                   title: "Nouvelle conversation",
-                                  onTap: () { 
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              buildCustomSnackBar(
-                                context,
-                                "Fonctionnalité disponible prochainement 😉",
-                                SnackBarType.info,
-                                showCloseIcon: false,
-                              ),
-                            );},
+                                  onTap: () {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      buildCustomSnackBar(
+                                        context,
+                                        "Fonctionnalité disponible prochainement 😉",
+                                        SnackBarType.info,
+                                        showCloseIcon: false,
+                                      ),
+                                    );
+                                  },
                                 ),
                                 ProfileSection(
                                   title: "Historique de conversation",
-                                  onTap: () { 
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              buildCustomSnackBar(
-                                context,
-                                "Fonctionnalité disponible prochainement 😉",
-                                SnackBarType.info,
-                                showCloseIcon: false,
-                              ),
-                            );},
+                                  onTap: () {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      buildCustomSnackBar(
+                                        context,
+                                        "Fonctionnalité disponible prochainement 😉",
+                                        SnackBarType.info,
+                                        showCloseIcon: false,
+                                      ),
+                                    );
+                                  },
                                 ),
                                 ProfileSection(
                                   title: "Supprimer",
-                                  onTap: () { 
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              buildCustomSnackBar(
-                                context,
-                                "Fonctionnalité disponible prochainement 😉",
-                                SnackBarType.info,
-                                showCloseIcon: false,
-                              ),
-                            );},
+                                  onTap: () {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      buildCustomSnackBar(
+                                        context,
+                                        "Fonctionnalité disponible prochainement 😉",
+                                        SnackBarType.info,
+                                        showCloseIcon: false,
+                                      ),
+                                    );
+                                  },
                                 ),
                                 ProfileSection(
                                   title: "Renommer",
-                                  onTap: () { 
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              buildCustomSnackBar(
-                                context,
-                                "Fonctionnalité disponible prochainement 😉",
-                                SnackBarType.info,
-                                showCloseIcon: false,
-                              ),
-                            );},
+                                  onTap: () {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      buildCustomSnackBar(
+                                        context,
+                                        "Fonctionnalité disponible prochainement 😉",
+                                        SnackBarType.info,
+                                        showCloseIcon: false,
+                                      ),
+                                    );
+                                  },
                                 ),
                                 ProfileSection(
                                   title: "Souvenirs épinglés",
                                   isTrueTopOrBottomFalse: false,
-                                  onTap: () { 
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              buildCustomSnackBar(
-                                context,
-                                "Fonctionnalité disponible prochainement 😉",
-                                SnackBarType.info,
-                                showCloseIcon: false,
-                              ),
-                            );},
+                                  onTap: () {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      buildCustomSnackBar(
+                                        context,
+                                        "Fonctionnalité disponible prochainement 😉",
+                                        SnackBarType.info,
+                                        showCloseIcon: false,
+                                      ),
+                                    );
+                                  },
                                 ),
                               ],
                             ),
@@ -336,52 +404,56 @@ class _YeeguideProfileScreenState extends State<YeeguideProfileScreen> {
                                 ProfileSection(
                                   title: "Réponse en live",
                                   isTrueTopOrBottomFalse: true,
-                                  onTap: () { 
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              buildCustomSnackBar(
-                                context,
-                                "Fonctionnalité disponible prochainement 😉",
-                                SnackBarType.info,
-                                showCloseIcon: false,
-                              ),
-                            );},
+                                  onTap: () {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      buildCustomSnackBar(
+                                        context,
+                                        "Fonctionnalité disponible prochainement 😉",
+                                        SnackBarType.info,
+                                        showCloseIcon: false,
+                                      ),
+                                    );
+                                  },
                                 ),
                                 ProfileSection(
                                   title: "Instructions personnalisées",
-                                  onTap: () { 
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              buildCustomSnackBar(
-                                context,
-                                "Fonctionnalité disponible prochainement 😉",
-                                SnackBarType.info,
-                                showCloseIcon: false,
-                              ),
-                            );},
+                                  onTap: () {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      buildCustomSnackBar(
+                                        context,
+                                        "Fonctionnalité disponible prochainement 😉",
+                                        SnackBarType.info,
+                                        showCloseIcon: false,
+                                      ),
+                                    );
+                                  },
                                 ),
                                 ProfileSection(
                                   title: "Changer de yeeguide",
-                                  onTap: () { 
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              buildCustomSnackBar(
-                                context,
-                                "Fonctionnalité disponible prochainement 😉",
-                                SnackBarType.info,
-                                showCloseIcon: false,
-                              ),
-                            );},
+                                  onTap: () {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      buildCustomSnackBar(
+                                        context,
+                                        "Fonctionnalité disponible prochainement 😉",
+                                        SnackBarType.info,
+                                        showCloseIcon: false,
+                                      ),
+                                    );
+                                  },
                                 ),
                                 ProfileSection(
                                   title: "Langue",
                                   isTrueTopOrBottomFalse: false,
-                                  onTap: () { 
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              buildCustomSnackBar(
-                                context,
-                                "Fonctionnalité disponible prochainement 😉",
-                                SnackBarType.info,
-                                showCloseIcon: false,
-                              ),
-                            );},
+                                  onTap: () {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      buildCustomSnackBar(
+                                        context,
+                                        "Fonctionnalité disponible prochainement 😉",
+                                        SnackBarType.info,
+                                        showCloseIcon: false,
+                                      ),
+                                    );
+                                  },
                                 ),
                               ],
                             ),
@@ -406,28 +478,30 @@ class _YeeguideProfileScreenState extends State<YeeguideProfileScreen> {
                                 ProfileSection(
                                   title: "Appel",
                                   isTrueTopOrBottomFalse: true,
-                                  onTap: () { 
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              buildCustomSnackBar(
-                                context,
-                                "Fonctionnalité disponible prochainement 😉",
-                                SnackBarType.info,
-                                showCloseIcon: false,
-                              ),
-                            );},
+                                  onTap: () {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      buildCustomSnackBar(
+                                        context,
+                                        "Fonctionnalité disponible prochainement 😉",
+                                        SnackBarType.info,
+                                        showCloseIcon: false,
+                                      ),
+                                    );
+                                  },
                                 ),
                                 ProfileSection(
                                   title: "Paramètres vocaux",
                                   isTrueTopOrBottomFalse: false,
-                                  onTap: () { 
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              buildCustomSnackBar(
-                                context,
-                                "Fonctionnalité disponible prochainement 😉",
-                                SnackBarType.info,
-                                showCloseIcon: false,
-                              ),
-                            );},
+                                  onTap: () {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      buildCustomSnackBar(
+                                        context,
+                                        "Fonctionnalité disponible prochainement 😉",
+                                        SnackBarType.info,
+                                        showCloseIcon: false,
+                                      ),
+                                    );
+                                  },
                                 ),
                               ],
                             ),
@@ -452,28 +526,30 @@ class _YeeguideProfileScreenState extends State<YeeguideProfileScreen> {
                                 ProfileSection(
                                   title: "Signaler un problème",
                                   isTrueTopOrBottomFalse: true,
-                                  onTap: () { 
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              buildCustomSnackBar(
-                                context,
-                                "Fonctionnalité disponible prochainement 😉",
-                                SnackBarType.info,
-                                showCloseIcon: false,
-                              ),
-                            );},
+                                  onTap: () {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      buildCustomSnackBar(
+                                        context,
+                                        "Fonctionnalité disponible prochainement 😉",
+                                        SnackBarType.info,
+                                        showCloseIcon: false,
+                                      ),
+                                    );
+                                  },
                                 ),
                                 ProfileSection(
                                   title: "Partager la discussion",
                                   isTrueTopOrBottomFalse: false,
-                                  onTap: () { 
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              buildCustomSnackBar(
-                                context,
-                                "Fonctionnalité disponible prochainement 😉",
-                                SnackBarType.info,
-                                showCloseIcon: false,
-                              ),
-                            );},
+                                  onTap: () {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      buildCustomSnackBar(
+                                        context,
+                                        "Fonctionnalité disponible prochainement 😉",
+                                        SnackBarType.info,
+                                        showCloseIcon: false,
+                                      ),
+                                    );
+                                  },
                                 ),
                               ],
                             ),
@@ -498,40 +574,43 @@ class _YeeguideProfileScreenState extends State<YeeguideProfileScreen> {
                                 ProfileSection(
                                   title: "Alertes & notifications",
                                   isTrueTopOrBottomFalse: true,
-                                  onTap: () { 
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              buildCustomSnackBar(
-                                context,
-                                "Fonctionnalité disponible prochainement 😉",
-                                SnackBarType.info,
-                                showCloseIcon: false,
-                              ),
-                            );},
+                                  onTap: () {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      buildCustomSnackBar(
+                                        context,
+                                        "Fonctionnalité disponible prochainement 😉",
+                                        SnackBarType.info,
+                                        showCloseIcon: false,
+                                      ),
+                                    );
+                                  },
                                 ),
                                 ProfileSection(
                                   title: "Publicité",
-                                  onTap: () { 
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              buildCustomSnackBar(
-                                context,
-                                "Fonctionnalité disponible prochainement 😉",
-                                SnackBarType.info,
-                                showCloseIcon: false,
-                              ),
-                            );},
+                                  onTap: () {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      buildCustomSnackBar(
+                                        context,
+                                        "Fonctionnalité disponible prochainement 😉",
+                                        SnackBarType.info,
+                                        showCloseIcon: false,
+                                      ),
+                                    );
+                                  },
                                 ),
                                 ProfileSection(
                                   title: "Passer à Yeebus+",
                                   isTrueTopOrBottomFalse: false,
-                                  onTap: () { 
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              buildCustomSnackBar(
-                                context,
-                                "Fonctionnalité disponible prochainement 😉",
-                                SnackBarType.info,
-                                showCloseIcon: false,
-                              ),
-                            );},
+                                  onTap: () {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      buildCustomSnackBar(
+                                        context,
+                                        "Fonctionnalité disponible prochainement 😉",
+                                        SnackBarType.info,
+                                        showCloseIcon: false,
+                                      ),
+                                    );
+                                  },
                                 ),
                               ],
                             ),
@@ -561,7 +640,9 @@ class _YeeguideProfileScreenState extends State<YeeguideProfileScreen> {
                           child: Container(
                               // padding: EdgeInsets.symmetric(horizontal: 20.0),
                               padding: EdgeInsets.only(
-                                  top: MediaQuery.of(context).padding.top, left: 5.0, right: 10.0),
+                                  top: MediaQuery.of(context).padding.top,
+                                  left: 5.0,
+                                  right: 10.0),
                               width: 1.sw,
                               height: 20,
                               decoration: BoxDecoration(
@@ -669,15 +750,17 @@ class _YeeguideProfileScreenState extends State<YeeguideProfileScreen> {
                                       color: Colors.transparent,
                                       child: InkWell(
                                         borderRadius: BorderRadius.circular(30),
-                                        onTap: () { 
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              buildCustomSnackBar(
-                                context,
-                                "Fonctionnalité disponible prochainement 😉",
-                                SnackBarType.info,
-                                showCloseIcon: false,
-                              ),
-                            );},
+                                        onTap: () {
+                                          ScaffoldMessenger.of(context)
+                                              .showSnackBar(
+                                            buildCustomSnackBar(
+                                              context,
+                                              "Fonctionnalité disponible prochainement 😉",
+                                              SnackBarType.info,
+                                              showCloseIcon: false,
+                                            ),
+                                          );
+                                        },
                                         child: SizedBox(
                                           height: 60,
                                           width: 42,
@@ -700,95 +783,33 @@ class _YeeguideProfileScreenState extends State<YeeguideProfileScreen> {
                   ],
                 ))));
   }
-}
-
-class ProfileSection extends StatelessWidget {
-  const ProfileSection({
-    super.key,
-    required this.title,
-    this.icon,
-    this.isTrueTopOrBottomFalse,
-    required this.onTap,
-  });
-
-  final String title;
-  final String? icon;
-  final bool? isTrueTopOrBottomFalse;
-  final void Function() onTap;
 
   @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.only(bottom: 1),
-      child: Material(
-        borderRadius: isTrueTopOrBottomFalse != null
-            ? BorderRadius.only(
-                topLeft:
-                    isTrueTopOrBottomFalse! ? Radius.circular(10) : Radius.zero,
-                topRight:
-                    isTrueTopOrBottomFalse! ? Radius.circular(10) : Radius.zero,
-                bottomLeft:
-                    isTrueTopOrBottomFalse! ? Radius.zero : Radius.circular(10),
-                bottomRight:
-                    isTrueTopOrBottomFalse! ? Radius.zero : Radius.circular(10))
-            : BorderRadius.zero,
+  void dispose() {
+    // TODO: implement dispose
+    scrollController.dispose();
+    scrollController.removeListener(() {});
+    super.dispose();
+  }
 
-        // borderRadius: BorderRadius.only(
-        //     topLeft: Radius.circular(10),
-        //     topRight: Radius.circular(10)),
-        color: Colors.white,
-        child: InkWell(
-          borderRadius: isTrueTopOrBottomFalse != null
-              ? BorderRadius.only(
-                  topLeft: isTrueTopOrBottomFalse!
-                      ? Radius.circular(10)
-                      : Radius.zero,
-                  topRight: isTrueTopOrBottomFalse!
-                      ? Radius.circular(10)
-                      : Radius.zero,
-                  bottomLeft: isTrueTopOrBottomFalse!
-                      ? Radius.zero
-                      : Radius.circular(10),
-                  bottomRight: isTrueTopOrBottomFalse!
-                      ? Radius.zero
-                      : Radius.circular(10))
-              : BorderRadius.zero,
-          // borderRadius: BorderRadius.only(
-          //     topLeft: Radius.circular(10),
-          //     topRight: Radius.circular(10)),
-          onTap: onTap,
-          child: Container(
-            width: 1.sw,
-            height: 40,
-            decoration: BoxDecoration(
-                // color: Colors.white,
-                borderRadius: isTrueTopOrBottomFalse != null
-                    ? BorderRadius.only(
-                        topLeft: isTrueTopOrBottomFalse!
-                            ? Radius.circular(10)
-                            : Radius.zero,
-                        topRight: isTrueTopOrBottomFalse!
-                            ? Radius.circular(10)
-                            : Radius.zero,
-                        bottomLeft: isTrueTopOrBottomFalse!
-                            ? Radius.zero
-                            : Radius.circular(10),
-                        bottomRight: isTrueTopOrBottomFalse!
-                            ? Radius.zero
-                            : Radius.circular(10))
-                    : BorderRadius.zero),
-            child: Center(
-                child: Row(
-              children: [
-                const SizedBox(
-                  width: 15,
-                ),
-                Text(title),
-              ],
-            )),
-          ),
-        ),
-      ),
-    );
+  @override
+  void initState() {
+    // TODO: implement initState
+    scrollController.addListener(() {
+      debugPrint(
+          "Current scroll:" + scrollController.position.pixels.toString());
+      if (scrollController.position.pixels > 295 && isProfilePicVisible) {
+        setState(() {
+          isProfilePicVisible = false;
+        });
+      } else if (scrollController.position.pixels < 295 &&
+          !isProfilePicVisible) {
+        setState(() {
+          isProfilePicVisible = true;
+        });
+      }
+    });
+
+    super.initState();
   }
 }

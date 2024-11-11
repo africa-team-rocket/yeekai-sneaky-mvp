@@ -2,9 +2,6 @@ import 'package:flutter/material.dart';
 // ignore: unnecessary_import
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
-
-import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:infinite_scroll_pagination/infinite_scroll_pagination.dart';
 
 import '../../../core/commons/theme/app_colors.dart';
@@ -12,18 +9,242 @@ import '../../../core/commons/utils/app_constants.dart';
 import '../../../core/commons/utils/raw_explandable_bottom_sheet.dart';
 import '../../../core/commons/utils/toolbox.dart';
 import '../../../core/presentation/root_app_bar/root_app_bar.dart';
-import '../../../map_feature/domain/model/bus.dart';
-import '../../domain/model/line.dart';
 import '../../../map_feature/domain/model/map_entity.dart';
-import '../../domain/model/place.dart';
-import '../../domain/model/product.dart';
 import '../../domain/model/search_hit_entity.dart';
-import '../../domain/model/stop.dart';
 import '../map_screen/bloc/map_bloc.dart';
 import '../map_screen/bloc/map_state.dart';
-import '../map_screen/map_screen.dart';
 import 'bloc/search_bloc.dart';
 import 'bloc/search_state.dart';
+
+class EntityHistory extends StatelessWidget {
+  final String? entityType;
+
+  final String entityName;
+  final String? entityInfo;
+  const EntityHistory({
+    super.key,
+    this.entityType,
+    required this.entityName,
+    this.entityInfo,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: () {},
+      child: Container(
+        margin: const EdgeInsets.only(top: 20, left: 20.0, right: 20.0),
+        height: 53,
+        decoration: BoxDecoration(
+          border: Border(
+            bottom: BorderSide(
+              color: AppColors.secondaryText
+                  .withOpacity(.5), // Couleur de la bordure inférieure
+              width: 0.5, // Épaisseur de la bordure inférieure
+            ),
+          ),
+        ),
+        // color: Colors.red,
+        child: entityType != null && entityInfo != null
+            ? Padding(
+                padding: const EdgeInsets.only(bottom: 10),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Image.asset(
+                      entityType == "place"
+                          ? "assets/icons/location_search.png"
+                          : entityType == "stop"
+                              ? "assets/icons/stop_search.png"
+                              : "assets/icons/bus_search.png",
+                      height: 30,
+                      width: 30,
+                    ),
+                    const SizedBox(
+                      width: 20,
+                    ),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          entityName,
+                          style: TextStyle(
+                              fontWeight: FontWeight.w400,
+                              color: AppColors.primaryText.withOpacity(0.8)),
+                        ),
+                        Text(
+                          entityInfo!,
+                          style: TextStyle(
+                              fontWeight: FontWeight.w400,
+                              color: AppColors.secondaryText),
+                        ),
+                      ],
+                    )
+                  ],
+                ),
+              )
+            : Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Image.asset(
+                    "assets/icons/notfound_search.png",
+                    height: 30,
+                    width: 30,
+                  ),
+                  const SizedBox(
+                    width: 24,
+                  ),
+                  SizedBox(
+                    height: 32,
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          entityName,
+                          style: TextStyle(
+                              fontWeight: FontWeight.w400,
+                              color: AppColors.secondaryText.withOpacity(0.8)),
+                        ),
+                        // Text(
+                        //   "0 résultats",
+                        //   style: TextStyle(
+                        //       fontWeight: FontWeight.w400,
+                        //       color: AppColors.bootstrapRed.withOpacity(.5)
+                        //   ),
+                        // ),
+                      ],
+                    ),
+                  )
+                ],
+              ),
+      ),
+    );
+  }
+}
+
+class EntitySuggestion extends StatelessWidget {
+  final SearchHitEntity entitySuggestion;
+
+  // final MapEntity mapEntity;
+  final Function(
+          MapEntity? suggestedMapEntity, SearchHitEntity searchHitEntity)?
+      onTapSuggestion;
+  const EntitySuggestion({
+    super.key,
+    // required this.entityType,
+    // required this.entityName,
+    // required this.entityAddress,
+    // required this.mapEntity,
+    required this.onTapSuggestion,
+    required this.entitySuggestion,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: () {
+        FocusScope.of(context).unfocus();
+        Future.delayed(const Duration(milliseconds: 390), () {
+          onTapSuggestion!(null, entitySuggestion);
+          // onTapSuggestion!(mapEntity);
+        });
+      },
+      child: Container(
+        margin: const EdgeInsets.only(top: 20, left: 20.0, right: 20.0),
+        height: 53,
+        decoration: BoxDecoration(
+          border: Border(
+            bottom: BorderSide(
+              color: AppColors.secondaryText
+                  .withOpacity(.5), // Couleur de la bordure inférieure
+              width: 0.5, // Épaisseur de la bordure inférieure
+            ),
+          ),
+        ),
+        // color: Colors.red,
+        child: Padding(
+          padding: const EdgeInsets.only(bottom: 10),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Image.asset(
+                entitySuggestion.entityType == "place"
+                    ? "assets/icons/location_search.png"
+                    : entitySuggestion.entityType == "stop"
+                        ? "assets/icons/stop_search.png"
+                        : "assets/icons/bus_search.png",
+                height: 30,
+                width: 30,
+              ),
+              const SizedBox(
+                width: 20,
+              ),
+              Expanded(
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        SizedBox(
+                          width: AppConstants.screenWidth * .6,
+                          child: Text(
+                            entitySuggestion.entityType == "place"
+                                ? (entitySuggestion as SearchHitPlace).title
+                                : entitySuggestion.entityType == "stop"
+                                    ? (entitySuggestion as SearchHitStop)
+                                        .stopName
+                                    : (entitySuggestion as SearchHitRoute)
+                                            .routeShortName +
+                                        " - " +
+                                        ((entitySuggestion as SearchHitRoute)
+                                                    .agencyId ==
+                                                "DDD"
+                                            ? "Dakar Dem Dikk"
+                                            : "Gie AFTU"),
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 1,
+                            style: TextStyle(
+                                fontWeight: FontWeight.w400,
+                                color: AppColors.primaryText.withOpacity(0.8)),
+                          ),
+                        ),
+                        SizedBox(
+                          width: AppConstants.screenWidth * .6,
+                          child: Text(
+                            entitySuggestion.entityType == "place"
+                                ? (entitySuggestion as SearchHitPlace).subTitle
+                                : entitySuggestion.entityType == "stop"
+                                    ? "Dakar"
+                                    : Toolbox.capitalizeWords(
+                                        (entitySuggestion as SearchHitRoute)
+                                            .routeLongName),
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 1,
+                            style: TextStyle(
+                                fontWeight: FontWeight.w400,
+                                color: AppColors.secondaryText),
+                          ),
+                        ),
+                      ],
+                    ),
+                    Image.asset(
+                      "assets/icons/arrow_left_up_black.png",
+                      height: 25,
+                      width: 25,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
 
 class SearchScreen extends StatefulWidget {
   const SearchScreen({Key? key}) : super(key: key);
@@ -32,52 +253,16 @@ class SearchScreen extends StatefulWidget {
   State<SearchScreen> createState() => _SearchScreenState();
 }
 
-class _SearchScreenState extends State<SearchScreen> {
-  @override
-  void initState() {
-    super.initState();
-  }
-
-  @override
-  void dispose() {
-    // TODO: implement dispose
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    // BlocProvider sert à rendre ton bloc accessible au sein d'un widget, utile quand
-    // tu as seulement besoin d'accéder au state du bloc sans le modifier.
-    return BlocProvider(
-      create: (_) => SearchBloc(),
-      // BlocBuilder en revanche te permet de pouvoir émettre des évènements avec ton bloc
-      // Si tu ne met pas de bloc builder, ton widget ne va pas s'update si ton state change
-      // Il est donc utile quand tu as besoin d'émettre de nouvelles valeurs.
-      child: BlocBuilder<SearchBloc, SearchState>(
-        builder: (context, searchState) {
-          // Et enfin à l'intérieur tu peux accéder à ton Bloc :
-          // .add() pour émettre un évènement et .state pour accéder à l'état avec ses attributs
-          final searchBloc = context.read<SearchBloc>();
-
-          return Scaffold(
-            // backgroundColor: Colors.white.withOpacity(.5),
-            appBar: RootAppBar(
-              isActive: true,
-              rootContext: context,
-              onTextChanged: (String value) {
-                // searchBloc.add(UpdatePrompt(newPrompt: value));
-              },
-              textValue: searchState.userPrompt,
-            ),
-            // body: SearchScreenDisplayer(),
-          );
-        },
-      ),
-    );
-  }
-}
-
 class SearchScreenDisplayer extends StatefulWidget {
+  final MapState blocState;
+
+  final MapBloc mapBloc;
+  final SheetPositionPair sheetPosition;
+  final PagingController<int, SearchHitEntity> pagingController;
+  final Function(MapEntity? suggestedMapEntity, SearchHitEntity searchHitEntity)
+      onTapSuggestion;
+  final Function() onBackPressed;
+  final Function(FilterValues filterValue) onChangeFilterState;
   // const SearchScreenDisplayer({Key? key}) : super(key: key);
 
   const SearchScreenDisplayer({
@@ -85,23 +270,371 @@ class SearchScreenDisplayer extends StatefulWidget {
     required this.blocState,
     required this.onTapSuggestion,
     required this.sheetPosition,
-    required this.pagingController, required this.onChangeFilterState, required this.mapBloc, required this.onBackPressed,
+    required this.pagingController,
+    required this.onChangeFilterState,
+    required this.mapBloc,
+    required this.onBackPressed,
   });
-
-  final MapState blocState;
-  final MapBloc mapBloc;
-  final SheetPositionPair sheetPosition;
-  final PagingController<int, SearchHitEntity> pagingController;
-  final Function(MapEntity? suggestedMapEntity, SearchHitEntity searchHitEntity) onTapSuggestion;
-  final Function() onBackPressed;
-  final Function(FilterValues filterValue) onChangeFilterState;
 
   @override
   State<SearchScreenDisplayer> createState() => _SearchScreenDisplayerState();
 }
 
 class _SearchScreenDisplayerState extends State<SearchScreenDisplayer> {
+  final ValueNotifier<FilterValues> _selectedFilterNotifier =
+      ValueNotifier(FilterValues.all);
 
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      child: BlocBuilder<MapBloc, MapState>(builder: (context, mapState) {
+        return Column(
+          children: [
+            AnimatedContainer(
+              height: widget.sheetPosition.gSheetPosition >= 0.95
+                  ? 42 + MediaQuery.of(context).padding.top
+                  : 0,
+              duration: const Duration(milliseconds: 100),
+            ),
+            Container(
+              color: AppColors.primaryVar2.withOpacity(.2),
+              height: 5,
+            ),
+            const SizedBox(
+              height: 18,
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20.0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Text(
+                      widget.blocState.userPrompt.isEmpty
+                          ? "Récents"
+                          : "Suggestions",
+                      style: const TextStyle(
+                          fontSize: 20, fontWeight: FontWeight.w400)),
+                  InkWell(
+                    onTap: () {
+                      if (widget.blocState.userPrompt.isEmpty) {
+                        // Vider les récents
+                      } else {
+                        showMenu(
+                          context: context,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(
+                                12.0), // Ajustez le borderRadius selon vos besoins
+                          ),
+                          elevation: 3.5,
+                          position: RelativeRect.fromLTRB(
+                              300, 220, 30, 0), // Position du menu
+                          items: [
+                            PopupMenuItem(
+                              enabled: true,
+                              child: ValueListenableBuilder<FilterValues>(
+                                valueListenable: _selectedFilterNotifier,
+                                builder: (context, selectedFilter, child) {
+                                  return Row(
+                                    children: [
+                                      Checkbox(
+                                        value: selectedFilter ==
+                                            FilterValues.routes,
+                                        onChanged:
+                                            null, // Désactive la case à cocher
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(
+                                              2.0), // Ajustez la forme ici
+                                        ),
+                                        side: BorderSide(
+                                          width:
+                                              0.8, // Ajustez la largeur de la bordure
+                                        ),
+                                      ),
+                                      Text('Lignes (bus)'),
+                                    ],
+                                  );
+                                },
+                              ),
+                              onTap: () {
+                                _selectedFilterNotifier.value =
+                                    FilterValues.routes;
+                                widget.onChangeFilterState(FilterValues.routes);
+                              },
+                            ),
+                            PopupMenuItem(
+                              enabled: true,
+                              child: ValueListenableBuilder<FilterValues>(
+                                valueListenable: _selectedFilterNotifier,
+                                builder: (context, selectedFilter, child) {
+                                  return Row(
+                                    children: [
+                                      Checkbox(
+                                        value:
+                                            selectedFilter == FilterValues.stop,
+                                        onChanged:
+                                            null, // Désactive la case à cocher
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(
+                                              2.0), // Ajustez la forme ici
+                                        ),
+                                        side: BorderSide(
+                                          width:
+                                              0.8, // Ajustez la largeur de la bordure
+                                        ),
+                                      ),
+                                      Text('Arrêts'),
+                                    ],
+                                  );
+                                },
+                              ),
+                              onTap: () {
+                                _selectedFilterNotifier.value =
+                                    FilterValues.stop;
+                                widget.onChangeFilterState(FilterValues.stop);
+                              },
+                            ),
+                            PopupMenuItem(
+                              child: ValueListenableBuilder<FilterValues>(
+                                valueListenable: _selectedFilterNotifier,
+                                builder: (context, selectedFilter, child) {
+                                  return Row(
+                                    children: [
+                                      Checkbox(
+                                        value: selectedFilter ==
+                                            FilterValues.places,
+                                        onChanged:
+                                            null, // Désactive la case à cocher
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(
+                                              2.0), // Ajustez la forme ici
+                                        ),
+                                        side: BorderSide(
+                                          width:
+                                              0.8, // Ajustez la largeur de la bordure
+                                        ),
+                                      ),
+                                      Text('Lieux'),
+                                    ],
+                                  );
+                                },
+                              ),
+                              onTap: () {
+                                _selectedFilterNotifier.value =
+                                    FilterValues.places;
+                                widget.onChangeFilterState(FilterValues.places);
+                              },
+                            ),
+                            PopupMenuItem(
+                              child: ValueListenableBuilder<FilterValues>(
+                                valueListenable: _selectedFilterNotifier,
+                                builder: (context, selectedFilter, child) {
+                                  return Row(
+                                    children: [
+                                      Checkbox(
+                                        value:
+                                            selectedFilter == FilterValues.all,
+                                        onChanged:
+                                            null, // Désactive la case à cocher
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(
+                                              2.0), // Ajustez la forme ici
+                                        ),
+                                        side: BorderSide(
+                                          width:
+                                              0.8, // Ajustez la largeur de la bordure
+                                        ),
+                                      ),
+                                      Text('Tous (par défaut)'),
+                                    ],
+                                  );
+                                },
+                              ),
+                              onTap: () {
+                                _selectedFilterNotifier.value =
+                                    FilterValues.all;
+                                widget.onChangeFilterState(FilterValues.all);
+                              },
+                            ),
+                          ],
+                        );
+                      }
+                    },
+                    child: Image.asset(
+                        widget.blocState.userPrompt.isEmpty
+                            ? "assets/icons/trash_outlined.png"
+                            : "assets/icons/filter_outlined.png",
+                        width: 26,
+                        height: 26),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(
+              height: 10,
+            ),
+            if (widget.blocState.userPrompt.isEmpty) ...[
+              if (widget.blocState.searchLoading.isHistoryLoading) ...[
+                const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 10.0),
+                  child: SizedBox(
+                    height: 400,
+                    child: Center(
+                      child: CircularProgressIndicator(),
+                    ),
+                  ),
+                )
+              ] else ...[
+                SizedBox(
+                  height: 365,
+                  child: Material(
+                      color: Colors.white,
+                      child: ListView.builder(
+                        physics: NeverScrollableScrollPhysics(),
+                        padding: EdgeInsets.zero,
+                        itemCount: mapState.searchHistory.length,
+                        itemBuilder: (BuildContext context, int index) {
+                          final suggestion = mapState.searchHistory[index];
+                          return EntitySuggestion(
+                              entitySuggestion: suggestion,
+                              onTapSuggestion: widget.onTapSuggestion);
+                          // } else {
+                          //   // Retourner un conteneur vide pour exclure cet élément
+                          //   // return Text("ez");
+                          // }
+                        },
+                      )),
+                )
+              ]
+            ] else ...[
+              if (widget.blocState.searchLoading.isSuggestionsLoading) ...[
+                const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 10.0),
+                  child: SizedBox(
+                    height: 350,
+                    child: Center(
+                      child: CircularProgressIndicator(),
+                    ),
+                  ),
+                )
+              ] else if (widget.blocState.filteredSearchHits.length == 0) ...[
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 10.0),
+                  child: SizedBox(
+                    height: 350,
+                    child: Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Image.asset(
+                              height: 200, "assets/images/not_found_1.png"),
+                          const SizedBox(
+                            height: 15.0,
+                          ),
+                          const Text(
+                            "Oops, Dr.Khady ne trouve rien...",
+                            style: TextStyle(
+                                fontWeight: FontWeight.w500, fontSize: 18.0),
+                          ),
+                          const SizedBox(
+                            height: 10.0,
+                          ),
+                          Text(
+                            "Il semblerait que votre recherche n'aie rien donné, veuillez réessayer !",
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 15.0,
+                            ),
+                          )
+                        ],
+                      ),
+                    ),
+                  ),
+                )
+              ] else ...[
+                SizedBox(
+                  height: 350,
+                  child: Material(
+                      color: Colors.white,
+                      child: ListView.builder(
+                        padding: EdgeInsets.zero,
+                        itemCount: mapState.filteredSearchHits.length,
+                        itemBuilder: (BuildContext context, int index) {
+                          // final suggestion = mapState.filteredSearchHits[index];
+                          // if (mapState.searchFilter == FilterValues.all ||
+                          //     (mapState.searchFilter == FilterValues.places &&
+                          //         suggestion.entityType == "place") ||
+                          //     (mapState.searchFilter == FilterValues.stop &&
+                          //         suggestion.entityType == "stop") ||
+                          //     (mapState.searchFilter == FilterValues.routes &&
+                          //         suggestion.entityType == "route")) {
+                          return EntitySuggestion(
+                              entitySuggestion:
+                                  widget.blocState.filteredSearchHits[index],
+                              onTapSuggestion: widget.onTapSuggestion);
+                          // } else {
+                          //   // Retourner un conteneur vide pour exclure cet élément
+                          //   // return Text("ez");
+                          // }
+                        },
+                      )),
+                )
+              ]
+            ],
+            const SizedBox(
+              height: 5,
+            ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                Material(
+                  borderRadius: BorderRadius.circular(30),
+                  color: AppColors.primaryVar0,
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(30),
+                    onTap: () {
+                      widget.onBackPressed();
+                    },
+                    child: Container(
+                      width: 50,
+                      height: 50,
+                      decoration: BoxDecoration(
+                          color: AppColors.primaryVar0,
+                          borderRadius: BorderRadius.circular(30),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.grey.withOpacity(.4),
+                              blurRadius: 4.0, // soften the shadow
+                              spreadRadius: 0.3, //extend the shadow
+                              offset: Offset(
+                                0.0, // Move to right 10  horizontally
+                                0.0, // Move to bottom 10 Vertically
+                              ),
+                            )
+                          ]),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Image.asset(
+                            "assets/icons/map_white.png",
+                            height: 18,
+                            width: 18,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(
+                  width: 20.0,
+                ),
+              ],
+            )
+          ],
+        );
+      }),
+    );
+  }
 
   // Widget _hits(BuildContext context) => PagedListView<int, SearchHitEntity>(
   //     pagingController: pagingController,
@@ -352,583 +885,49 @@ class _SearchScreenDisplayerState extends State<SearchScreenDisplayer> {
     _selectedFilterNotifier.dispose();
     super.dispose();
   }
+}
 
-
-  final ValueNotifier<FilterValues> _selectedFilterNotifier = ValueNotifier(FilterValues.all);
-
+class _SearchScreenState extends State<SearchScreen> {
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      child: BlocBuilder<MapBloc, MapState>(
-          builder: (context, mapState) {
-            return Column(
-              children: [
-                AnimatedContainer(
-                  height: widget.sheetPosition.gSheetPosition >= 0.95 ? 42 + MediaQuery.of(context).padding.top : 0,
-                  duration: const Duration(milliseconds: 100),
-                ),
-                Container(
-                  color: AppColors.primaryVar2.withOpacity(.2),
-                  height: 5,
-                ),
-                const SizedBox(
-                  height: 18,
-                ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      Text(widget.blocState.userPrompt.isEmpty ? "Récents" : "Suggestions",
-                          style: const TextStyle(
-                              fontSize: 20, fontWeight: FontWeight.w400)),
-                      InkWell(
-                        onTap: () {
+    // BlocProvider sert à rendre ton bloc accessible au sein d'un widget, utile quand
+    // tu as seulement besoin d'accéder au state du bloc sans le modifier.
+    return BlocProvider(
+      create: (_) => SearchBloc(),
+      // BlocBuilder en revanche te permet de pouvoir émettre des évènements avec ton bloc
+      // Si tu ne met pas de bloc builder, ton widget ne va pas s'update si ton state change
+      // Il est donc utile quand tu as besoin d'émettre de nouvelles valeurs.
+      child: BlocBuilder<SearchBloc, SearchState>(
+        builder: (context, searchState) {
+          // Et enfin à l'intérieur tu peux accéder à ton Bloc :
+          // .add() pour émettre un évènement et .state pour accéder à l'état avec ses attributs
+          // final searchBloc = context.read<SearchBloc>();
 
-                          if(widget.blocState.userPrompt.isEmpty){
-                            // Vider les récents
-                          }else{
-                            showMenu(
-                              context: context,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12.0), // Ajustez le borderRadius selon vos besoins
-                              ),
-                              elevation: 3.5,
-                              position: RelativeRect.fromLTRB(300, 220, 30, 0), // Position du menu
-                              items: [
-                                PopupMenuItem(
-                                  enabled: true,
-                                  child: ValueListenableBuilder<FilterValues>(
-                                    valueListenable: _selectedFilterNotifier,
-                                    builder: (context, selectedFilter, child) {
-                                      return Row(
-                                        children: [
-                                          Checkbox(
-                                            value: selectedFilter == FilterValues.routes,
-                                            onChanged: null, // Désactive la case à cocher
-                                            shape: RoundedRectangleBorder(
-                                              borderRadius: BorderRadius.circular(2.0), // Ajustez la forme ici
-                                            ),
-                                            side: BorderSide(
-                                              width: 0.8, // Ajustez la largeur de la bordure
-                                            ),
-                                          ),
-                                          Text('Lignes (bus)'),
-                                        ],
-                                      );
-                                    },
-                                  ),
-                                  onTap: (){
-                                    _selectedFilterNotifier.value = FilterValues.routes;
-                                    widget.onChangeFilterState(FilterValues.routes);
-
-                                  },
-                                ),
-                                PopupMenuItem(
-                                  enabled: true,
-                                  child: ValueListenableBuilder<FilterValues>(
-                                    valueListenable: _selectedFilterNotifier,
-                                    builder: (context, selectedFilter, child) {
-                                      return Row(
-                                        children: [
-                                          Checkbox(
-                                            value: selectedFilter == FilterValues.stop,
-                                            onChanged: null, // Désactive la case à cocher
-                                            shape: RoundedRectangleBorder(
-                                              borderRadius: BorderRadius.circular(2.0), // Ajustez la forme ici
-                                            ),
-                                            side: BorderSide(
-                                              width: 0.8, // Ajustez la largeur de la bordure
-                                            ),
-                                          ),
-                                          Text('Arrêts'),
-                                        ],
-                                      );
-                                    },
-                                  ),
-                                  onTap: (){
-                                    _selectedFilterNotifier.value = FilterValues.stop;
-                                    widget.onChangeFilterState(FilterValues.stop);
-
-                                  },
-                                ),
-                                PopupMenuItem(
-                                  child: ValueListenableBuilder<FilterValues>(
-                                    valueListenable: _selectedFilterNotifier,
-                                    builder: (context, selectedFilter, child) {
-                                      return Row(
-                                        children: [
-                                          Checkbox(
-                                            value: selectedFilter == FilterValues.places,
-                                            onChanged: null, // Désactive la case à cocher
-                                            shape: RoundedRectangleBorder(
-                                              borderRadius: BorderRadius.circular(2.0), // Ajustez la forme ici
-                                            ),
-                                            side: BorderSide(
-                                              width: 0.8, // Ajustez la largeur de la bordure
-                                            ),
-                                          ),
-                                          Text('Lieux'),
-                                        ],
-                                      );
-                                    },
-                                  ),
-                                  onTap: (){
-                                    _selectedFilterNotifier.value = FilterValues.places;
-                                    widget.onChangeFilterState(FilterValues.places);
-
-                                  },
-                                ),
-                                PopupMenuItem(
-                                  child: ValueListenableBuilder<FilterValues>(
-                                    valueListenable: _selectedFilterNotifier,
-                                    builder: (context, selectedFilter, child) {
-                                      return Row(
-                                        children: [
-                                          Checkbox(
-                                            value: selectedFilter == FilterValues.all,
-                                            onChanged: null, // Désactive la case à cocher
-                                            shape: RoundedRectangleBorder(
-                                              borderRadius: BorderRadius.circular(2.0), // Ajustez la forme ici
-                                            ),
-                                            side: BorderSide(
-                                              width: 0.8, // Ajustez la largeur de la bordure
-                                            ),
-                                          ),
-                                          Text('Tous (par défaut)'),
-                                        ],
-                                      );
-                                    },
-                                  ),
-                                  onTap: (){
-                                    _selectedFilterNotifier.value = FilterValues.all;
-                                    widget.onChangeFilterState(FilterValues.all);
-                                  },
-                                ),
-                              ],
-                            );
-                          }
-                        },
-                        child: Image.asset(
-                            widget.blocState.userPrompt.isEmpty
-                                ? "assets/icons/trash_outlined.png"
-                                : "assets/icons/filter_outlined.png",
-                            width: 26,
-                            height: 26),
-                      ),
-
-                    ],
-
-                  ),
-                ),
-                const SizedBox(
-                  height: 10,
-                ),
-                if (widget.blocState.userPrompt.isEmpty ) ...[
-
-                  if(widget.blocState.searchLoading.isHistoryLoading) ...[
-                    const Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 10.0),
-                      child: SizedBox(
-                        height: 400,
-                        child: Center(
-                          child: CircularProgressIndicator(),
-                        ),
-                      ),
-                    )
-                  ]else...[
-
-                    SizedBox(
-                    height: 365,
-                    child: Material(
-                        color: Colors.white,
-                        child: ListView.builder(
-                          physics: NeverScrollableScrollPhysics(),
-                          padding: EdgeInsets.zero,
-                          itemCount: mapState.searchHistory.length,
-                          itemBuilder: (BuildContext context, int index) {
-                            final suggestion = mapState.searchHistory[index];
-                            return EntitySuggestion(
-                                entitySuggestion: suggestion,
-                                onTapSuggestion: widget.onTapSuggestion);
-                            // } else {
-                            //   // Retourner un conteneur vide pour exclure cet élément
-                            //   // return Text("ez");
-                            // }
-                          },
-                        )
-
-                    ),
-                  )
-                  ]
-
-
-                ] else ...[
-                  if(widget.blocState.searchLoading.isSuggestionsLoading) ...[
-                    const Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 10.0),
-                      child: SizedBox(
-                        height: 350,
-                        child: Center(
-                          child: CircularProgressIndicator(),
-                        ),
-                      ),
-                    )
-                  ]else if(widget.blocState.filteredSearchHits == null ||
-                      widget.blocState.filteredSearchHits.length == 0) ...[
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 10.0),
-                      child: SizedBox(
-                        height: 350,
-                        child: Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Image.asset(
-                                  height: 200,
-                                  "assets/images/not_found_1.png"
-                              ),
-                              const SizedBox(
-                                height: 15.0,
-                              ),
-                              const Text(
-                                "Oops, Dr.Khady ne trouve rien...",
-                                style: TextStyle(
-                                  fontWeight: FontWeight.w500,
-                                  fontSize: 18.0
-                                ),
-                                ),
-                              const SizedBox(
-                                height: 10.0,
-                              ),
-                              Text(
-                                "Il semblerait que votre recherche n'aie rien donné, veuillez réessayer !",
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                    fontSize: 15.0,
-
-                                ),
-                              )
-
-                            ],
-                          ),
-                        ),
-                      ),
-                    )
-                  ]else ...[
-                    SizedBox(
-                      height: 350,
-                      child: Material(
-                        color: Colors.white,
-                        child: ListView.builder(
-                          padding: EdgeInsets.zero,
-                          itemCount: mapState.filteredSearchHits.length,
-                          itemBuilder: (BuildContext context, int index) {
-                            final suggestion = mapState.filteredSearchHits[index];
-                            // if (mapState.searchFilter == FilterValues.all ||
-                            //     (mapState.searchFilter == FilterValues.places &&
-                            //         suggestion.entityType == "place") ||
-                            //     (mapState.searchFilter == FilterValues.stop &&
-                            //         suggestion.entityType == "stop") ||
-                            //     (mapState.searchFilter == FilterValues.routes &&
-                            //         suggestion.entityType == "route")) {
-                              return EntitySuggestion(
-                              entitySuggestion:
-                              widget.blocState.filteredSearchHits[index],
-                              onTapSuggestion: widget.onTapSuggestion);
-                            // } else {
-                            //   // Retourner un conteneur vide pour exclure cet élément
-                            //   // return Text("ez");
-                            // }
-                          },
-                        )
-
-                      ),
-                    )
-                  ]
-
-                ],
-                const SizedBox(
-                  height: 5,
-                ),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-
-                    Material(
-                      borderRadius: BorderRadius.circular(30),
-                      color: AppColors.primaryVar0,
-
-                      child: InkWell(
-                        borderRadius: BorderRadius.circular(30),
-                        onTap: (){
-                          widget.onBackPressed();
-                        },
-                        child: Container(
-                          width: 50,
-                          height: 50,
-                          decoration: BoxDecoration(
-                              color: AppColors.primaryVar0,
-
-                              borderRadius: BorderRadius.circular(30),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.grey.withOpacity(.4),
-                                  blurRadius: 4.0, // soften the shadow
-                                  spreadRadius: 0.3, //extend the shadow
-                                  offset: Offset(
-                                    0.0, // Move to right 10  horizontally
-                                    0.0, // Move to bottom 10 Vertically
-                                  ),
-                                )
-                              ]
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Image.asset(
-                                "assets/icons/map_white.png",
-                                height: 18,
-                                width: 18,
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(
-                      width: 20.0,
-                    ),
-                  ],
-                )
-              ],
-            );
-          }
+          return Scaffold(
+            // backgroundColor: Colors.white.withOpacity(.5),
+            appBar: RootAppBar(
+              isActive: true,
+              rootContext: context,
+              onTextChanged: (String value) {
+                // searchBloc.add(UpdatePrompt(newPrompt: value));
+              },
+              textValue: searchState.userPrompt,
+            ),
+            // body: SearchScreenDisplayer(),
+          );
+        },
       ),
     );
   }
-}
-
-
-class EntityHistory extends StatelessWidget {
-  const EntityHistory({
-    super.key,
-    this.entityType,
-    required this.entityName,
-    this.entityInfo,
-  });
-
-  final String? entityType;
-  final String entityName;
-  final String? entityInfo;
 
   @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: () {},
-      child: Container(
-        margin: const EdgeInsets.only(top: 20, left: 20.0, right: 20.0),
-        height: 53,
-        decoration: BoxDecoration(
-          border: Border(
-            bottom: BorderSide(
-              color: AppColors.secondaryText
-                  .withOpacity(.5), // Couleur de la bordure inférieure
-              width: 0.5, // Épaisseur de la bordure inférieure
-            ),
-          ),
-        ),
-        // color: Colors.red,
-        child: entityType != null && entityInfo != null
-            ? Padding(
-          padding: const EdgeInsets.only(bottom: 10),
-              child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Image.asset(
-                      entityType == "place"
-                          ? "assets/icons/location_search.png"
-                          : entityType == "stop"
-                              ? "assets/icons/stop_search.png"
-                              : "assets/icons/bus_search.png",
-                      height: 30,
-                      width: 30,
-                    ),
-                    const SizedBox(
-                      width: 20,
-                    ),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          entityName,
-                          style: TextStyle(
-                              fontWeight: FontWeight.w400,
-                              color: AppColors.primaryText.withOpacity(0.8)),
-                        ),
-                        Text(
-                          entityInfo!,
-                          style: TextStyle(
-                              fontWeight: FontWeight.w400,
-                              color: AppColors.secondaryText),
-                        ),
-                      ],
-                    )
-                  ],
-                ),
-            )
-            : Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-
-                  Image.asset(
-                    "assets/icons/notfound_search.png",
-                    height: 30,
-                    width: 30,
-                  ),
-                  const SizedBox(
-                    width: 24,
-                  ),
-                  SizedBox(
-                    height: 32,
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          entityName,
-                          style: TextStyle(
-                              fontWeight: FontWeight.w400,
-                              color: AppColors.secondaryText.withOpacity(0.8)),
-                        ),
-                        // Text(
-                        //   "0 résultats",
-                        //   style: TextStyle(
-                        //       fontWeight: FontWeight.w400,
-                        //       color: AppColors.bootstrapRed.withOpacity(.5)
-                        //   ),
-                        // ),
-                      ],
-                    ),
-                  )
-                ],
-              ),
-      ),
-    );
+  void dispose() {
+    // TODO: implement dispose
+    super.dispose();
   }
-}
-
-class EntitySuggestion extends StatelessWidget {
-  const EntitySuggestion({
-    super.key,
-    // required this.entityType,
-    // required this.entityName,
-    // required this.entityAddress,
-    // required this.mapEntity,
-    required this.onTapSuggestion,
-    required this.entitySuggestion,
-  });
-
-  final SearchHitEntity entitySuggestion;
-  // final MapEntity mapEntity;
-  final Function(MapEntity? suggestedMapEntity, SearchHitEntity searchHitEntity)? onTapSuggestion;
 
   @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: () {
-        FocusScope.of(context).unfocus();
-        Future.delayed(const Duration(milliseconds: 390), () {
-          onTapSuggestion!(null,entitySuggestion);
-          // onTapSuggestion!(mapEntity);
-        });
-      },
-      child: Container(
-        margin: const EdgeInsets.only(top: 20, left: 20.0, right: 20.0),
-        height: 53,
-        decoration: BoxDecoration(
-          border: Border(
-            bottom: BorderSide(
-              color: AppColors.secondaryText
-                  .withOpacity(.5), // Couleur de la bordure inférieure
-              width: 0.5, // Épaisseur de la bordure inférieure
-            ),
-          ),
-        ),
-        // color: Colors.red,
-        child: Padding(
-          padding: const EdgeInsets.only(bottom: 10),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Image.asset(
-                entitySuggestion.entityType == "place"
-                    ? "assets/icons/location_search.png"
-                    : entitySuggestion.entityType == "stop"
-                        ? "assets/icons/stop_search.png"
-                        : "assets/icons/bus_search.png",
-                height: 30,
-                width: 30,
-              ),
-              const SizedBox(
-                width: 20,
-              ),
-              Expanded(
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        SizedBox(
-                          width: AppConstants.screenWidth * .6,
-                          child: Text(
-                              entitySuggestion.entityType == "place"
-                              ? (entitySuggestion as SearchHitPlace).title
-                              :  entitySuggestion.entityType == "stop"
-                                ? (entitySuggestion as SearchHitStop).stopName
-                                : (entitySuggestion as SearchHitRoute)
-                                    .routeShortName  + " - " + ((entitySuggestion as SearchHitRoute).agencyId == "DDD" ? "Dakar Dem Dikk" : "Gie AFTU"),
-                            overflow: TextOverflow.ellipsis,
-                            maxLines: 1,
-                            style: TextStyle(
-                                fontWeight: FontWeight.w400,
-                                color: AppColors.primaryText.withOpacity(0.8)),
-                          ),
-                        ),
-                        SizedBox(
-                          width: AppConstants.screenWidth * .6,
-                          child: Text(
-                            entitySuggestion.entityType == "place"
-                                ? (entitySuggestion as SearchHitPlace).subTitle
-                                : entitySuggestion.entityType == "stop"
-                                ? "Dakar"
-                                : Toolbox.capitalizeWords((entitySuggestion as SearchHitRoute)
-                                    .routeLongName),
-                            overflow: TextOverflow.ellipsis,
-                            maxLines: 1,
-                            style: TextStyle(
-
-                                fontWeight: FontWeight.w400,
-                                color: AppColors.secondaryText),
-                          ),
-                        ),
-                      ],
-                    ),
-                    Image.asset(
-                      "assets/icons/arrow_left_up_black.png",
-                      height: 25,
-                      width: 25,
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
+  void initState() {
+    super.initState();
   }
 }

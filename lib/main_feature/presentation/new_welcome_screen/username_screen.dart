@@ -1,9 +1,5 @@
-import 'dart:io';
-
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter/widgets.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:page_transition/page_transition.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -13,8 +9,8 @@ import '../../../core/di/locator.dart';
 import '../home_screen/home_screen.dart';
 
 class UsernameScreen extends StatefulWidget {
-  const UsernameScreen({super.key, required this.selectedIndex});
   final int selectedIndex;
+  const UsernameScreen({super.key, required this.selectedIndex});
 
   @override
   State<UsernameScreen> createState() => _UsernameScreenState();
@@ -24,46 +20,6 @@ class _UsernameScreenState extends State<UsernameScreen> {
   double animationLevel = 0.0;
   String username = "";
   final TextEditingController _nameController = TextEditingController();
-
-  @override
-  void initState() {
-    super.initState();
-    _nameController.addListener(() {
-      setState(() {
-        username = _nameController.text;
-      });
-    });
-    debugPrint(
-        "Screen width and height : " + 1.sw.toString() + " " + 1.sh.toString());
-    _startAnimation();
-  }
-
-  @override
-  void dispose() {
-    super.dispose();
-  }
-
-  Future<void> _startAnimation() async {
-    // await Future.delayed(const Duration(milliseconds: 200));
-
-    // setState(() {
-    //   animationLevel = 0.5;
-    // });
-
-    await Future.delayed(const Duration(milliseconds: 500));
-
-    setState(() {
-      animationLevel = 1;
-    });
-  }
-
-  Future<void> _continueAnimation() async {
-    await Future.delayed(const Duration(milliseconds: 500));
-
-    setState(() {
-      animationLevel = 2;
-    });
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -274,5 +230,45 @@ class _UsernameScreenState extends State<UsernameScreen> {
             ),
           ),
         ));
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _nameController.addListener(() {
+      setState(() {
+        username = _nameController.text;
+      });
+    });
+    debugPrint(
+        "Screen width and height : " + 1.sw.toString() + " " + 1.sh.toString());
+    _startAnimation();
+  }
+
+  Future<void> _continueAnimation() async {
+    await Future.delayed(const Duration(milliseconds: 500));
+
+    setState(() {
+      animationLevel = 2;
+    });
+  }
+
+  Future<void> _startAnimation() async {
+    // await Future.delayed(const Duration(milliseconds: 200));
+
+    // setState(() {
+    //   animationLevel = 0.5;
+    // });
+
+    await Future.delayed(const Duration(milliseconds: 500));
+
+    setState(() {
+      animationLevel = 1;
+    });
   }
 }
