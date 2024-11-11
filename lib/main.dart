@@ -171,8 +171,6 @@ class YeebusApp extends StatelessWidget {
                 // hintColor: Color(0xff1BA3F0),
                 // brightness: Brightness.light
               ),
-              locale: DevicePreview.locale(context), // add this line
-              builder: DevicePreview.appBuilder, // add this line
               // home: const HomeScreen(),
               home:
                   locator.get<SharedPreferences>().getBool("isOldUser") != true
