@@ -520,19 +520,7 @@ class _YeeguideProfileScreenState extends State<YeeguideProfileScreen> {
                               ),
                             );},
                                 ),
-                                ProfileSection(
-                                  title: "Passer à Yeebus+",
-                                  isTrueTopOrBottomFalse: false,
-                                  onTap: () { 
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              buildCustomSnackBar(
-                                context,
-                                "Fonctionnalité disponible prochainement 😉",
-                                SnackBarType.info,
-                                showCloseIcon: false,
-                              ),
-                            );},
-                                ),
+                                
                               ],
                             ),
                             const SizedBox(

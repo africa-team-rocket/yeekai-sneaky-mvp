@@ -3,7 +3,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/svg.dart';
 import 'package:page_transition/page_transition.dart';
 import 'package:shimmer/shimmer.dart';
 
@@ -400,13 +399,7 @@ class CurrentDestShortcut extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Center(
-                child: SvgPicture.asset(currentDest.iconUrl,
-                    height: 20,
-                    width: 20,
-                    // colorFilter: ColorFilter.mode(AppColors.primaryVar0, BlendMode.srcIn)
-                ),
-              ),
+
               const SizedBox(
                 height: 10,
               ),

@@ -89,6 +89,9 @@ class _ChooseYeeguideScreenState extends State<ChooseYeeguideScreen> {
 
             child: ElevatedButton(
               onPressed: () {
+                if(AppConstants.availableYeeguides.contains(
+                    AppConstants.yeeguidesList[selectedYeeguide].id)){
+
                 Navigator.push(
                     context,
                     PageTransition(
@@ -97,6 +100,8 @@ class _ChooseYeeguideScreenState extends State<ChooseYeeguideScreen> {
                         child: ConfirmYeeguideScreen(
                           selectedIndex: selectedYeeguide,
                         )));
+                }
+
               },
               style: ElevatedButton.styleFrom(
                 surfaceTintColor: Colors.blue,

@@ -363,7 +363,7 @@ class YeeguideResumeWidget extends StatelessWidget {
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
                                   Image.asset(
-                                    "assets/icons/translate.png",
+                                    "assets/icons/message.png",
                                     height: 13,
                                   ),
                                   const SizedBox(
@@ -371,7 +371,7 @@ class YeeguideResumeWidget extends StatelessWidget {
                                   ),
                                   Flexible(
                                     child: Text(
-                                      "Wolof",
+                                      yeeguide.category,
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
                                       style: TextStyle(

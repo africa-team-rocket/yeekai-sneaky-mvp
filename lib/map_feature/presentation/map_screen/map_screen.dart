@@ -170,17 +170,17 @@ class _MapScreenState extends State<MapScreen> {
                             if (mapBloc.state.selectedEntity == null &&
                                 mapBloc.state.isSearchModeEnabled == false)
                               {
-                                mapBloc.add(
-                                    const UpdateSearchMode(newSearchMode: true))
+                               // mapBloc.add(
+                               //     const UpdateSearchMode(newSearchMode: true))
                               }
                           },
                       onIsContractedCallback: () => {
                             // mapBloc.state.selectedEntity == null
                             if (mapBloc.state.isSearchModeEnabled == true)
                               {
-                                mapBloc.add(const UpdateSearchMode(
-                                    newSearchMode: false)),
-                                mapBloc.add(UpdatePrompt(newPrompt: ""))
+                               // mapBloc.add(const UpdateSearchMode(
+                                //    newSearchMode: false)),
+                               // mapBloc.add(UpdatePrompt(newPrompt: ""))
                               }
                           },
                       animationDurationExtend:
@@ -192,9 +192,10 @@ class _MapScreenState extends State<MapScreen> {
 
                       // Il faudra prendre en compte ceci pour l'animation des floating button
                       persistentContentHeight: 0,
-                      initialPos: widget.searchMode == true ? 1.0 : 0.06,
-                      // 0.06
-                      initialMaxExpandableHeight: 1.0,
+                      initialPos:
+                      //widget.searchMode == true ? 1.0 : 0.06,
+                      1.0,
+                      initialMaxExpandableHeight: 0.06,
                       initialMinExpandableHeight: 0.06,
                       background: GMap(
                           key: mapKey,
@@ -1924,7 +1925,7 @@ class MapWState extends State<GMap> {
       },
       {
         "markerId": "Salle MP-ISI2",
-        "rotation": -20,
+        "rotation": -20.0,
         "position": LatLng(14.69988, -17.45155),
         "title": "Salle MP-ISI2",
       },
@@ -1984,6 +1985,7 @@ class MapWState extends State<GMap> {
         data["title"],
       );
       setState(() {
+          debugPrint(marker.markerId.toString());
         _levelOneMarkers.add(marker);
       });
     }
@@ -1998,6 +2000,7 @@ class MapWState extends State<GMap> {
     return Marker(
         markerId: MarkerId(markerId),
         anchor: const Offset(0.5, 0.5),
+        zIndex: 2000,
         rotation: rotation,
         position: position,
         icon: await Text(
@@ -2563,6 +2566,14 @@ class MapWState extends State<GMap> {
                 break;
 
               default:
+                ScaffoldMessenger.of(context).showSnackBar(
+                  buildCustomSnackBar(
+                    context,
+                    "Fonctionnalité disponible prochainement 😉",
+                    SnackBarType.info,
+                    showCloseIcon: false,
+                  ),
+                );
                 // Cas par défaut pour les markers qui ne sont pas des salles de classe
                 break;
             }
@@ -3142,6 +3153,14 @@ class MapWState extends State<GMap> {
         position: LatLng(14.700017004673004, -17.451315186917782),
         icon: icons["point_priere.png"]!,
         onTap: () {
+          ScaffoldMessenger.of(context).showSnackBar(
+            buildCustomSnackBar(
+              context,
+              "Ce lieu sera disponible prochainement 😉",
+              SnackBarType.info,
+              showCloseIcon: false,
+            ),
+          );
           // add(SetSelectedMapEntity(event.newMapEntity));
         },
       ),
@@ -3154,6 +3173,14 @@ class MapWState extends State<GMap> {
         position: LatLng(14.69949649972709, -17.45146505534649),
         icon: icons["salle_reprographie.png"]!,
         onTap: () {
+          ScaffoldMessenger.of(context).showSnackBar(
+            buildCustomSnackBar(
+              context,
+              "Ce lieu sera disponible prochainement 😉",
+              SnackBarType.info,
+              showCloseIcon: false,
+            ),
+          );
           // add(SetSelectedMapEntity(event.newMapEntity));
         },
       ),
@@ -3164,6 +3191,14 @@ class MapWState extends State<GMap> {
         position: LatLng(14.699460177840324, -17.451517023146152),
         icon: icons["salle_amicale.png"]!,
         onTap: () {
+          ScaffoldMessenger.of(context).showSnackBar(
+            buildCustomSnackBar(
+              context,
+              "La salle amicale sera disponible prochainement 😉",
+              SnackBarType.info,
+              showCloseIcon: false,
+            ),
+          );
           // add(SetSelectedMapEntity(event.newMapEntity));
         },
       ),
@@ -3174,6 +3209,14 @@ class MapWState extends State<GMap> {
         position: LatLng(14.700041327303694, -17.451469749212265),
         icon: icons["labo.png"]!,
         onTap: () {
+          ScaffoldMessenger.of(context).showSnackBar(
+            buildCustomSnackBar(
+              context,
+              "Ce lieu sera disponible prochainement 😉",
+              SnackBarType.info,
+              showCloseIcon: false,
+            ),
+          );
           // add(SetSelectedMapEntity(event.newMapEntity));
         },
       ),
@@ -3184,6 +3227,14 @@ class MapWState extends State<GMap> {
         position: LatLng(14.700004681205748, -17.45160486549139),
         icon: icons["labo.png"]!,
         onTap: () {
+          ScaffoldMessenger.of(context).showSnackBar(
+            buildCustomSnackBar(
+              context,
+              "Ce lieu sera disponible prochainement 😉",
+              SnackBarType.info,
+              showCloseIcon: false,
+            ),
+          );
           // add(SetSelectedMapEntity(event.newMapEntity));
         },
       ),
@@ -3225,6 +3276,14 @@ class MapWState extends State<GMap> {
         position: LatLng(14.700116889592406, -17.451324239373207),
         icon: icons["salle_restaurant.png"]!,
         onTap: () {
+          ScaffoldMessenger.of(context).showSnackBar(
+            buildCustomSnackBar(
+              context,
+              "Le restaurant sera disponible prochainement 😉",
+              SnackBarType.info,
+              showCloseIcon: false,
+            ),
+          );
           // add(SetSelectedMapEntity(event.newMapEntity));
         },
       ),
@@ -3235,6 +3294,14 @@ class MapWState extends State<GMap> {
         position: LatLng(14.699935604915927, -17.451586090028286),
         icon: icons["salle_infirmerie.png"]!,
         onTap: () {
+          ScaffoldMessenger.of(context).showSnackBar(
+            buildCustomSnackBar(
+              context,
+              "L'infirmerie sera disponible prochainement 😉",
+              SnackBarType.info,
+              showCloseIcon: false,
+            ),
+          );
           // add(SetSelectedMapEntity(event.newMapEntity));
         },
       ),
@@ -3256,6 +3323,14 @@ class MapWState extends State<GMap> {
         position: LatLng(14.700017004673004, -17.451315186917782),
         icon: icons["point_priere.png"]!,
         onTap: () {
+          ScaffoldMessenger.of(context).showSnackBar(
+            buildCustomSnackBar(
+              context,
+              "Ce lieu sera disponible prochainement 😉",
+              SnackBarType.info,
+              showCloseIcon: false,
+            ),
+          );
           // add(SetSelectedMapEntity(event.newMapEntity));
         },
       ),
@@ -3266,6 +3341,14 @@ class MapWState extends State<GMap> {
         position: LatLng(14.700050407751775, -17.451514676213264),
         icon: icons["point_priere.png"]!,
         onTap: () {
+          ScaffoldMessenger.of(context).showSnackBar(
+            buildCustomSnackBar(
+              context,
+              "Ce lieu sera disponible prochainement 😉",
+              SnackBarType.info,
+              showCloseIcon: false,
+            ),
+          );
           // add(SetSelectedMapEntity(event.newMapEntity));
         },
       ),
@@ -3278,6 +3361,14 @@ class MapWState extends State<GMap> {
         position: LatLng(14.69958600720797, -17.451496236026287),
         icon: icons["salle_incubateur.png"]!,
         onTap: () {
+          ScaffoldMessenger.of(context).showSnackBar(
+            buildCustomSnackBar(
+              context,
+              "L'incubateur sera disponible prochainement 😉",
+              SnackBarType.info,
+              showCloseIcon: false,
+            ),
+          );
           // add(SetSelectedMapEntity(event.newMapEntity));
         },
       ),
@@ -3288,6 +3379,14 @@ class MapWState extends State<GMap> {
         position: LatLng(14.699652164887663, -17.451038919389248),
         icon: icons["salle_biblio.png"]!,
         onTap: () {
+          ScaffoldMessenger.of(context).showSnackBar(
+            buildCustomSnackBar(
+              context,
+              "La bibliothèque sera disponible prochainement 😉",
+              SnackBarType.info,
+              showCloseIcon: false,
+            ),
+          );
           // add(SetSelectedMapEntity(event.newMapEntity));
         },
       ),
@@ -3298,6 +3397,14 @@ class MapWState extends State<GMap> {
         position: LatLng(14.699667082793065, -17.45149288326502),
         icon: icons["salle_conference.png"]!,
         onTap: () {
+          ScaffoldMessenger.of(context).showSnackBar(
+            buildCustomSnackBar(
+              context,
+              "La salle de conf' sera disponible prochainement 😉",
+              SnackBarType.info,
+              showCloseIcon: false,
+            ),
+          );
           // add(SetSelectedMapEntity(event.newMapEntity));
         },
       ),
@@ -3319,6 +3426,14 @@ class MapWState extends State<GMap> {
         position: LatLng(14.700066622836733, -17.450779750943184),
         icon: icons["exit.png"]!,
         onTap: () {
+          ScaffoldMessenger.of(context).showSnackBar(
+            buildCustomSnackBar(
+              context,
+              "Ce lieu sera disponible prochainement 😉",
+              SnackBarType.info,
+              showCloseIcon: false,
+            ),
+          );
           // add(SetSelectedMapEntity(event.newMapEntity));
         },
       ),
@@ -3329,6 +3444,14 @@ class MapWState extends State<GMap> {
         position: LatLng(14.69948158181005, -17.451396994292736),
         icon: icons["exit.png"]!,
         onTap: () {
+          ScaffoldMessenger.of(context).showSnackBar(
+            buildCustomSnackBar(
+              context,
+              "Ce lieu sera disponible prochainement 😉",
+              SnackBarType.info,
+              showCloseIcon: false,
+            ),
+          );
           // add(SetSelectedMapEntity(event.newMapEntity));
         },
       ),
@@ -3341,6 +3464,14 @@ class MapWState extends State<GMap> {
         position: LatLng(14.700240772773133, -17.450975216925144),
         icon: icons["bat_e.png"]!,
         onTap: () {
+          ScaffoldMessenger.of(context).showSnackBar(
+            buildCustomSnackBar(
+              context,
+              "Ce lieu sera disponible prochainement 😉",
+              SnackBarType.info,
+              showCloseIcon: false,
+            ),
+          );
           // add(SetSelectedMapEntity(event.newMapEntity));
         },
       ),
@@ -6376,15 +6507,18 @@ class CommentSection extends StatelessWidget {
       ],
     );
   }
+
 }
 
 class UserComment extends StatelessWidget {
+
   const UserComment({
     super.key,
     required this.username,
     required this.userPicture,
     required this.userComment,
   });
+
 
   final String username;
   final String userPicture;

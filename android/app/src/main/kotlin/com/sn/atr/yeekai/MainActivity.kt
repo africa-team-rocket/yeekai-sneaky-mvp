@@ -1,4 +1,4 @@
-package com.example.yeebus_filthy_mvp
+package com.sn.atr.yeekai
 
 import io.flutter.embedding.android.FlutterActivity
 

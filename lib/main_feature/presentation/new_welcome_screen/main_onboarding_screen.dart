@@ -449,7 +449,7 @@ class _MainOnboardingScreenState extends State<MainOnboardingScreen> {
                                 SizedBox(
                                   height: 59,
                                   child: Image.asset(
-                                    "assets/yeeguides/raruto_guide.png",
+                                    "assets/yeeguides/rita_guide.png",
                                     height: 43,
                                     width: 43,
                                   ),
@@ -484,7 +484,7 @@ class _MainOnboardingScreenState extends State<MainOnboardingScreen> {
                               SizedBox(
                                 height: 59,
                                 child: Image.asset(
-                                  "assets/yeeguides/raruto_guide.png",
+                                  "assets/yeeguides/rita_guide.png",
                                   height: 43,
                                   width: 43,
                                 ),
@@ -515,7 +515,7 @@ class _MainOnboardingScreenState extends State<MainOnboardingScreen> {
                                 SizedBox(
                                   height: 58,
                                   child: Image.asset(
-                                    "assets/yeeguides/raruto_guide.png",
+                                    "assets/yeeguides/rita_guide.png",
                                     height: 43,
                                     width: 43,
                                   ),
