@@ -718,6 +718,67 @@ class MapWState extends State<GMap> {
       strokeWidth: 1,
       fillColor: const Color(0XFFF8F9FB),
     ),
+
+    // Main Building 2 : (bat E)
+
+    Polygon(
+      polygonId: PolygonId('Main building 2 (bat E)'),
+      points: [
+        LatLng(14.7001549, -17.4512144),
+        LatLng(14.7001931, -17.4510934),
+        LatLng(14.700308, -17.4511384),
+        LatLng(14.7004012, -17.450841),
+        LatLng(14.7001765, -17.4507615),
+        LatLng(14.7001519, -17.4508304),
+        LatLng(14.7000509, -17.4507924),
+        LatLng(14.7000889, -17.4506834),
+        LatLng(14.7001816, -17.4507187),
+        LatLng(14.7002039, -17.4506514),
+        LatLng(14.7004085, -17.4507223),
+        LatLng(14.7004022, -17.450739),
+        LatLng(14.7004292, -17.450749),
+        LatLng(14.7004342, -17.4507326),
+        LatLng(14.7005299, -17.4507654),
+        LatLng(14.7003569, -17.4512894),
+        LatLng(14.7001549, -17.4512144),
+      ],
+      strokeColor: const Color(0xFFD5D5D7),
+      strokeWidth: 1,
+      fillColor: const Color(0xFFF8F9FB),
+    ),
+
+    // Escaliers 1 BAT E :
+
+    Polygon(
+      polygonId: PolygonId("Escaliers 1 Bat E"),
+      points: [
+        LatLng(14.7003434, -17.4511322),
+        LatLng(14.7004009, -17.4511545),
+        LatLng(14.7003927, -17.4511801),
+        LatLng(14.7003346, -17.4511578),
+        LatLng(14.7003434, -17.4511322),
+      ],
+      strokeWidth: 2,
+      strokeColor: const Color(0XFFDCDCDE),
+      fillColor: const Color(0XFFF2F3F7),
+    ),
+
+    // Escaliers 2 BAT E :
+
+    Polygon(
+      polygonId: PolygonId("Escaliers 2 Bat E"),
+      points: [
+        LatLng(14.7004992, -17.4508565),
+        LatLng(14.7004917, -17.4508795),
+        LatLng(14.7004325, -17.4508604),
+        LatLng(14.7004397, -17.4508365),
+        LatLng(14.7004992, -17.4508565),
+      ],
+      strokeWidth: 2,
+      strokeColor: const Color(0XFFDCDCDE),
+      fillColor: const Color(0XFFF2F3F7),
+    ),
+
   };
   Set<Polygon> _firstFloorPolygons = {
     // MainBYellowZone1 :
@@ -1355,8 +1416,293 @@ class MapWState extends State<GMap> {
       strokeColor: const Color.fromRGBO(182, 182, 182, 1.0),
       strokeWidth: 2,
     ),
+
+    // Lot 5 (batiment E) :
+
+
+    // E-11 ÉLECTRONIQUE (Mr Rabé)
+    Polygon(
+      polygonId: PolygonId('E-11 ÉLECTRONIQUE (Mr Rabé)'),
+      points: [
+        LatLng(14.7001402, -17.4508263),
+        LatLng(14.7000509, -17.4507924),
+        LatLng(14.7000889, -17.4506834),
+        LatLng(14.7001816, -17.4507187),
+        LatLng(14.7002039, -17.4506514),
+        LatLng(14.7002374, -17.4506633),
+        LatLng(14.7002052, -17.4507546),
+        LatLng(14.7001682, -17.4507412),
+        LatLng(14.7001402, -17.4508263),
+      ],
+      strokeColor: Color.fromRGBO(129, 199, 132, 1.0),
+      fillColor: Color.fromRGBO(232, 253, 232, 1.0),
+      strokeWidth: 2,
+    ),
+
+    // E-13 Commutateur
+    Polygon(
+      polygonId: PolygonId('E-13 COMMUTATEUR'),
+      points: [
+        LatLng(14.7002477, -17.4507639),
+        LatLng(14.7002767, -17.4506773),
+        LatLng(14.7004085, -17.4507223),
+        LatLng(14.7004022, -17.450739),
+        LatLng(14.7004292, -17.450749),
+        LatLng(14.7004065, -17.4508185),
+        LatLng(14.7002477, -17.4507639),
+      ],
+      strokeColor: Color.fromRGBO(129, 199, 132, 1.0),
+      fillColor: Color.fromRGBO(232, 253, 232, 1.0),
+      strokeWidth: 2,
+    ),
+
+    // E-15 LABO FEU Abdoulaye SADOU
+    Polygon(
+      polygonId: PolygonId('E-15 LABO FEU Abdoulaye SADOU'),
+      points: [
+        LatLng(14.7004917, -17.4508795),
+        LatLng(14.7004454, -17.4510215),
+        LatLng(14.7003702, -17.4509942),
+        LatLng(14.7004146, -17.4508545),
+        LatLng(14.7004917, -17.4508795),
+      ],
+      strokeColor: Color.fromRGBO(129, 199, 132, 1.0),
+      fillColor: Color.fromRGBO(232, 253, 232, 1.0),
+      strokeWidth: 2,
+    ),
+
+    // Polygon for E-16 Résezux locaux
+    Polygon(
+      polygonId: PolygonId("E-16 Résezux locaux"),
+      points: [
+        LatLng(14.7004454, -17.4510215),
+        LatLng(14.7004009, -17.4511545),
+        LatLng(14.7003265, -17.4511262),
+        LatLng(14.7003702, -17.4509942),
+        LatLng(14.7004454, -17.4510215),
+      ],
+      fillColor: const Color.fromRGBO(232, 253, 232, 1.0),
+      strokeColor: const Color.fromRGBO(129, 199, 132, 1.0),
+      strokeWidth: 2,
+    ),
+    // Polygon for E-17 Labo TP
+    Polygon(
+      polygonId: PolygonId("E-17 Labo TP"),
+      points: [
+        LatLng(14.7002594, -17.4511458),
+        LatLng(14.7003454, -17.4511781),
+        LatLng(14.7003274, -17.4512312),
+        LatLng(14.7003705, -17.4512472),
+        LatLng(14.7003569, -17.4512894),
+        LatLng(14.7002288, -17.4512418),
+        LatLng(14.7002594, -17.4511458),
+      ],
+      fillColor: const Color.fromRGBO(232, 253, 232, 1.0),
+      strokeColor: const Color.fromRGBO(129, 199, 132, 1.0),
+      strokeWidth: 2,
+    ),
+    // Polygon for E-18 Classe Lmen1
+    Polygon(
+      polygonId: PolygonId("E-18 Classe Lmen1"),
+      points: [
+        LatLng(14.7002594, -17.4511458),
+        LatLng(14.7002288, -17.4512418),
+        LatLng(14.7001549, -17.4512144),
+        LatLng(14.7001864, -17.4511164),
+        LatLng(14.7002594, -17.4511458),
+      ],
+      fillColor: const Color.fromRGBO(217, 217, 217, 1.0),
+      strokeColor: const Color.fromRGBO(182, 182, 182, 1.0),
+      strokeWidth: 2,
+    ),
+
+    // E14 - ???
+
+  Polygon(
+  polygonId: PolygonId("E14 - ???"),
+  points: [
+  LatLng(14.7004342, -17.4507326),
+  LatLng(14.7005299, -17.4507654),
+  LatLng(14.7005135, -17.4508133),
+  LatLng(14.7004992, -17.4508565),
+  LatLng(14.7004772, -17.4508489),
+  LatLng(14.7004792, -17.4508408),
+  LatLng(14.7004075, -17.4508165),
+  LatLng(14.7004342, -17.4507326),
+  ],
+  strokeWidth: 2,
+  strokeColor: const Color.fromRGBO(182, 182, 182, 1.0),
+  fillColor: const Color.fromRGBO(217, 217, 217, 1.0),
+  ),
+
+    // Toilettes 1
+    Polygon(
+      polygonId: PolygonId("Toilettes 1"),
+      points: const [
+        LatLng(14.7003927, -17.4511801),
+        LatLng(14.7003705, -17.4512472),
+        LatLng(14.7003274, -17.4512312),
+        LatLng(14.7003454, -17.4511781),
+        LatLng(14.7003293, -17.4511721),
+        LatLng(14.7003346, -17.4511578),
+        LatLng(14.7003927, -17.4511801),
+      ],
+      fillColor: const Color.fromRGBO(223, 227, 255, 1.0),
+      strokeColor: const Color.fromRGBO(152, 159, 228, 1.0),
+      strokeWidth: 2,
+    ),
+
+// Toilettes 2
+    Polygon(
+      polygonId: PolygonId("Toilettes 2"),
+      points: const [
+        LatLng(14.7002122, -17.450736),
+        LatLng(14.7002374, -17.4506633),
+        LatLng(14.7002767, -17.4506773),
+        LatLng(14.7002518, -17.4507513),
+        LatLng(14.7002122, -17.450736),
+      ],
+      fillColor: const Color.fromRGBO(223, 227, 255, 1.0),
+      strokeColor: const Color.fromRGBO(152, 159, 228, 1.0),
+      strokeWidth: 2,
+    ),
+
+
   };
   Set<Polygon> _secondFloorPolygons = {
+
+    // - Batiment E
+
+    // E25
+    Polygon(
+      polygonId: PolygonId('E25 LP3'),
+      points: [
+        LatLng(14.7003538, -17.4510508),
+        LatLng(14.7004261, -17.4510785),
+        LatLng(14.700400329017548, -17.45115391910076),
+        LatLng(14.700329631346406, -17.45112575590611),
+        LatLng(14.7003538, -17.4510508),
+      ],
+      fillColor: const Color.fromRGBO(217, 217, 217, 1.0),
+      strokeColor: const Color.fromRGBO(182, 182, 182, 1.0),
+      strokeWidth: 2,
+    ),
+
+    // E26
+    Polygon(
+      polygonId: PolygonId('Salle E26 LTI2A'),
+      points: [
+        LatLng(14.7002674, -17.4511494),
+        LatLng(14.7003877, -17.4511951),
+        LatLng(14.7003569, -17.4512894),
+        LatLng(14.7002379, -17.4512452),
+        LatLng(14.7002674, -17.4511494),
+      ],
+      fillColor: const Color.fromRGBO(217, 217, 217, 1.0),
+      strokeColor: const Color.fromRGBO(182, 182, 182, 1.0),
+      strokeWidth: 2,
+    ),
+
+    // Salle mystère
+    Polygon(
+      polygonId: PolygonId('Salle mystère'),
+      points: [
+        LatLng(14.7004065, -17.4508185),
+        LatLng(14.7004342, -17.4507326),
+        LatLng(14.7004738, -17.4507466),
+        LatLng(14.7004474, -17.4508318),
+        LatLng(14.7004065, -17.4508185),
+      ],
+      fillColor: const Color.fromRGBO(217, 217, 217, 1.0),
+      strokeColor: const Color.fromRGBO(182, 182, 182, 1.0),
+      strokeWidth: 2,
+    ),
+
+
+    // E 27
+    Polygon(
+      polygonId: PolygonId('E 27 Classe MMTD1 (en construction)'),
+      points: [
+        LatLng(14.7002379, -17.4512452),
+        LatLng(14.7001549, -17.4512144),
+        LatLng(14.7001857, -17.4511205),
+        LatLng(14.7002674, -17.4511494),
+        LatLng(14.7002379, -17.4512452),
+      ],
+      fillColor: const Color.fromRGBO(217, 217, 217, 1.0),
+      strokeColor: const Color.fromRGBO(182, 182, 182, 1.0),
+      strokeWidth: 2,
+    ),
+
+    // E-22
+    Polygon(
+      polygonId: PolygonId('E-22 LTI2B'),
+      points: [
+        LatLng(14.7004917, -17.4508795),
+        LatLng(14.7004481, -17.4510124),
+        LatLng(14.7003732, -17.4509864),
+        LatLng(14.7004146, -17.4508545),
+        LatLng(14.7004917, -17.4508795),
+      ],
+      fillColor: const Color.fromRGBO(217, 217, 217, 1.0),
+      strokeColor: const Color.fromRGBO(182, 182, 182, 1.0),
+      strokeWidth: 2,
+    ),
+
+    // E24
+    Polygon(
+      polygonId: PolygonId('E24 Lmen3 (spé MDI le mardi)'),
+      points: [
+        LatLng(14.7003732, -17.4509864),
+        LatLng(14.7004481, -17.4510124),
+        LatLng(14.7004261, -17.4510785),
+        LatLng(14.7003538, -17.4510508),
+        LatLng(14.7003732, -17.4509864),
+      ],
+      fillColor: const Color.fromRGBO(217, 217, 217, 1.0),
+      strokeColor: const Color.fromRGBO(182, 182, 182, 1.0),
+      strokeWidth: 2,
+    ),
+
+    // Terrasse
+
+    Polygon(
+      polygonId: PolygonId('Terrasse'),
+      points: [
+        LatLng(14.7004292, -17.450749),
+        LatLng(14.7004065, -17.4508185),
+        LatLng(14.7004166, -17.4508228),
+        LatLng(14.7004094, -17.4508442),
+        LatLng(14.7004012, -17.450841),
+        LatLng(14.7001765, -17.4507615),
+        LatLng(14.7001816, -17.4507187),
+        LatLng(14.7002039, -17.4506514),
+        LatLng(14.7004085, -17.4507223),
+        LatLng(14.7004022, -17.450739),
+        LatLng(14.7004292, -17.450749),
+      ],
+      fillColor: const Color(0XFFFDF9EE),
+      strokeColor: const Color(0XFFE6E1CE),
+      strokeWidth: 2,
+    ),
+
+    // Toilettes
+    Polygon(
+      polygonId: PolygonId('Toilettes 3 BATE E2'),
+      points: [
+        LatLng(14.7004573, -17.4507971),
+        LatLng(14.7004738, -17.4507466),
+        LatLng(14.7005299, -17.4507654),
+        LatLng(14.7004992, -17.4508565),
+        LatLng(14.700455, -17.4508418),
+        LatLng(14.7004672, -17.4508007),
+        LatLng(14.7004573, -17.4507971),
+      ],
+      fillColor: const Color.fromRGBO(223, 227, 255, 1.0),
+      strokeColor: const Color.fromRGBO(152, 159, 228, 1.0),
+      strokeWidth: 2,
+    ),
+
     // - Étage admin
 
     // Resto
@@ -1869,6 +2215,65 @@ class MapWState extends State<GMap> {
 
   Future<void> _initializeTextMarkersOfLevel1() async {
     List<Map<String, dynamic>> markerData = [
+      // BAT E :
+
+      {
+        "markerId": "Admin",
+        "rotation": -5.0,
+        "position": LatLng(14.700011491543004, -17.45103120803833),
+        "title": "(Bientôt disponible)",
+      },
+
+      {
+        "markerId": "Salle E18",
+        "rotation": -18.0,
+        "position": LatLng(14.700207045422003, -17.45118040591478),
+        "title": "Salle E18\n(LMEN 1)",
+      },
+
+      {
+        "markerId": "Salle E14",
+        "rotation": 73.0,
+        "position": LatLng(14.700469405160389, -17.450793161988262),
+        "title": "Salle E14\n(mystère)",
+      },
+
+      {
+        "markerId": "Salle E17",
+        "rotation": -18.0,
+        "position": LatLng(14.70028098614654, -17.451208233833313),
+        "title": "Salle E17\n(Labo TP)",
+      },
+
+      {
+        "markerId": "Salle E16",
+        "rotation": -18.0,
+        "position": LatLng(14.700374709221931, -17.451071441173553),
+        "title": "Salle E16\n(Réseaux locaux)",
+      },
+
+      {
+        "markerId": "Salle E15",
+        "rotation": -18.0,
+        "position": LatLng(14.700419138485834, -17.450932636857033),
+        "title": "Salle E15\n(Laboratoire Feu Abdoulaye SADOU)",
+      },
+
+      {
+        "markerId": "Salle E13",
+        "rotation": 73.0,
+        "position": LatLng(14.700335468769655, -17.45076399296522),
+        "title": "Salle E13\n(Commutateur)",
+      },
+
+      {
+        "markerId": "Salle E11",
+        "rotation": -18.0,
+        "position": LatLng(14.700105214734053, -17.450753934681416),
+        "title": "Salle E11\n(Électronique - Mr.Rabé)",
+      },
+
+      // BAT H :
       {
         "markerId": "Salle HA6",
         "rotation": -18.0,
@@ -2583,6 +2988,60 @@ class MapWState extends State<GMap> {
 
   Future<void> _initializeTextMarkersOfLevel12() async {
     List<Map<String, dynamic>> markerData = [
+
+      // BAT E :
+
+      {
+        "markerId": "Salle E27",
+        "rotation": -18.0,
+        "position": LatLng(14.70021450435587, -17.4511881172657),
+        "title": "Salle E27\n(MMTD1 - En construction)",
+      },
+
+      {
+        "markerId": "Salle E26",
+        "rotation": -18.0,
+        "position": LatLng(14.700309524665105, -17.45122231543064),
+        "title": "Salle E26\n(LTI2A)",
+      },
+
+      {
+        "markerId": "Salle E25",
+        "rotation": -18.0,
+        "position": LatLng(14.70037924943911, -17.451102286577225),
+        "title": "Salle E25\n(LP3)",
+      },
+
+      {
+        "markerId": "Salle E24",
+        "rotation": -18.0,
+        "position": LatLng(14.700398058909201, -17.451035231351852),
+        "title": "Salle E24\n(LMEN3)",
+      },
+
+      {
+        "markerId": "Salle E22-23",
+        "rotation": -18.0,
+        "position": LatLng(14.700429840423974, -17.450936660170555),
+        "title": "Salle E22-23\n(LTI2B)",
+      },
+
+      {
+        "markerId": "Salle mystere BATE E2 1",
+        "rotation": -18.0,
+        "position": LatLng(14.70043827225364, -17.450782097876072),
+        "title": "Salle mystère",
+      },
+
+      {
+        "markerId": "Terrasse BATE E2 1",
+        "rotation": 73.0,
+        "position": LatLng(14.70030530874783, -17.45075024664402),
+        "title": "Terrasse\n(accès interdit)",
+      },
+      // BAT H :
+
+
       {
         "markerId": "Salle informatique DAR (SES)",
         "position": LatLng(14.699996573661137, -17.451602183282375),
@@ -2667,6 +3126,84 @@ class MapWState extends State<GMap> {
 
   Future<void> _initializeLevel1Markers() async {
     List<Marker> levelOneMarkers = [
+
+
+
+      // BAT E :
+
+      Marker(
+        markerId: const MarkerId("Toilettes 1 BATE E1 (H/F)"),
+        anchor: const Offset(0.5, 0.5),
+        position: LatLng(14.700361412871128, -17.45120957493782),
+        icon: icons["toilette_mixte.png"]!,
+        onTap: () {
+          context.read<MapBloc>().add(SetSelectedMapEntity(
+            Restroom(
+              occupancyLevel: "Faible",
+              urinalsAvailable: "Oui",
+              cleanlinessLevel: "Très propre",
+              placeName: "Toilettes 1 Batiment E (H/F)",
+              shortDescription:
+              "Sanitaires modernes, accessibles à tous, mixtes. Ces toilettes mixtes sont bien entretenues et offrent un accès universel.",
+              entityPosition:
+              LatLng(14.700361412871128, -17.45120957493782),
+              entityName: "Toilettes mixte",
+              rating: "4.5/5",
+              floor: "Étage 0",
+              building: "Bat E",
+              timeDetail: "Ouvert H24",
+              about:
+              "Ces toilettes mixtes sont bien entretenues et offrent un accès universel. Elles se situent au rez de chaussée du bâtiment E, toujours prêtes à l'emploi.",
+              isOpen: true,
+              photos: [
+                "assets/images/school_toilets.jpg",
+                "assets/images/place_placeholder.png",
+                "assets/images/esmt_3.png"
+              ],
+              placeType: "Toilettes",
+            ),
+          ));
+        },
+      ),
+
+      Marker(
+        markerId: const MarkerId("Toilettes 2 BATE E1 (H/F)"),
+        anchor: const Offset(0.5, 0.5),
+        position: LatLng(14.700244340088812, -17.450708001852036),
+        icon: icons["toilette_mixte.png"]!,
+        onTap: () {
+          context.read<MapBloc>().add(SetSelectedMapEntity(
+            Restroom(
+              occupancyLevel: "Faible",
+              urinalsAvailable: "Oui",
+              cleanlinessLevel: "Très propre",
+              placeName: "Toilettes 2 Batiment E (H/F)",
+              shortDescription:
+              "Sanitaires modernes, accessibles à tous, mixtes. Ces toilettes mixtes sont bien entretenues et offrent un accès universel.",
+              entityPosition:
+              LatLng(14.700244340088812, -17.450708001852036),
+              entityName: "Toilettes mixte",
+              rating: "4.5/5",
+              floor: "Étage 0",
+              building: "Bat E",
+              timeDetail: "Ouvert H24",
+              about:
+              "Ces toilettes mixtes sont bien entretenues et offrent un accès universel. Elles se situent au rez de chaussée du bâtiment E, toujours prêtes à l'emploi.",
+              isOpen: true,
+              photos: [
+                "assets/images/school_toilets.jpg",
+                "assets/images/place_placeholder.png",
+                "assets/images/esmt_3.png"
+              ],
+              placeType: "Toilettes",
+            ),
+          ));
+        },
+      ),
+
+
+      // BAT H :
+
       // -- Another level
 
       Marker(
@@ -2960,6 +3497,45 @@ class MapWState extends State<GMap> {
   Future<void> _initializeLevel1Markers2() async {
     List<Marker> levelOneMarkers2 = [
       // -- Another level
+
+      // BAT E :
+
+      Marker(
+        markerId: const MarkerId("Toilettes 3 BATE E1 (H/F)"),
+        anchor: const Offset(0.5, 0.5),
+        position: LatLng(14.700492754837532, -17.45080053806305),
+        icon: icons["toilette_mixte.png"]!,
+        onTap: () {
+          context.read<MapBloc>().add(SetSelectedMapEntity(
+            Restroom(
+              occupancyLevel: "Faible",
+              urinalsAvailable: "Oui",
+              cleanlinessLevel: "Très propre",
+              placeName: "Toilettes 3 Batiment E (H/F)",
+              shortDescription:
+              "Sanitaires modernes, accessibles à tous, mixtes. Ces toilettes mixtes sont bien entretenues et offrent un accès universel.",
+              entityPosition:
+              LatLng(14.700492754837532, -17.45080053806305),
+              entityName: "Toilettes mixte",
+              rating: "4.5/5",
+              floor: "Étage 1",
+              building: "Bat E",
+              timeDetail: "Ouvert H24",
+              about:
+              "Ces toilettes mixtes sont bien entretenues et offrent un accès universel. Elles se situent au 1er étage du bâtiment E, toujours prêtes à l'emploi.",
+              isOpen: true,
+              photos: [
+                "assets/images/school_toilets.jpg",
+                "assets/images/place_placeholder.png",
+                "assets/images/esmt_3.png"
+              ],
+              placeType: "Toilettes",
+            ),
+          ));
+        },
+      ),
+
+      // BAT H :
 
       Marker(
         markerId: const MarkerId("Toilettes 1 (H/F) 2F"),
@@ -3305,6 +3881,98 @@ class MapWState extends State<GMap> {
           // add(SetSelectedMapEntity(event.newMapEntity));
         },
       ),
+
+      // BAT E :
+
+      Marker(
+        markerId: const MarkerId("Labo 4 BATE E17"),
+        anchor: const Offset(0.5, 0.5),
+        position: LatLng(14.700309848966432, -17.451219968497753),
+        icon: icons["labo.png"]!,
+        onTap: () {
+          ScaffoldMessenger.of(context).showSnackBar(
+            buildCustomSnackBar(
+              context,
+              "Ce lieu sera disponible prochainement 😉",
+              SnackBarType.info,
+              showCloseIcon: false,
+            ),
+          );
+          // add(SetSelectedMapEntity(event.newMapEntity));
+        },
+      ),
+
+      Marker(
+        markerId: const MarkerId("Labo 5 BATE E16"),
+        anchor: const Offset(0.5, 0.5),
+        position: LatLng(14.700397086005616, -17.451080828905106),
+        icon: icons["labo.png"]!,
+        onTap: () {
+          ScaffoldMessenger.of(context).showSnackBar(
+            buildCustomSnackBar(
+              context,
+              "Ce lieu sera disponible prochainement 😉",
+              SnackBarType.info,
+              showCloseIcon: false,
+            ),
+          );
+          // add(SetSelectedMapEntity(event.newMapEntity));
+        },
+      ),
+
+      Marker(
+        markerId: const MarkerId("Labo 6 BATE E15"),
+        anchor: const Offset(0.5, 0.5),
+        position: LatLng(14.70044800128748, -17.450945377349854),
+        icon: icons["labo.png"]!,
+        onTap: () {
+          ScaffoldMessenger.of(context).showSnackBar(
+            buildCustomSnackBar(
+              context,
+              "Ce lieu sera disponible prochainement 😉",
+              SnackBarType.info,
+              showCloseIcon: false,
+            ),
+          );
+          // add(SetSelectedMapEntity(event.newMapEntity));
+        },
+      ),
+
+      Marker(
+        markerId: const MarkerId("Labo 7 BATE E13"),
+        anchor: const Offset(0.5, 0.5),
+        position: LatLng(14.700343900602972, -17.450743541121483),
+        icon: icons["labo.png"]!,
+        onTap: () {
+          ScaffoldMessenger.of(context).showSnackBar(
+            buildCustomSnackBar(
+              context,
+              "Ce lieu sera disponible prochainement 😉",
+              SnackBarType.info,
+              showCloseIcon: false,
+            ),
+          );
+          // add(SetSelectedMapEntity(event.newMapEntity));
+        },
+      ),
+
+      Marker(
+        markerId: const MarkerId("Labo 8 BATE E11"),
+        anchor: const Offset(0.5, 0.5),
+        position: LatLng(14.700130185958107, -17.450766675174236),
+        icon: icons["labo.png"]!,
+        onTap: () {
+          ScaffoldMessenger.of(context).showSnackBar(
+            buildCustomSnackBar(
+              context,
+              "Ce lieu sera disponible prochainement 😉",
+              SnackBarType.info,
+              showCloseIcon: false,
+            ),
+          );
+          // add(SetSelectedMapEntity(event.newMapEntity));
+        },
+      ),
     ];
 
     setState(() {
@@ -3458,23 +4126,23 @@ class MapWState extends State<GMap> {
 
       // -- Batiments :
 
-      Marker(
-        markerId: const MarkerId("Batiment E"),
-        anchor: const Offset(0.5, 0.5),
-        position: LatLng(14.700240772773133, -17.450975216925144),
-        icon: icons["bat_e.png"]!,
-        onTap: () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            buildCustomSnackBar(
-              context,
-              "Ce lieu sera disponible prochainement 😉",
-              SnackBarType.info,
-              showCloseIcon: false,
-            ),
-          );
-          // add(SetSelectedMapEntity(event.newMapEntity));
-        },
-      ),
+      // Marker(
+      //   markerId: const MarkerId("Batiment E"),
+      //   anchor: const Offset(0.5, 0.5),
+      //   position: LatLng(14.700240772773133, -17.450975216925144),
+      //   icon: icons["bat_e.png"]!,
+      //   onTap: () {
+      //     ScaffoldMessenger.of(context).showSnackBar(
+      //       buildCustomSnackBar(
+      //         context,
+      //         "Ce lieu sera disponible prochainement 😉",
+      //         SnackBarType.info,
+      //         showCloseIcon: false,
+      //       ),
+      //     );
+      //     // add(SetSelectedMapEntity(event.newMapEntity));
+      //   },
+      // ),
     ];
 
     setState(() {
@@ -3546,6 +4214,8 @@ class MapWState extends State<GMap> {
           },
           // polylines: mapState.polylinesSet,
           polylines: {
+
+
             // Escaliers 9 : Ligne 2
             Polyline(
               polylineId: PolylineId('esc_9_ligne_2'),
@@ -4183,6 +4853,138 @@ class MapWState extends State<GMap> {
               },
             ),
 
+            // Escaliers 2 BAT E :
+
+            Polyline(
+              polylineId: PolylineId('ligne_1_e2_bate'),
+              zIndex: 2,
+              points: [
+                LatLng(14.7004954, -17.4508689),
+                LatLng(14.7004354, -17.4508487),
+              ],
+              color: const Color(0XFFDCDCDE),
+              width: 2,
+            ),
+
+            Polyline(
+              polylineId: PolylineId('ligne_2_e2_bate'),
+              zIndex: 2,
+              points: [
+                LatLng(14.7004422, -17.4508642),
+                LatLng(14.7004494, -17.45084),
+              ],
+              color: const Color(0XFFDCDCDE),
+              width: 2,
+            ),
+
+            Polyline(
+              polylineId: PolylineId('ligne_3_e2_bate'),
+              zIndex: 2,
+              points: [
+                LatLng(14.7004529, -17.4508665),
+                LatLng(14.7004604, -17.450843),
+              ],
+              color: const Color(0XFFDCDCDE),
+              width: 2,
+            ),
+
+            Polyline(
+              polylineId: PolylineId('ligne_4_e2_bate'),
+              zIndex: 2,
+              points: [
+                LatLng(14.700464, -17.4508709),
+                LatLng(14.7004714, -17.4508471),
+              ],
+              color: const Color(0XFFDCDCDE),
+              width: 2,
+            ),
+
+            Polyline(
+              polylineId: PolylineId('ligne_5_e2_bate'),
+              zIndex: 2,
+              points: [
+                LatLng(14.7004747, -17.4508749),
+                LatLng(14.7004828, -17.4508511),
+              ],
+              color: const Color(0XFFDCDCDE),
+              width: 2,
+            ),
+
+            Polyline(
+              polylineId: PolylineId('ligne_6_e2_bate'),
+              zIndex: 2,
+              points: [
+                LatLng(14.700488, -17.4508669),
+                LatLng(14.7004919, -17.4508541),
+              ],
+              color: const Color(0XFFDCDCDE),
+              width: 2,
+            ),
+
+            // BAT E : Escaliers 1
+
+            Polyline(
+              polylineId: PolylineId('ligne_1_e1_bate'),
+              zIndex: 2,
+              points: [
+                LatLng(14.7003959, -17.4511672),
+                LatLng(14.7003382, -17.4511451),
+              ],
+              color: const Color(0XFFDCDCDE),
+              width: 2,
+            ),
+            Polyline(
+              polylineId: PolylineId('ligne_2_e1_bate'),
+              zIndex: 2,
+              points: [
+                LatLng(14.7003434, -17.4511615),
+                LatLng(14.7003476, -17.4511487),
+              ],
+              color: const Color(0XFFDCDCDE),
+              width: 2,
+            ),
+            Polyline(
+              polylineId: PolylineId('ligne_3_e1_bate'),
+              zIndex: 2,
+              points: [
+                LatLng(14.7003538, -17.4511658),
+                LatLng(14.7003625, -17.45114),
+              ],
+              color: const Color(0XFFDCDCDE),
+              width: 2,
+            ),
+            Polyline(
+              polylineId: PolylineId('ligne_4_e1_bate'),
+              zIndex: 2,
+              points: [
+                LatLng(14.7003648, -17.4511699),
+                LatLng(14.7003735, -17.4511434),
+              ],
+              color: const Color(0XFFDCDCDE),
+              width: 2,
+            ),
+            Polyline(
+              polylineId: PolylineId('ligne_5_e1_bate'),
+              zIndex: 2,
+              points: [
+                LatLng(14.7003744, -17.4511736),
+                LatLng(14.7003838, -17.4511477),
+              ],
+              color: const Color(0XFFDCDCDE),
+              width: 2,
+            ),
+            Polyline(
+              polylineId: PolylineId('ligne_6_e1_bate'),
+              zIndex: 2,
+              points: [
+                LatLng(14.7003898, -17.4511655),
+                LatLng(14.700394, -17.4511521),
+              ],
+              color: const Color(0XFFDCDCDE),
+              width: 2,
+            ),
+
+
             // Entree
             if (widget.floorLevel == 0) ...{
               Polyline(
@@ -4252,40 +5054,43 @@ class MapWState extends State<GMap> {
                   );
                 },
               ),
-              Polyline(
-                geodesic: false,
-                visible: true,
-                polylineId: const PolylineId('polygonId1'),
-                points: [
-                  const LatLng(14.6974015, -17.4511063),
-                  const LatLng(14.6974327, -17.4510688),
-                  const LatLng(14.6989789, -17.4514228),
-                  const LatLng(14.6993058, -17.4514818),
-                  const LatLng(14.700354, -17.451793),
-                  const LatLng(14.700712, -17.4506557),
-                  const LatLng(14.7000893, -17.4504197),
-                  const LatLng(14.70009, -17.45039),
-                ],
-                width: 1,
-                color: Colors.grey,
-                endCap: Cap.roundCap,
-                patterns: <PatternItem>[
-                  // Définit un motif de pointillés
-                  PatternItem.dash(20.0),
-                  PatternItem.gap(10.0),
-                ],
-                onTap: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    buildCustomSnackBar(
-                      context,
-                      "Fonctionnalité disponible prochainement 😉",
-                      SnackBarType.info,
-                      showCloseIcon: false,
-                    ),
-                  );
-                },
-              ),
+
             },
+
+            Polyline(
+              geodesic: false,
+              visible: true,
+              polylineId: const PolylineId('polygonId1'),
+              points: [
+                const LatLng(14.6974015, -17.4511063),
+                const LatLng(14.6974327, -17.4510688),
+                const LatLng(14.6989789, -17.4514228),
+                const LatLng(14.6993058, -17.4514818),
+                const LatLng(14.700354, -17.451793),
+                const LatLng(14.700712, -17.4506557),
+                const LatLng(14.7000893, -17.4504197),
+                const LatLng(14.70009, -17.45039),
+              ],
+              width: 1,
+              color: Colors.grey,
+              endCap: Cap.roundCap,
+              patterns: <PatternItem>[
+                // Définit un motif de pointillés
+                PatternItem.dash(20.0),
+                PatternItem.gap(10.0),
+              ],
+              onTap: () {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  buildCustomSnackBar(
+                    context,
+                    "Fonctionnalité disponible prochainement 😉",
+                    SnackBarType.info,
+                    showCloseIcon: false,
+                  ),
+                );
+              },
+            ),
+
 
             // Upstairs 2 :
             // Ligne 6
