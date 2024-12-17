@@ -213,15 +213,13 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
       switch (resource.type) {
         case ResourceType.success:
           if (resource.data != null) {
-            emit(state.copyWith(messages: resource.data!));
+            emit(state.copyWith(messages: [
+              AIChatMessage(message: "Dans quelle salle a eu lieu la démo de l'appli Yeekai durant la campagne ?", conversationId: "0", yeeguideId: "rita"),
+              ...resource.data!]));
 
             if(resource.data!.isEmpty){
               emit(state.copyWith(messages: [
-                HumanChatMessage(message: "Comment puis-je avoir un duplicata de mon bulletin ? \nJe suis étudiant en L2.", conversationId: "0", yeeguideId: "rita"),
-                AIChatMessage(message: "Bonjour, pour avoir un duplicata de ton bulletin c'est simple :", conversationId: "0", yeeguideId: "rita"),
-                AIChatMessage(message: "1 - Aller voir Madame Barro avec ta carte d'identité scolaire en 2000 FCFA de frais.", conversationId: "0", yeeguideId: "rita"),
-                AIChatMessage(message: "2 - Revenir une semaine après (ou au délai que vous aura donné Mme Barro", conversationId: "0", yeeguideId: "rita"),
-                AIChatMessage(message: "3 - Veux-tu que je t'indique où est le bureau de Mme Barro ?", conversationId: "0", yeeguideId: "rita"),
+                AIChatMessage(message: "Dans quelle salle a eu lieu la démo de l'appli Yeekai durant la campagne ?", conversationId: "0", yeeguideId: "rita"),
                   // const HumanChatMessage(message: "Comment puis-je avoir un duplicata de mon bulletin ? \nJe suis étudiant en L2.", conversationId: "0", yeeguideId: "rita"),
 
               ]));

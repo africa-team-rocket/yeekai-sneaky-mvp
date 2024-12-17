@@ -102,36 +102,25 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   ];
 
   List<String> _suggestionMessages = [
-    "📚 À quelle heure ouvre la bibliothèque ?",
-    "🍽️ Quel est le menu du restaurant ?",
-    "👩‍💼 Est-ce que Madame Rita est dans son bureau ?",
-    "💳 J'ai perdu ma carte étudiant, que faire ?",
-    "📑 Comment avoir mon bulletin du second semestre ?",
-    "🚻 Quelles sont les toilettes les plus propres ?",
-    "🕌 Où puis-je prier au sein de l'école ?",
-    "🔬 Où est le labo E26 ?",
-    "🧑‍🏫 Est-ce que la salle HB6 est occupée ?",
-    "👨‍🏫 Qui est Mr GBETIE ?",
-    "🏦 Quels sont les numéros bancaires pour payer ma scolarité ?",
-    "⚡ Comment trouver de l'aide pour mes cours d'électricité ?",
-    "🏀 Est-ce que le championnat inter classe de basket de l'école est en cours ?",
-    "⚽ Quelle classe a gagné le tournoi de football de l'école cette année ?",
-    "🚌 C'est quand la sortie d'intégration de l'école ?",
-    "📚 Comment emprunter un livre à la bibliothèque ?",
-    "❓ Ça veut dire quoi TPE ?",
-    "🏛️ En quelle année l'ESMT a-t-il été créé ?",
-    "💼 Combien coûte le master en gestion de projet à l'ESMT ?",
-    "📝 Quelles sont les procédures pour s'inscrire en MiTMN ?",
-    "🔄 Est-il possible de me réorienter en LPTI depuis LMEN ?",
-    "📞 C'est quoi le numéro du gérant du restaurant ?",
-    "📠 J'aimerais avoir le contact du gérant de la reprographie",
-    "🚪 Pourquoi la portière à l'entrée de l'école est toujours fermée ?",
-    "👜 J'ai perdu mon portefeuille dans le campus, comment faire ?",
-    "🎓 Existe-t-il un service de soutien académique ou de tutorat pour les étudiants ?",
-    "🚏 Où sont situés les arrêts de transport en commun les plus proches du campus de l'ESMT ?",
-    "🔧 Comment signaler un problème technique ou de maintenance sur le campus ?",
-    "⚕️ Où se situe l'infirmerie ?",
-    "🧑‍🎓 Qui est le président de l'amicale de l'ESMT ?",
+    "Au milieu de la cour",
+    "Vers le batiment E",
+    "À la salle E48",
+    "À la salle HB8",
+    "À la salle HB2",
+    "À la salle de conférence",
+    "Au restaurant, 1er étage",
+    "Au terrain de Basket",
+    "À 10h, au grand théâtre",
+    "À la salle HA1",
+    "À la salle HA8",
+    "À la salle HA4",
+    "À la salle HA9",
+    "À la salle HB6",
+    "À la salle HB9",
+    "À la salle de conférence",
+    "Au restaurant, 1er étage",
+    "Au terrain de Basket",
+    "À 10h, au grand théâtre",
   ];
 
   final _scrollViewController = ScrollController();
@@ -589,14 +578,22 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                             onTap: () {
                                               // widget.onPop();
                                               // Navigator.pop(context);
-                                              Navigator.push(
+                                              ScaffoldMessenger.of(context).showSnackBar(
+                                                buildCustomSnackBar(
                                                   context,
-                                                  PageTransition(
-                                                      type: PageTransitionType
-                                                          .fade,
-                                                      duration: const Duration(
-                                                          milliseconds: 500),
-                                                      child: MapScreen()));
+                                                  "Concentre toi sur le trésor 😡",
+                                                  SnackBarType.info,
+                                                  showCloseIcon: false,
+                                                ),
+                                              );
+                                              // Navigator.push(
+                                              //     context,
+                                              //     PageTransition(
+                                              //         type: PageTransitionType
+                                              //             .fade,
+                                              //         duration: const Duration(
+                                              //             milliseconds: 500),
+                                              //         child: MapScreen()));
                                             },
                                             child: SizedBox(
                                               height: 48,
@@ -622,14 +619,14 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                             borderRadius:
                                                 BorderRadius.circular(30),
                                             onTap: () {
-                                              Navigator.push(
+                                              ScaffoldMessenger.of(context).showSnackBar(
+                                                buildCustomSnackBar(
                                                   context,
-                                                  PageTransition(
-                                                      type: PageTransitionType
-                                                          .fade,
-                                                      duration: const Duration(
-                                                          milliseconds: 500),
-                                                      child: ProfileScreen()));
+                                                  "Concentre toi sur le trésor 😡",
+                                                  SnackBarType.info,
+                                                  showCloseIcon: false,
+                                                ),
+                                              );
                                             },
                                             child: SizedBox(
                                               height: 48,
@@ -884,63 +881,12 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                       child: InkWell(
                                         borderRadius: BorderRadius.circular(12),
                                         onTap: () {
-                                          showCupertinoModalPopup<void>(
-                                            context: context,
-                                            builder: (BuildContext context) =>
-                                                CupertinoActionSheet(
-                                              // title: const Text('Title'),
-                                              // message: const Text('Message'),
-                                              actions: <CupertinoActionSheetAction>[
-                                                CupertinoActionSheetAction(
-                                                  onPressed: () {
-                                                    Navigator.pop(context);
-                                                  },
-                                                  child: Text(
-                                                    'Voir les discussions archivées',
-                                                    style: TextStyle(
-                                                        color: AppColors
-                                                            .primaryVar0),
-                                                  ),
-                                                ),
-                                                CupertinoActionSheetAction(
-                                                  onPressed: () {
-                                                    Navigator.push(
-                                                            context,
-                                                            PageTransition(
-                                                                type:
-                                                                    PageTransitionType
-                                                                        .fade,
-                                                                duration:
-                                                                    const Duration(
-                                                                        milliseconds:
-                                                                            500),
-                                                                child:
-                                                                    const CatalogScreen()))
-                                                        .then((value) =>
-                                                            {setState(() {})});
-                                                  },
-                                                  child: Text(
-                                                    'Changer de yeeguide',
-                                                    style: TextStyle(
-                                                        color: AppColors
-                                                            .primaryVar0),
-                                                  ),
-                                                ),
-                                              ],
-                                              cancelButton:
-                                                  CupertinoActionSheetAction(
-                                                isDefaultAction: true,
-                                                isDestructiveAction: true,
-                                                onPressed: () {
-                                                  Navigator.pop(context);
-                                                },
-                                                child: Text(
-                                                  'Fermer',
-                                                  style: TextStyle(
-                                                      // color: AppColors.primaryVar0
-                                                      ),
-                                                ),
-                                              ),
+                                          ScaffoldMessenger.of(context).showSnackBar(
+                                            buildCustomSnackBar(
+                                              context,
+                                              "Concentre toi sur le trésor 😡",
+                                              SnackBarType.info,
+                                              showCloseIcon: false,
                                             ),
                                           );
                                         },
@@ -1029,7 +975,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                                           left: 15.0),
                                                   child: Text(
                                                     // readOnly: true,
-                                                    "Posez une question...",
+                                                    "Insére ta réponse ici...",
                                                     style: TextStyle(
                                                       fontSize: 13.5,
                                                       // color: Colors.black45,
@@ -1058,7 +1004,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                                       ScaffoldMessenger.of(context).showSnackBar(
                                                         buildCustomSnackBar(
                                                           context,
-                                                          "Fonctionnalité disponible prochainement 😉",
+                                                          "Concentre toi sur le trésor 😡",
                                                           SnackBarType.info,
                                                           showCloseIcon: false,
                                                         ),
@@ -1174,11 +1120,12 @@ class CompanyChannel extends StatelessWidget {
             ScaffoldMessenger.of(context).showSnackBar(
               buildCustomSnackBar(
                 context,
-                "Fonctionnalité disponible prochainement 😉",
+                "Concentre toi sur le trésor 😡",
                 SnackBarType.info,
                 showCloseIcon: false,
               ),
-            );},
+            );
+            },
           child: Container(
             padding: EdgeInsets.only(
                 left: 20.0, right: 15.0, top: 10.0, bottom: 10.0),

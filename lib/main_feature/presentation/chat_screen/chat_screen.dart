@@ -172,7 +172,7 @@ class _ChatScreenState extends State<ChatScreen> {
                                       width: 1.sw,
                                       child: Text(
                                         // "⚠️ Cette application est un prototype. L'assistant ne fournit pas encore de réponses à 100% précises, il sert à uniquement tester le concept. Amusez-vous, et faites nous un feedback.",
-                                        "⚠️ Cette application est un prototype. L'assistant n'est pas encore fonctionnel, veuillez vous référer à la carte ou à notre communauté whatsapp en attendant (+221 76 309 94 67).",
+                                        "⚠️ Ceci est la version chasse au trésor de Yeekai, pour toute interpellation, contacter le 78 870 84 28 via Whatsapp ou téléphone.",
                                         textAlign: TextAlign.center,
                                         style: TextStyle(
 

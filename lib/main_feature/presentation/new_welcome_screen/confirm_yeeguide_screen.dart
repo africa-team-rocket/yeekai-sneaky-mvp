@@ -255,7 +255,7 @@ class _ConfirmYeeguideScreenState extends State<ConfirmYeeguideScreen> {
                   height: 10,
                 ),
                 SizedBox(
-                  width: 160,
+                  width: 190,
                   child: Row(
                     children: [
                       Expanded(
