@@ -93,7 +93,7 @@ class AppConstants {
                                     response: ChatResponse(text: [
                                       "Super, voici la deuxième énigme :",
                                       "C’est le moment de faire du sport. Prend du recul, récupère le numéro de l entreprise monde impression et viens me trouver (Signé Djibril)",
-                                      "Dès que tu auras la réponse à cette énigme, venir me retrouver à la salle HB6 tu devras..",
+                                      "Dès que tu auras la réponse à cette énigme, venir me retrouver à la salle HA8 (ou HA1 sinon) tu devras..",
                                       "Si la bonne réponse tu as, récompensé tu seras.. oh et n'oublie pas :",
                                       "Le trésor est en toi 🧘🏿‍"
                                     ], nextSteps: [

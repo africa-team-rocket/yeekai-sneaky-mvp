@@ -63,7 +63,7 @@ Future<void> main() async {
         backgroundColor: Colors.white,
 
         // Enable preview by default for web demo
-        enabled: true,
+        enabled: false,
 
         // Start with Galaxy A50 as it's a common Android device
         defaultDevice: null,
