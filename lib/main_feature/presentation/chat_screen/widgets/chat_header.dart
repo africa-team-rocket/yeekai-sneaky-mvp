@@ -218,15 +218,23 @@ class _ChatScreenHeaderState extends State<ChatScreenHeader> {
                                           borderRadius:
                                               BorderRadius.circular(30),
                                           onTap: () {
-                                            Navigator.push(
+                                            ScaffoldMessenger.of(context).showSnackBar(
+                                              buildCustomSnackBar(
                                                 context,
-                                                PageTransition(
-                                                    type:
-                                                        PageTransitionType.fade,
-                                                    duration: const Duration(
-                                                        milliseconds: 500),
-                                                    child:
-                                                        YeeguideProfileScreen()));
+                                                "Concentre toi sur le trésor 😡",
+                                                SnackBarType.info,
+                                                showCloseIcon: false,
+                                              ),
+                                            );
+                                            // Navigator.push(
+                                            //     context,
+                                            //     PageTransition(
+                                            //         type:
+                                            //             PageTransitionType.fade,
+                                            //         duration: const Duration(
+                                            //             milliseconds: 500),
+                                            //         child:
+                                            //             YeeguideProfileScreen()));
                                             // widget.onPop();
                                             // Navigator.pop(context);
                                           },

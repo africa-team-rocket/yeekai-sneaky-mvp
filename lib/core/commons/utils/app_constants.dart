@@ -14,11 +14,13 @@ enum YeeguideId {
   madio,
   vaidewish,
   rita,
-  issa
+  issa,
+  djibril
 }
 
 extension YeeguideIdExtension on YeeguideId {
   String get value {
+    //gey
     switch (this) {
       case YeeguideId.raruto:
         return "raruto";
@@ -34,6 +36,8 @@ extension YeeguideIdExtension on YeeguideId {
         return "rita";
       case YeeguideId.issa:
         return "issa";
+      case YeeguideId.djibril:
+        return "djibril";
       default:
         return "";
     }
@@ -1646,8 +1650,9 @@ class AppConstants {
     // YeeguideId.domsa.value,
     // YeeguideId.songo.value,
     // YeeguideId.vaidewish.value,
-    YeeguideId.rita.value,
-    YeeguideId.issa.value,
+    // YeeguideId.rita.value,
+    // YeeguideId.issa.value,
+    YeeguideId.djibril.value
 
   ];
 
@@ -1815,6 +1820,30 @@ class AppConstants {
         ], nextSteps: [])
     ),
     Yeeguide(
+        id: YeeguideId.djibril.value,
+        category: "Chasse au trésor",
+        name: "Djibril",
+        profilePictureAsset: "assets/yeeguides/djibril_guide.png",
+        profilePictureSquareAsset: "assets/yeeguides/djibril_guide_square.png",
+        tag: "@djibithegenie",
+        shortBio:
+        "Trouver le trésor du campus tu dois, t'y aider je ferai. Es-tu prêt, jeune padawan ?",
+        usesAudio: true,
+        languages: [Languages.fr],
+        nbSubs: 12,
+        script: rarutoConvo,
+        introChatResponse : ChatResponse(text: [
+          "Bonjour à toi, jeune ${locator.get<SharedPreferences>().getString("username")}",
+          "Voici ta première énigme :",
+          "Dans quelle salle a eu lieu la démo de l'appli Yeekai durant la campagne ?"
+        ], nextSteps: []),
+        welcomeChatResponse : ChatResponse(text: [
+          "Bienvenue à toi, jeune ${locator.get<SharedPreferences>().getString("username")}",
+          "Voici ta première énigme :",
+          "Dans quelle salle a eu lieu la démo de l'appli Yeekai durant la campagne ?"
+        ], nextSteps: [])
+    ),
+    Yeeguide(
         id: YeeguideId.rita.value,
         category: "General",
         name: "Rita",
@@ -1976,6 +2005,32 @@ class AppConstants {
           "Alors comment puis-je t'aider aujourd'hui way 😭 ?",
         ], nextSteps: [])
     ),
+        Yeeguide(
+        id: YeeguideId.djibril.value,
+        category: "Chasse au trésor",
+        name: "Djibril",
+        profilePictureAsset: "assets/yeeguides/djibril_guide.png",
+        profilePictureSquareAsset: "assets/yeeguides/djibril_guide_square.png",
+        tag: "@djibithegenie",
+        shortBio:
+        "Trouver le trésor du campus tu dois, t'y aider je ferai. Es-tu prêt, jeune padawan ?",
+        usesAudio: true,
+        languages: [Languages.fr],
+        nbSubs: 12,
+        script: rarutoConvo,
+        introChatResponse : ChatResponse(text: [
+          "Bonjour à toi, jeune ${locator.get<SharedPreferences>().getString("username")}",
+          "Voici ta première énigme :",
+          "Dans quelle salle a eu lieu la démo de l'appli Yeekai durant la campagne ?"
+        ], nextSteps: []),
+        welcomeChatResponse : ChatResponse(text: [
+          "Bienvenue à toi, jeune ${locator.get<SharedPreferences>().getString("username")}",
+          "Voici ta première énigme :",
+          "Dans quelle salle a eu lieu la démo de l'appli Yeekai durant la campagne ?"
+        ], nextSteps: [])
+    ),
+
+
     Yeeguide(
         id: YeeguideId.rita.value,
         category: "General",
@@ -2138,6 +2193,32 @@ class AppConstants {
           "Alors comment puis-je t'aider aujourd'hui way 😭 ?",
         ], nextSteps: [])
     ),
+        Yeeguide(
+        id: YeeguideId.djibril.value,
+        category: "Chasse au trésor",
+        name: "Djibril",
+        profilePictureAsset: "assets/yeeguides/djibril_guide.png",
+        profilePictureSquareAsset: "assets/yeeguides/djibril_guide_square.png",
+        tag: "@djibithegenie",
+        shortBio:
+        "Trouver le trésor du campus tu dois, t'y aider je ferai. Es-tu prêt, jeune padawan ?",
+        usesAudio: true,
+        languages: [Languages.fr],
+        nbSubs: 12,
+        script: rarutoConvo,
+        introChatResponse : ChatResponse(text: [
+          "Bonjour à toi, jeune ${locator.get<SharedPreferences>().getString("username")}",
+          "Voici ta première énigme :",
+          "Dans quelle salle a eu lieu la démo de l'appli Yeekai durant la campagne ?"
+        ], nextSteps: []),
+        welcomeChatResponse : ChatResponse(text: [
+          "Bienvenue à toi, jeune ${locator.get<SharedPreferences>().getString("username")}",
+          "Voici ta première énigme :",
+          "Dans quelle salle a eu lieu la démo de l'appli Yeekai durant la campagne ?"
+        ], nextSteps: [])
+    ),
+
+
   ];
 
   static List<Yeeguide> yeeguidesOriginalList = [
@@ -2164,6 +2245,32 @@ class AppConstants {
           "Comment puis-je t'aider aujourd'hui ?"
         ], nextSteps: [])
     ),
+        Yeeguide(
+        id: YeeguideId.djibril.value,
+        category: "Chasse au trésor",
+        name: "Djibril",
+        profilePictureAsset: "assets/yeeguides/djibril_guide.png",
+        profilePictureSquareAsset: "assets/yeeguides/djibril_guide_square.png",
+        tag: "@djibithegenie",
+        shortBio:
+        "Trouver le trésor du campus tu dois, t'y aider je ferai. Es-tu prêt, jeune padawan ?",
+        usesAudio: true,
+        languages: [Languages.fr],
+        nbSubs: 12,
+        script: rarutoConvo,
+        introChatResponse : ChatResponse(text: [
+          "Bonjour à toi, jeune ${locator.get<SharedPreferences>().getString("username")}",
+          "Voici ta première énigme :",
+          "Dans quelle salle a eu lieu la démo de l'appli Yeekai durant la campagne ?"
+        ], nextSteps: []),
+        welcomeChatResponse : ChatResponse(text: [
+          "Bienvenue à toi, jeune ${locator.get<SharedPreferences>().getString("username")}",
+          "Voici ta première énigme :",
+          "Dans quelle salle a eu lieu la démo de l'appli Yeekai durant la campagne ?"
+        ], nextSteps: [])
+    ),
+
+
     Yeeguide(
         id: YeeguideId.issa.value,
         name: "Issa",

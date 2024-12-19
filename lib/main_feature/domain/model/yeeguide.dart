@@ -61,6 +61,8 @@ class Yeeguide {
         break;
       case "vaidewish":
         enumId = YeeguideId.vaidewish;
+      case "djibril":
+        enumId = YeeguideId.djibril;
         break;
       default:
         throw ArgumentError('Invalid Yeeguide ID: $id');
