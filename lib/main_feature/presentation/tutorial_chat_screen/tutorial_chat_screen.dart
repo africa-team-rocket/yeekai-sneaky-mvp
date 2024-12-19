@@ -3,17 +3,23 @@ import 'dart:math';
 import 'package:animated_size_and_fade/animated_size_and_fade.dart';
 import 'package:animated_text_kit/animated_text_kit.dart';
 import 'package:confetti/confetti.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:lottie/lottie.dart';
+import 'package:page_transition/page_transition.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:yeebus_filthy_mvp/main_feature/presentation/tutorial_chat_screen/widgets/tutorial_chat_footer.dart';
 import 'package:yeebus_filthy_mvp/main_feature/presentation/tutorial_chat_screen/widgets/tutorial_chat_header.dart';
 
 import '../../../core/commons/theme/app_colors.dart';
 import '../../../core/commons/utils/app_constants.dart';
+import '../../../core/di/locator.dart';
 import '../../../core/domain/models/chatbot_conversation.dart';
+import '../chat_screen/widgets/chat_header.dart';
+import '../new_welcome_screen/new_welcome_screen.dart';
 
 String remplacerNomDansPhrase(String phrase, String nom) {
   // Chercher la séquence "#;username;#" dans la phrase
@@ -451,6 +457,8 @@ class _TutorialChatScreenState extends State<TutorialChatScreen> {
     });
   }
 
+
+
   @override
   Widget build(BuildContext context) {
     askQuestion(int index) {
@@ -488,6 +496,7 @@ class _TutorialChatScreenState extends State<TutorialChatScreen> {
       // });
     }
 
+
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: const SystemUiOverlayStyle(
         statusBarColor: Colors.transparent,
@@ -505,7 +514,7 @@ class _TutorialChatScreenState extends State<TutorialChatScreen> {
               AnimatedOpacity(
                   opacity: animationLevel >= 2 ? 1.0 : 0.0,
                   duration: const Duration(milliseconds: 500),
-                  child: TutorialChatScreenHeader()),
+                  child: ChatScreenHeader()),
               // CHAT BODY
               Expanded(
                 // Il y'avait un SizedBox de 1.sw ici au cas où qqch part en yeuks.
@@ -750,15 +759,286 @@ class _TutorialChatScreenState extends State<TutorialChatScreen> {
                     ),
 
                     AnimatedPositioned(
-                        duration: const Duration(milliseconds: 400),
-                        bottom: currentUserOptions.isNotEmpty ? 0 : -152,
-                        child: Padding(
-                          padding: const EdgeInsets.only(right: 20.0),
-                          child: TutorialChatScreenFooter(
-                            scrollController: _scrollController,
-                            shouldOpenKeyboard: false,
-                          ),
-                        )),
+                      duration: const Duration(milliseconds: 300),
+                      bottom: currentUserOptions.isNotEmpty ? 0 : -152 ,
+                      child: Container(
+                        // color: Colors.red,
+                          padding: EdgeInsets.symmetric(vertical: 10.0),
+                          margin: EdgeInsets.only(top: 10),
+                          decoration: BoxDecoration(
+                              color: Colors.white,
+                              boxShadow: [
+                                BoxShadow(
+                                    spreadRadius: 2,
+                                    blurRadius: 6,
+                                    offset: const Offset(0, -2),
+                                    color: Colors.grey.withOpacity(.2))
+                              ]),
+                          width: 1.sw,
+                          height: 150,
+                          child: Material(
+                            color: Colors.transparent,
+                            child: Column(
+                              mainAxisAlignment:
+                              MainAxisAlignment.spaceAround,
+                              children: [
+                                Expanded(
+                                  child: Container(
+                                    // color: Colors.red,
+                                    // padding: const EdgeInsets.symmetric(horizontal: 14.0),
+                                    child: ListView.builder(
+                                      physics: BouncingScrollPhysics(),
+                                      itemCount:
+                                      currentUserOptions.length,
+                                      scrollDirection: Axis.horizontal,
+                                      itemBuilder: (context, index) {
+                                        return Container(
+                                          height: 5,
+                                          margin: EdgeInsets.symmetric(
+                                              horizontal: 15.0),
+                                          decoration: BoxDecoration(
+                                            // color: Colors.green,
+                                              borderRadius:
+                                              BorderRadius.circular(
+                                                  15)),
+                                          child: InkWell(
+                                            borderRadius:
+                                            BorderRadius.circular(15),
+                                            onTap: () {
+                                              setState(() {
+                                                nextSelectedStep =
+                                                currentUserOptions[
+                                                index];
+                                              });
+                                            },
+                                            child: Row(
+                                              mainAxisAlignment:
+                                              MainAxisAlignment
+                                                  .center,
+                                              children: [
+                                                Container(
+                                                  width: 17.0,
+                                                  height: 17.0,
+                                                  margin: EdgeInsets
+                                                      .symmetric(
+                                                      horizontal:
+                                                      10.0),
+                                                  padding:
+                                                  EdgeInsets.all(3),
+                                                  decoration:
+                                                  BoxDecoration(
+                                                    shape:
+                                                    BoxShape.circle,
+                                                    border: Border.all(
+                                                      color: nextSelectedStep != null &&
+                                                          currentUserOptions
+                                                              .isNotEmpty &&
+                                                          nextSelectedStep!
+                                                              .prompt ==
+                                                              currentUserOptions[index]
+                                                                  .prompt
+                                                          ? AppColors
+                                                          .primaryVar0
+                                                          : AppColors
+                                                          .secondaryText,
+                                                      width: 1.0,
+                                                    ),
+                                                  ),
+                                                  child: Transform.scale(
+                                                    scale: 0.6,
+                                                    child: Center(
+                                                      child: Checkbox(
+                                                        // SUGGESTION :
+                                                        // Les ChatSteps devraient ptet avoir un attribut garantissant l'unicité
+                                                        value: nextSelectedStep !=
+                                                            null &&
+                                                            currentUserOptions
+                                                                .isNotEmpty &&
+                                                            nextSelectedStep!
+                                                                .prompt ==
+                                                                currentUserOptions[
+                                                                index]
+                                                                    .prompt, // Mettez la valeur de votre état de la checkbox ici
+                                                        onChanged: (bool?
+                                                        value) {
+                                                          // Mettez à jour l'état de la checkbox ici
+                                                        },
+                                                        side: BorderSide
+                                                            .none,
+                                                        checkColor: AppColors
+                                                            .primaryVar0, // Couleur de la coche
+                                                        activeColor:
+                                                        AppColors
+                                                            .primaryVar0,
+                                                        shape:
+                                                        RoundedRectangleBorder(
+                                                          borderRadius:
+                                                          BorderRadius
+                                                              .circular(
+                                                              50),
+                                                        ),
+                                                        materialTapTargetSize:
+                                                        MaterialTapTargetSize
+                                                            .shrinkWrap,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ),
+                                                SizedBox(width: 2.0),
+                                                Text(currentUserOptions
+                                                    .isNotEmpty
+                                                    ? currentUserOptions[
+                                                index]
+                                                    .prompt
+                                                    : ""),
+                                              ],
+                                            ),
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(
+                                  height: 10,
+                                ),
+                                Container(
+                                  height: 60,
+                                  width: 1.sw,
+                                  margin: EdgeInsets.only(
+                                      left: 15.0,
+                                      right: 15.0,
+                                      bottom: 0.0),
+                                  padding: EdgeInsets.symmetric(
+                                      horizontal: 10.0),
+                                  decoration: BoxDecoration(
+                                      borderRadius:
+                                      BorderRadius.circular(15),
+                                      // color: AppColors.primaryText.withOpacity(.7)),
+                                      color: AppColors.secondaryText
+                                          .withOpacity(.20)),
+                                  child: Row(
+                                    mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      SizedBox(
+                                        width: 1.sw * 0.70,
+                                        child: TextField(
+                                          readOnly: true,
+                                          controller: TextEditingController(
+                                            text: nextSelectedStep != null
+                                                ? nextSelectedStep!.prompt
+                                                : "",
+                                          ),
+                                          style: TextStyle(
+                                            fontSize: 13,
+                                            color: nextSelectedStep != null
+                                                ? AppColors.primaryText
+                                                : Colors.black45,
+                                            overflow: TextOverflow.ellipsis,
+
+                                          ),
+                                          decoration: InputDecoration(
+                                            border: InputBorder.none,
+                                            hintText: "Sélectionnez une réponse ci-dessus",
+                                          ),
+                                          cursorColor: AppColors.primaryVar0, // Couleur du curseur
+                                          showCursor: true,
+                                          maxLines: 1,
+                                        ),
+                                      ),
+                                      Container(
+                                        height: 44,
+                                        width: 46,
+                                        decoration: BoxDecoration(boxShadow: [
+                                          BoxShadow(
+                                            spreadRadius: 2,
+                                            blurRadius: 4,
+                                            offset: const Offset(0, 0),
+                                            color: Colors.grey.withOpacity(.25),
+                                          )
+                                        ]),
+                                        child: Material(
+                                          color: AppColors.primaryVar0,
+                                          borderRadius: BorderRadius.circular(10),
+                                          child: InkWell(
+                                            borderRadius: BorderRadius.circular(10),
+                                            onTap: () {
+                                              if (nextSelectedStep !=
+                                                  null) {
+                                                _scrollController.animateTo(_scrollController.position.minScrollExtent, duration: Duration(milliseconds: 300), curve: Curves.easeInOut).then((value) => {
+                                                  setState(() {
+                                                    chatMessagesSections.add(
+                                                        UserMessagesSection(
+                                                            initialPrompt:
+                                                            nextSelectedStep!
+                                                                .prompt,
+                                                            nextSteps:
+                                                            nextSelectedStep!
+                                                                .response
+                                                                .nextSteps));
+                                                    currentUserOptions = [];
+                                                  })
+                                                });
+
+                                                Future.delayed(
+                                                    Duration(
+                                                        milliseconds: 900),
+                                                        () {
+                                                      setState(() {
+                                                        debugPrint(
+                                                            "EASY BOZO !");
+                                                        chatMessagesSections.add(
+                                                            AssistantMessagesSection(
+                                                                chatResponse:
+                                                                nextSelectedStep!
+                                                                    .response
+                                                            ));
+                                                      });
+                                                    }).then((value) => {
+                                                  setState(() {
+                                                    nextSelectedStep =
+                                                    null;
+                                                  })
+                                                });
+                                              }
+                                              // Ajoutez la logique que vous souhaitez exécuter lorsque le bouton est pressé
+                                            },
+
+                                            child: SizedBox(
+                                              height: 55,
+                                              width: 47,
+                                              child: Center(
+                                                child: Image.asset(
+                                                  false
+                                                      ? "assets/icons/mic_bold.png"
+                                                      : "assets/icons/direction.png",
+                                                  width: 14,
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+
+                                    ],
+                                  ),
+                                )
+                              ],
+                            ),
+                          )),
+                    ),
+                    // AnimatedPositioned(
+                    //     duration: const Duration(milliseconds: 400),
+                    //     bottom: currentUserOptions.isNotEmpty ? 0 : -152,
+                    //     child: Padding(
+                    //       padding: const EdgeInsets.only(right: 20.0),
+                    //       child:
+                    //       TutorialChatScreenFooter(
+                    //         scrollController: _scrollController,
+                    //         shouldOpenKeyboard: false,
+                    //       ),
+                    //     )),
                     Positioned(
                       top: 65,
                       right: 0,
@@ -1256,14 +1536,14 @@ class _SuitedMessageBubblesState extends State<SuitedMessageBubbles> {
                   isTypingChecker: index == 0 ? isTyping : false,
                   onTextFinished: () {
                     debugPrint("The index : $index");
+
+
                     // debugPrint("The index : ${widget.chatMessages.length}");
                     // if(currentIndex < widget.chatMessages.length - 1)
                     //   currentIndex++;
                     if (index + 1 <= widget.chatResponse.text.length - 1 &&
                             widget.chatResponse.text[index + 1] ==
-                                "abracadabra !" ||
-                        index + 1 <= widget.chatResponse.text.length - 1 &&
-                            widget.chatResponse.text[index + 1] == "#vie.") {
+                                "abracadabra !") {
                       debugPrint("Drop sum confettito");
                       Future.delayed(const Duration(milliseconds: 650), () {
                         widget.dropConfetti();
@@ -1435,7 +1715,7 @@ class _TextBoxState extends State<TextBox> {
                             ? widget.username
                             : "cher utilisateur")
                     : widget.text,
-                speed: const Duration(milliseconds: 40),
+                speed: const Duration(milliseconds: 20),
                 textStyle: TextStyle(
                   fontSize: 13,
                   color: AppColors.primaryText,

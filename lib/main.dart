@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
+import 'package:yeebus_filthy_mvp/main_feature/presentation/tutorial_chat_screen/tutorial_chat_screen.dart';
 
 import 'core/commons/utils/app_constants.dart';
 import 'core/data/database_instance.dart';
@@ -65,7 +66,7 @@ Future<void> main() async {
         enabled: true,
 
         // Start with Galaxy A50 as it's a common Android device
-        defaultDevice: Devices.ios.iPhone13ProMax,
+        defaultDevice: null,
 
         // Show toolbar to let users test different devices
         isToolbarVisible: true,
@@ -176,7 +177,7 @@ class YeebusApp extends StatelessWidget {
               home:
                   locator.get<SharedPreferences>().getBool("isOldUser") != true
                       ? const NewWelcomeScreen()
-                      : const HomeScreen(),
+                      : const TutorialChatScreen(selectedYeeguideIndex: 1, username: "utilisateur"),
               // home: const MapScreen(),
 
               // home: FlutterSplashScreen.gif(

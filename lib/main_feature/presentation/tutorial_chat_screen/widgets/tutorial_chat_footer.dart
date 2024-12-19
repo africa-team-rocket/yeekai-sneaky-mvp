@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:confetti/confetti.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -28,10 +29,21 @@ class _TutorialChatScreenFooterState extends State<TutorialChatScreenFooter> {
   TextEditingController _chatTextController = TextEditingController();
   FocusNode _focusNode = FocusNode();
 
+
+  late ConfettiController _controllerCenterRight;
+  late ConfettiController _controllerCenterLeft;
+
+
+
   @override
   void initState() {
     // TODO: implement initState
     super.initState();
+    _controllerCenterRight =
+        ConfettiController(duration: const Duration(seconds: 1));
+    _controllerCenterLeft =
+        ConfettiController(duration: const Duration(seconds: 1));
+
 
     if (widget.shouldOpenKeyboard) {
       Future.delayed(const Duration(milliseconds: 500), () {
@@ -48,6 +60,8 @@ class _TutorialChatScreenFooterState extends State<TutorialChatScreenFooter> {
   @override
   void dispose() {
     // TODO: implement dispose
+    _controllerCenterRight.dispose();
+    _controllerCenterLeft.dispose();
     super.dispose();
   }
 

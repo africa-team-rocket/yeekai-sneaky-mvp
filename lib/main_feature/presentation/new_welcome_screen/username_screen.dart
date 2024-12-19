@@ -7,6 +7,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:page_transition/page_transition.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:yeebus_filthy_mvp/main_feature/presentation/tutorial_chat_screen/tutorial_chat_screen.dart';
 
 import '../../../core/commons/theme/app_colors.dart';
 import '../../../core/di/locator.dart';
@@ -108,7 +109,7 @@ class _UsernameScreenState extends State<UsernameScreen> {
                         PageTransition(
                           type: PageTransitionType.fade,
                           duration: const Duration(milliseconds: 500),
-                          child: HomeScreen(),
+                          child: TutorialChatScreen(selectedYeeguideIndex: 1, username: username),
                         ),
                       );
                     });

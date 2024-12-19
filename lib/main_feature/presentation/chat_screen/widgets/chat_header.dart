@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:ui';
 
 import 'package:animated_switcher_plus/animated_switcher_plus.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:page_transition/page_transition.dart';
@@ -14,6 +15,7 @@ import '../../../../core/presentation/app_global_widgets.dart';
 import '../../../domain/model/yeeguide.dart';
 import '../../catalog_screen/catalog_screen.dart';
 import '../../home_screen/home_screen.dart';
+import '../../new_welcome_screen/new_welcome_screen.dart';
 import '../../yeeguide_profile_screen/bloc/yeeguide_profile_screen.dart';
 
 class ChatScreenHeader extends StatefulWidget {
@@ -25,6 +27,70 @@ class ChatScreenHeader extends StatefulWidget {
 
 class _ChatScreenHeaderState extends State<ChatScreenHeader> {
   bool isSearchModeEnabled = false;
+
+  void _showAlertDialog(BuildContext innerContext) {
+    showCupertinoModalPopup<void>(
+      context: innerContext,
+      builder: (BuildContext context) => CupertinoAlertDialog(
+        title: Text(
+          'Attention',
+          style: TextStyle(fontSize: 20, color: AppColors.primaryText),
+        ),
+        content: Padding(
+          padding: const EdgeInsets.only(top: 10),
+          child: Text(
+            'Vous êtes sur le point de recommencer à Zéro, ne faites ceci que si vous êtes bloqué',
+            style: TextStyle(fontSize: 15.5, color: AppColors.primaryText),
+          ),
+        ),
+        actions: <CupertinoDialogAction>[
+          CupertinoDialogAction(
+            /// This parameter indicates this action is the default,
+            /// and turns the action's text to bold text.
+            // isDefaultAction: true,
+            onPressed: () {
+              Navigator.pop(context);
+            },
+            child: Text(
+              'Annuler',
+              style: TextStyle(color: AppColors.bootstrapRed),
+            ),
+          ),
+          CupertinoDialogAction(
+            /// This parameter indicates the action would perform
+            /// a destructive action such as deletion, and turns
+            /// the action's text color to red.
+            isDestructiveAction: true,
+            isDefaultAction: true,
+            onPressed: () {
+              locator
+                  .get<SharedPreferences>().clear();
+
+              // Future.delayed(
+              //     Duration(milliseconds: 500),
+              //     () => {
+              //           ScaffoldMessenger.of(context).showSnackBar(
+              //               buildCustomSnackBar(context,
+              //                   "Yeeguide changé avec succès", SnackBarType.info))
+              //         });
+              Navigator.pop(context);
+              Navigator.pushReplacement(
+                  context,
+                  PageTransition(
+                      type: PageTransitionType.fade,
+                      duration: const Duration(milliseconds: 500),
+                      child: NewWelcomeScreen()));
+            },
+            child: Text(
+              'Oui, je veux recommencer',
+              style: TextStyle(color: AppColors.primaryVar0),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -177,16 +243,19 @@ class _ChatScreenHeaderState extends State<ChatScreenHeader> {
                                         borderRadius: BorderRadius.circular(30),
                                         onTap: () {
                                           FocusScope.of(context).unfocus();
-                                          Future.delayed(Duration.zero, () {
-                                            Navigator.push(
-                                                context,
-                                                PageTransition(
-                                                    type:
-                                                        PageTransitionType.fade,
-                                                    duration: const Duration(
-                                                        milliseconds: 100),
-                                                    child: HomeScreen()));
-                                          });
+                                          /// AJOUTER UNE ALERTE POUR RELANCER L'APP ICI ?
+                                          ///
+                                          _showAlertDialog(context);
+                                          // Future.delayed(Duration.zero, () {
+                                          //   Navigator.push(
+                                          //       context,
+                                          //       PageTransition(
+                                          //           type:
+                                          //               PageTransitionType.fade,
+                                          //           duration: const Duration(
+                                          //               milliseconds: 100),
+                                          //           child: HomeScreen()));
+                                          // });
                                           // widget.onPop();
                                         },
                                         child: SizedBox(
@@ -604,14 +673,14 @@ class _ChatScreenHeaderState extends State<ChatScreenHeader> {
                                       ),
                                       PopupBlurryMenuItem(
                                         onTap: () {
-                                          Navigator.push(
-                                            context,
-                                            PageTransition(
-                                                type: PageTransitionType.fade,
-                                                duration: const Duration(
-                                                    milliseconds: 500),
-                                                child: const CatalogScreen()),
-                                          ).then((value) => {setState(() {})});
+                                          // Navigator.push(
+                                          //   context,
+                                          //   PageTransition(
+                                          //       type: PageTransitionType.fade,
+                                          //       duration: const Duration(
+                                          //           milliseconds: 500),
+                                          //       child: const CatalogScreen()),
+                                          // ).then((value) => {setState(() {})});
                                         },
                                         child: Row(
                                           mainAxisAlignment:
