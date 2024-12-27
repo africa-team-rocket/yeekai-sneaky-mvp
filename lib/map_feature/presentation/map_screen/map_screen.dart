@@ -721,6 +721,34 @@ class MapWState extends State<GMap> {
 
     // Main Building 2 : (bat E)
 
+    // Version Bat E only
+    // Polygon(
+    //   polygonId: PolygonId('Main building 2 (bat E)'),
+    //   points: [
+    //     LatLng(14.7001549, -17.4512144),
+    //     LatLng(14.7001931, -17.4510934),
+    //     LatLng(14.700308, -17.4511384),
+    //     LatLng(14.7004012, -17.450841),
+    //     LatLng(14.7001765, -17.4507615),
+    //     LatLng(14.7001519, -17.4508304),
+    //     LatLng(14.7000509, -17.4507924),
+    //     LatLng(14.7000889, -17.4506834),
+    //     LatLng(14.7001816, -17.4507187),
+    //     LatLng(14.7002039, -17.4506514),
+    //     LatLng(14.7004085, -17.4507223),
+    //     LatLng(14.7004022, -17.450739),
+    //     LatLng(14.7004292, -17.450749),
+    //     LatLng(14.7004342, -17.4507326),
+    //     LatLng(14.7005299, -17.4507654),
+    //     LatLng(14.7003569, -17.4512894),
+    //     LatLng(14.7001549, -17.4512144),
+    //   ],
+    //   strokeColor: const Color(0xFFD5D5D7),
+    //   strokeWidth: 1,
+    //   fillColor: const Color(0xFFF8F9FB),
+    // ),
+
+    // Version administration :
     Polygon(
       polygonId: PolygonId('Main building 2 (bat E)'),
       points: [
@@ -729,7 +757,11 @@ class MapWState extends State<GMap> {
         LatLng(14.700308, -17.4511384),
         LatLng(14.7004012, -17.450841),
         LatLng(14.7001765, -17.4507615),
-        LatLng(14.7001519, -17.4508304),
+        LatLng(14.7001545, -17.4508311),
+        LatLng(14.700171, -17.450837),
+        LatLng(14.7000582, -17.4511724),
+        LatLng(14.6999225, -17.4511184),
+        LatLng(14.7000356, -17.450786),
         LatLng(14.7000509, -17.4507924),
         LatLng(14.7000889, -17.4506834),
         LatLng(14.7001816, -17.4507187),
@@ -742,9 +774,9 @@ class MapWState extends State<GMap> {
         LatLng(14.7003569, -17.4512894),
         LatLng(14.7001549, -17.4512144),
       ],
+      fillColor: const Color(0xFFF8F9FB),
       strokeColor: const Color(0xFFD5D5D7),
       strokeWidth: 1,
-      fillColor: const Color(0xFFF8F9FB),
     ),
 
     // Escaliers 1 BAT E :
@@ -781,6 +813,7 @@ class MapWState extends State<GMap> {
 
   };
   Set<Polygon> _firstFloorPolygons = {
+
     // MainBYellowZone1 :
     Polygon(
       zIndex: 2,
@@ -1424,16 +1457,16 @@ class MapWState extends State<GMap> {
     Polygon(
       polygonId: PolygonId('E-11 ÉLECTRONIQUE (Mr Rabé)'),
       points: [
-        LatLng(14.7001402, -17.4508263),
+        LatLng(14.7001314, -17.4508243),
         LatLng(14.7000509, -17.4507924),
         LatLng(14.7000889, -17.4506834),
         LatLng(14.7001816, -17.4507187),
         LatLng(14.7002039, -17.4506514),
         LatLng(14.7002374, -17.4506633),
         LatLng(14.7002052, -17.4507546),
-        LatLng(14.7001682, -17.4507412),
-        LatLng(14.7001402, -17.4508263),
-      ],
+        LatLng(14.7001614, -17.4507375),
+        LatLng(14.7001314, -17.4508243),
+        ],
       strokeColor: Color.fromRGBO(129, 199, 132, 1.0),
       fillColor: Color.fromRGBO(232, 253, 232, 1.0),
       strokeWidth: 2,
@@ -1568,7 +1601,288 @@ class MapWState extends State<GMap> {
     ),
 
 
+    // Batiment A Etage 0 :
+
+    // Accueil ESMT
+    Polygon(
+      polygonId: PolygonId('Accueil ESMT'),
+      points: [
+        LatLng(14.7000809, -17.450923),
+        LatLng(14.7000446, -17.45091),
+        LatLng(14.700052, -17.4508894),
+        LatLng(14.7000791, -17.4508757),
+        LatLng(14.7000886, -17.4508973),
+        LatLng(14.7000809, -17.450923),
+      ],
+      strokeColor: const Color(0XFFE6E1CE),
+      strokeWidth: 2,
+      fillColor: const Color(0XFFFDF9EE),
+    ),
+
+    // Agents de liaison
+    Polygon(
+      polygonId: PolygonId('Agents de liaison'),
+      points: [
+        LatLng(14.7000564, -17.450996),
+        LatLng(14.7000204, -17.4509813),
+        LatLng(14.7000324, -17.4509457),
+        LatLng(14.700068, -17.4509597),
+        LatLng(14.7000564, -17.450996),
+      ],
+      fillColor: const Color.fromRGBO(217, 217, 217, 1.0), // grey fill
+      strokeColor: const Color.fromRGBO(182, 182, 182, 1.0), // darker grey border
+      strokeWidth: 2,
+    ),
+
+
+    // Bureau DEFR (M.Kora)
+    Polygon(
+      polygonId: PolygonId('Bureau DEFR (M.Kora)'),
+      points: [
+        LatLng(14.7000327, -17.4511024),
+        LatLng(14.700016, -17.4511557),
+        LatLng(14.6999551, -17.4511307),
+        LatLng(14.6999724, -17.451078),
+        LatLng(14.7000327, -17.4511024),
+      ],
+      fillColor: const Color.fromRGBO(217, 217, 217, 1.0), // grey fill
+      strokeColor: const Color.fromRGBO(182, 182, 182, 1.0), // darker grey border
+      strokeWidth: 2,
+    ),
+
+
+    // Bureau Mme Marthe
+    Polygon(
+      polygonId: PolygonId('Bureau Mme Marthe'),
+      points: [
+        LatLng(14.700083, -17.451098),
+        LatLng(14.7000582, -17.4511724),
+        LatLng(14.700016, -17.4511557),
+        LatLng(14.7000327, -17.4511024),
+        LatLng(14.7000534, -17.4511107),
+        LatLng(14.7000606, -17.4510897),
+        LatLng(14.700083, -17.451098),
+      ],
+      fillColor: const Color.fromRGBO(217, 217, 217, 1.0), // grey fill
+      strokeColor: const Color.fromRGBO(182, 182, 182, 1.0), // darker grey border
+      strokeWidth: 2,
+    ),
+
+
+// Bureau Mr Alpha Barry
+    Polygon(
+      polygonId: PolygonId('Bureau Mr Alpha Barry'),
+      points: [
+        LatLng(14.6999637, -17.4509957),
+        LatLng(14.699982, -17.450945),
+        LatLng(14.7000127, -17.450957),
+        LatLng(14.699996, -17.451008),
+        LatLng(14.6999637, -17.4509957),
+      ],
+      fillColor: const Color.fromRGBO(217, 217, 217, 1.0), // grey fill
+      strokeColor: const Color.fromRGBO(182, 182, 182, 1.0), // darker grey border
+      strokeWidth: 2,
+    ),
+
+// Bureau Mr BA & Mr Preira
+    Polygon(
+      polygonId: PolygonId('Bureau Mr BA & Mr Preira'),
+      points: [
+        LatLng(14.6999551, -17.4511307),
+        LatLng(14.6999225, -17.4511184),
+        LatLng(14.6999471, -17.451047),
+        LatLng(14.699979, -17.45106),
+        LatLng(14.6999551, -17.4511307),
+      ],
+      fillColor: const Color.fromRGBO(217, 217, 217, 1.0), // grey fill
+      strokeColor: const Color.fromRGBO(182, 182, 182, 1.0), // darker grey border
+      strokeWidth: 2,
+    ),
+
+    // Bureau Mr Boudal Niang
+    Polygon(
+      polygonId: const PolygonId('bureau_mr_boudal_niang'),
+      points: const [
+        LatLng(14.7000356, -17.450786),
+        LatLng(14.7000896, -17.450807),
+        LatLng(14.70008, -17.450832),
+        LatLng(14.700063, -17.450826),
+        LatLng(14.700053, -17.450856),
+        LatLng(14.7000173, -17.4508407),
+        LatLng(14.7000356, -17.450786),
+      ],
+      strokeColor: const Color.fromRGBO(182, 182, 182, 1.0),
+      fillColor: const Color.fromRGBO(217, 217, 217, 1.0),
+      strokeWidth: 2,
+    ),
+    // Bureau Mr Doumbia
+    Polygon(
+      polygonId: const PolygonId('bureau_mr_doumbia'),
+      points: const [
+        LatLng(14.699979, -17.45106),
+        LatLng(14.6999471, -17.451047),
+        LatLng(14.6999637, -17.4509957),
+        LatLng(14.699996, -17.451008),
+        LatLng(14.699979, -17.45106),
+      ],
+      strokeColor: const Color.fromRGBO(182, 182, 182, 1.0),
+      fillColor: const Color.fromRGBO(217, 217, 217, 1.0),
+      strokeWidth: 2,
+    ),
+    // Bureau Oumar Ndiaye
+    Polygon(
+      polygonId: const PolygonId('bureau_oumar_ndiaye'),
+      points: const [
+        LatLng(14.7001344, -17.4509447),
+        LatLng(14.7001244, -17.4509743),
+        LatLng(14.7000843, -17.4509587),
+        LatLng(14.7000936, -17.4509293),
+        LatLng(14.7001344, -17.4509447),
+      ],
+      strokeColor: const Color.fromRGBO(182, 182, 182, 1.0),
+      fillColor: const Color.fromRGBO(217, 217, 217, 1.0),
+      strokeWidth: 2,
+    ),
+
+    Polygon(
+      polygonId: const PolygonId('Bureau Mr Lemrabott (Secrétaire Général)'),
+      points: const [
+        LatLng(14.70014, -17.450827),
+        LatLng(14.700171, -17.450837),
+        LatLng(14.7001511, -17.4508963),
+        LatLng(14.70012, -17.450885),
+        LatLng(14.70014, -17.450827),
+      ],
+      fillColor: const Color.fromRGBO(217, 217, 217, 1.0),
+      strokeColor: const Color.fromRGBO(182, 182, 182, 1.0),
+      strokeWidth: 2,
+    ),
+
+    Polygon(
+      polygonId: const PolygonId('Escaliers 2'),
+      points: const [
+        LatLng(14.7001, -17.451048),
+        LatLng(14.7000896, -17.4510773),
+        LatLng(14.7000599, -17.451064),
+        LatLng(14.700069, -17.451036),
+        LatLng(14.7001, -17.451048),
+      ],
+      fillColor: const Color(0XFFF2F3F7),
+      strokeColor: const Color(0XFFDCDCDE),
+      strokeWidth: 2,
+    ),
+
+    Polygon(
+      polygonId: const PolygonId('Escaliers 1'),
+      points: const [
+        LatLng(14.700145,-17.450915),
+        LatLng(14.7001344,-17.4509447),
+        LatLng(14.7001053,-17.450934),
+        LatLng(14.7001142,-17.4509041),
+        LatLng(14.700145,-17.450915),
+      ],
+      fillColor: const Color(0XFFF2F3F7),
+      strokeColor: const Color(0XFFDCDCDE),
+      strokeWidth: 2,
+    ),
+
+    Polygon(
+      polygonId: const PolygonId('Bureau Mme Diallo MDI'),
+      points: const [
+        LatLng(14.700068, -17.4509597),
+        LatLng(14.7000324, -17.4509457),
+        LatLng(14.7000446, -17.45091),
+        LatLng(14.7000809, -17.450923),
+        LatLng(14.700068, -17.4509597),
+      ],
+      fillColor: const Color.fromRGBO(217, 217, 217, 1.0),
+      strokeColor: const Color.fromRGBO(182, 182, 182, 1.0),
+      strokeWidth: 2,
+    ),
+
+    // Bureau mme Garba
+    Polygon(
+      polygonId: const PolygonId('Bureau Mme Garba'),
+      points: const <LatLng>[
+        LatLng(14.7000419, -17.4510746),
+        LatLng(14.7000327, -17.4511024),
+        LatLng(14.6999858, -17.451084),
+        LatLng(14.6999959, -17.4510556),
+        LatLng(14.7000419, -17.4510746),
+      ],
+      fillColor: const Color.fromRGBO(217, 217, 217, 1.0),
+      strokeColor: const Color.fromRGBO(182, 182, 182, 1.0),
+      strokeWidth: 2,
+    ),
+
+    // Mr Damoue
+
+    Polygon(
+      polygonId: const PolygonId('Bureau Mr Damoue'),
+      points: const <LatLng>[
+        LatLng(14.7000843, -17.4509587),
+        LatLng(14.7001244, -17.4509743),
+        LatLng(14.7001104, -17.451016),
+        LatLng(14.70007, -17.4510013),
+        LatLng(14.7000843, -17.4509587),
+      ],
+      fillColor: const Color.fromRGBO(217, 217, 217, 1.0),
+      strokeColor: const Color.fromRGBO(182, 182, 182, 1.0),
+      strokeWidth: 2,
+    ),
+
+    // Mr DER
+
+    Polygon(
+      polygonId: const PolygonId('Bureau Mr DER'),
+      points: const <LatLng>[
+        LatLng(14.7000127, -17.450957),
+        LatLng(14.699982, -17.450945),
+        LatLng(14.699998, -17.450896),
+        LatLng(14.7000284, -17.450907),
+        LatLng(14.7000127, -17.450957),
+      ],
+      fillColor: const Color.fromRGBO(217, 217, 217, 1.0),
+      strokeColor: const Color.fromRGBO(182, 182, 182, 1.0),
+      strokeWidth: 2,
+    ),
+
+    // Salle des profs
+
+    Polygon(
+      polygonId: const PolygonId('Salle des profs'),
+      points: const <LatLng>[
+        LatLng(14.7000411, -17.451043),
+        LatLng(14.7000044, -17.451029),
+        LatLng(14.7000204, -17.4509813),
+        LatLng(14.7000564, -17.450996),
+        LatLng(14.7000411, -17.451043),
+      ],
+      fillColor: const Color.fromRGBO(217, 217, 217, 1.0),
+      strokeColor: const Color.fromRGBO(182, 182, 182, 1.0),
+      strokeWidth: 2,
+    ),
+
+    // Toilettes personnels homme
+
+    Polygon(
+      polygonId: const PolygonId('Toilettes personnel homme'),
+      points: const <LatLng>[
+        LatLng(14.70007, -17.4510013),
+        LatLng(14.7001104, -17.451016),
+        LatLng(14.7001, -17.451048),
+        LatLng(14.7000603, -17.4510327),
+        LatLng(14.70007, -17.4510013),
+      ],
+      fillColor: const Color.fromRGBO(223, 227, 255, 1.0),
+      strokeColor: const Color.fromRGBO(152, 159, 228, 1.0),
+      strokeWidth: 2,
+
+    ),
+
+
   };
+
   Set<Polygon> _secondFloorPolygons = {
 
     // - Batiment E
@@ -2215,14 +2529,131 @@ class MapWState extends State<GMap> {
 
   Future<void> _initializeTextMarkersOfLevel1() async {
     List<Map<String, dynamic>> markerData = [
-      // BAT E :
+
+      // BAT A :
 
       {
-        "markerId": "Admin",
-        "rotation": -5.0,
-        "position": LatLng(14.700011491543004, -17.45103120803833),
-        "title": "(Bientôt disponible)",
+        "markerId": "Bureau\nMr Boudal Niang",
+        "rotation": -18.0,
+        "position": LatLng(14.70004684043293, -17.450822666287422),
+        "title": "Bureau\nMr Boudal Niang",
       },
+
+      {
+        "markerId": "Bureau\nMr Lemrabott",
+        "rotation": -18.0,
+        "position": LatLng(14.7001444552277, -17.450862899422646),
+        "title": "Bureau\nMr Lemrabott",
+      },
+
+      {
+        "markerId": "Bureau\nMr O.Ndiaye",
+        "rotation": -18.0,
+        "position": LatLng(14.700109106353576, -17.45095442980528),
+        "title": "Bureau\nMr O.Ndiaye",
+      },
+
+      {
+        "markerId": "Bureau\nMr Damoue",
+        "rotation": -18.0,
+        "position": LatLng(14.700096782891524, -17.450988963246342),
+        "title": "Bureau\nMr Damoue",
+      },
+
+      {
+        "markerId": "Bureau\nMme Marthe",
+        "rotation": -18.0,
+        "position": LatLng(14.70004716473465, -17.451136149466038),
+        "title": "Bureau\nMme Marthe",
+      },
+
+      {
+        "markerId": "Bureau\nMr Kora",
+        "rotation": 73.0,
+        "position": LatLng(14.699995600755758, -17.451119385659695),
+        "title": "Bureau\nMr Kora",
+      },
+
+      {
+        "markerId": "Bureau\nMr Preira & Mr Ba",
+        "rotation": -18.0,
+        "position": LatLng(14.69995117140569, -17.451089210808274),
+        "title": "Bureau\nMr Preira & Mr Ba",
+      },
+
+
+      {
+        "markerId": "Bureau\nMr Doumbia",
+        "rotation": -18.0,
+        "position": LatLng(14.699969332309005, -17.451029866933823),
+        "title": "Bureau\nMr Doumbia",
+      },
+
+      {
+        "markerId": "Bureau\nMr Alpha Barry",
+        "rotation": -18.0,
+        "position": LatLng(14.69998846611621, -17.450980581343174),
+        "title": "Bureau\nMr Alpha Barry",
+      },
+
+      {
+        "markerId": "Bureau\nMr DER",
+        "rotation": -18.0,
+        "position": LatLng(14.700002735395076, -17.45092827826738),
+        "title": "Bureau\nMr DER",
+      },
+
+      {
+        "markerId": "Salle\ndes profs",
+        "rotation": 73.0,
+        "position": LatLng(14.700031273950001, -17.45101746171713),
+        "title": "Salle\ndes profs",
+      },
+
+      {
+        "markerId": "Agents\nde liaison",
+        "rotation": 73.0,
+        "position": LatLng(14.700044246019184, -17.450973205268383),
+        "title": "Agents\nde liaison",
+      },
+
+      {
+        "markerId": "Bureau\nMme Diallo MDI",
+        "rotation": 73.0,
+        "position": LatLng(14.700055920880796, -17.450935654342175),
+        "title": "Bureau\nMme Diallo\nMDI",
+      },
+
+      {
+        "markerId": "Accueil\nESMT",
+        "rotation": 73.0,
+        "position": LatLng(14.700067595741782, -17.450902797281742),
+        "title": "Accueil\nESMT",
+      },
+
+      {
+        "markerId": "Bureau\nMme Garba",
+        "rotation": 73.0,
+        "position": LatLng(14.700010518637686, -17.45108049362898),
+        "title": "Bureau\nMme Garba",
+      },
+
+      {
+        "markerId": "Salle E13",
+        "rotation": 73.0,
+        "position": LatLng(14.700335468769655, -17.45076399296522),
+        "title": "Salle E13\n(Commutateur)",
+      },
+
+      // BAT E :
+
+      // Administration bientôt disponible
+      // {
+      //   "markerId": "Admin",
+      //   "rotation": -5.0,
+      //   "position": LatLng(14.700011491543004, -17.45103120803833),
+      //   "title": "(Bientôt disponible)",
+      // },
 
       {
         "markerId": "Salle E18",
@@ -2269,7 +2700,7 @@ class MapWState extends State<GMap> {
       {
         "markerId": "Salle E11",
         "rotation": -18.0,
-        "position": LatLng(14.700105214734053, -17.450753934681416),
+        "position": LatLng(14.700095809986601, -17.450751587748528),
         "title": "Salle E11\n(Électronique - Mr.Rabé)",
       },
 
@@ -3955,11 +4386,10 @@ class MapWState extends State<GMap> {
           // add(SetSelectedMapEntity(event.newMapEntity));
         },
       ),
-
       Marker(
         markerId: const MarkerId("Labo 8 BATE E11"),
         anchor: const Offset(0.5, 0.5),
-        position: LatLng(14.700130185958107, -17.450766675174236),
+        position: LatLng(14.700126294338954, -17.450763322412968),
         icon: icons["labo.png"]!,
         onTap: () {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -4215,6 +4645,116 @@ class MapWState extends State<GMap> {
           // polylines: mapState.polylinesSet,
           polylines: {
 
+            // Escaliers 1 (Bat A) :
+
+            Polyline(
+              polylineId: PolylineId('Ligne 1 Escalier 1 Bat A'),
+              points: [
+                LatLng(14.7001297, -17.4509429),
+                LatLng(14.70014, -17.4509124),
+              ],
+              color: const Color(0XFFDCDCDE),
+              width: 2,
+            ),
+            Polyline(
+              polylineId: PolylineId('Ligne 3 Escalier 1 Bat A'),
+              points: [
+                LatLng(14.700124, -17.4509415),
+                LatLng(14.7001344, -17.450911),
+              ],
+              color: const Color(0XFFDCDCDE),
+              width: 2,
+            ),
+            Polyline(
+              polylineId: PolylineId('Ligne 4 Escalier 1 Bat A'),
+              points: [
+                LatLng(14.7001292, -17.45091),
+                LatLng(14.7001185, -17.4509388),
+              ],
+              color: const Color(0XFFDCDCDE),
+              width: 2,
+            ),
+            Polyline(
+              polylineId: PolylineId('Ligne 5 Escalier 1 Bat A'),
+              points: [
+                LatLng(14.7001136, -17.4509365),
+                LatLng(14.7001243, -17.4509073),
+              ],
+              color: const Color(0XFFDCDCDE),
+              width: 2,
+            ),
+            Polyline(
+              polylineId: PolylineId('Ligne 6 Escalier 1 Bat A'),
+              points: [
+                LatLng(14.7001085, -17.4509356),
+                LatLng(14.7001192, -17.4509061),
+              ],
+              color: const Color(0XFFDCDCDE),
+              width: 2,
+            ),
+            Polyline(
+              polylineId: PolylineId('Ligne 7 Escalier 1 Bat A'),
+              points: [
+                LatLng(14.7001396, -17.4509306),
+                LatLng(14.7001101, -17.4509195),
+              ],
+              color: const Color(0XFFDCDCDE),
+              width: 2,
+            ),
+            Polyline(
+              polylineId: PolylineId('Ligne 2 Escalier 2 Bat A'),
+              points: [
+                LatLng(14.7000895, -17.4510602),
+                LatLng(14.700095, -17.4510461),
+              ],
+              color: const Color(0XFFDCDCDE),
+              width: 2,
+            ),
+            Polyline(
+              polylineId: PolylineId('Ligne 3 Escalier 2 Bat A'),
+              points: [
+                LatLng(14.7000788, -17.4510729),
+                LatLng(14.7000896, -17.4510438),
+              ],
+              color: const Color(0XFFDCDCDE),
+              width: 2,
+            ),
+            Polyline(
+              polylineId: PolylineId('Ligne 4 Escalier 2 Bat A'),
+              points: [
+                LatLng(14.7000745, -17.4510698),
+                LatLng(14.7000842, -17.451042),
+              ],
+              color: const Color(0XFFDCDCDE),
+              width: 2,
+            ),
+            Polyline(
+              polylineId: PolylineId('Ligne 5 Escalier 2 Bat A'),
+              points: [
+                LatLng(14.7000693, -17.4510681),
+                LatLng(14.7000793, -17.4510397),
+              ],
+              color: const Color(0XFFDCDCDE),
+              width: 2,
+            ),
+            Polyline(
+              polylineId: PolylineId('Ligne 6 Escalier 2 Bat A'),
+              points: [
+                LatLng(14.7000644, -17.4510654),
+                LatLng(14.7000744, -17.4510383),
+              ],
+              color: const Color(0XFFDCDCDE),
+              width: 2,
+            ),
+            Polyline(
+              polylineId: PolylineId('Ligne 7 Escalier 2 Bat A'),
+              points: [
+                LatLng(14.700093864176718, -17.451062723994255),
+                LatLng(14.700063379819838, -17.45104931294918)
+              ],
+              color: const Color(0XFFDCDCDE),
+              width: 2,
+            ),
 
             // Escaliers 9 : Ligne 2
             Polyline(
