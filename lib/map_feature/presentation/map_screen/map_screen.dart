@@ -2723,18 +2723,21 @@ class MapWState extends State<GMap> {
         "position": LatLng(14.69958114267191, -17.45119046419859),
         "title": "Salle HA?",
       },
+
       {
         "markerId": "Bureau recouvrement",
         "rotation": 74.0,
         "position": LatLng(14.699544172194296, -17.45131216943264),
         "title": "Bureau\nrecouvrement",
       },
+
       {
         "markerId": "Bureausurveillants",
         "rotation": 70.0,
         "position": LatLng(14.6996, -17.45138),
         "title": "Bureau\nsurveillants",
       },
+
       {
         "markerId": "Bureau Mme Barro",
         "rotation": 70.0,
