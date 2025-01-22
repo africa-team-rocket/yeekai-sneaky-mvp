@@ -17,10 +17,11 @@ class ChatScreenFooter extends StatefulWidget {
       required this.chatBloc,
       required this.scrollController,
       required this.shouldOpenKeyboard,
-      this.initialPrompt})
+      this.initialPrompt, required this.isConnected})
       : super(key: key);
 
   final ChatBloc chatBloc;
+  final bool isConnected;
   final bool shouldOpenKeyboard;
   final InitialPrompt? initialPrompt;
   // On aurait aussi pu écouter l'évènement de l'autre côté mais on va simplement vite, on verra après
@@ -170,6 +171,9 @@ class _ChatScreenFooterState extends State<ChatScreenFooter> {
                       child: InkWell(
                         borderRadius: BorderRadius.circular(10),
                         onTap: () {
+
+
+
                           if (_chatText.isEmpty) {
                             //TODO: Check if we need this feature
                             //While this feature is unavailable
@@ -185,6 +189,19 @@ class _ChatScreenFooterState extends State<ChatScreenFooter> {
 
                           if (!widget.chatBloc.state.isAITyping &&
                               _chatTextController.text.isNotEmpty) {
+
+                            if(widget.isConnected == false){
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                buildCustomSnackBar(
+                                  context,
+                                  "Pas connecté à internet",
+                                  SnackBarType.info,
+                                  showCloseIcon: false,
+                                ),
+                              );
+                              return;
+                            }
+
                             widget.chatBloc.add(SendMessageByStream(
                                 message: _chatText,
                                 yeeguideId: locator

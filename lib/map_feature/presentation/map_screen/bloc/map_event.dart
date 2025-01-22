@@ -20,6 +20,11 @@ class UpdateMarkersSet extends MapEvent{
   UpdateMarkersSet({required this.newMarker, required this.newMarkerSubset});
 }
 
+class GetGifts extends MapEvent{
+  final bool? isConnectedToInternet;
+  GetGifts({required this.isConnectedToInternet});
+}
+
 class UpdatePolylinesSet extends MapEvent{
   final Polyline? newPolyline;
   final Set<Polyline>? newPolylineSubset;

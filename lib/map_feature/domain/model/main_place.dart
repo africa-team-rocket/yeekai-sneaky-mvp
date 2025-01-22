@@ -4,6 +4,7 @@ import 'map_entity.dart';
 
 // Classe représentant les endroits clés du campus (labos, resto, etc.)
 class MainPlace extends MapEntity {
+  final bool hasDetails;
   final String placeName;
   final String placeType;
   final String shortDescription;
@@ -16,6 +17,7 @@ class MainPlace extends MapEntity {
   final List<String> photos;
 
   const MainPlace({
+    required this.hasDetails,
     required this.placeType,
     required this.placeName,
     required this.shortDescription,
@@ -57,6 +59,7 @@ class MainPlace extends MapEntity {
       entityPosition: entityPosition ?? this.entityPosition,
       entityName: entityName ?? this.entityName,
       photos: photos ?? this.photos,
+      hasDetails: hasDetails ?? this.hasDetails,
     );
   }
 }
@@ -82,6 +85,7 @@ class Restroom extends MainPlace {
     required super.isOpen,
     required super.photos,
     required super.placeType,
+    required super.hasDetails,
   });
 
   Restroom copyWith({
@@ -100,6 +104,7 @@ class Restroom extends MainPlace {
     bool? isOpen,
     List<String>? photos,
     String? placeType,
+    bool? hasDetails
   }) {
     return Restroom(
       occupancyLevel: occupancyLevel ?? this.occupancyLevel,
@@ -117,6 +122,7 @@ class Restroom extends MainPlace {
       isOpen: isOpen ?? this.isOpen,
       photos: photos ?? this.photos,
       placeType: placeType ?? this.placeType,
+      hasDetails: hasDetails ?? this.hasDetails,
     );
   }
 }
@@ -145,7 +151,7 @@ class Office extends MainPlace {
     required super.about,
     required super.isOpen,
     required super.photos,
-    required super.placeType,
+    required super.placeType, required super.hasDetails,
   });
 
   Office copyWith({
@@ -166,6 +172,7 @@ class Office extends MainPlace {
     bool? isOpen,
     List<String>? photos,
     String? placeType,
+    bool? hasDetails
   }) {
     return Office(
       officeRole: officeRole ?? this.officeRole,
@@ -184,7 +191,7 @@ class Office extends MainPlace {
       about: about ?? this.about,
       isOpen: isOpen ?? this.isOpen,
       photos: photos ?? this.photos,
-      placeType: placeType ?? this.placeType,
+      placeType: placeType ?? this.placeType, hasDetails: hasDetails ?? this.hasDetails,
     );
   }
 }
@@ -224,6 +231,6 @@ class Classroom extends MainPlace {
     required super.isOpen,
     required super.entityPosition,
     required super.entityName,
-    required super.photos,
+    required super.photos, required super.hasDetails,
   });
 }

@@ -77,6 +77,7 @@ dependencies:
   icons_launcher: ^3.0.0
   path_provider: ^2.1.4
   change_app_package_name: ^1.4.0
+  connectivity_plus: ^6.1.1
   #flutter_app_name: ^0.1.1
 #  appinio_video_player: ^1.2.2
 

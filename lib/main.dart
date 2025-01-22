@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
+import 'package:yeebus_filthy_mvp/map_feature/presentation/gift_test_page.dart';
 import 'core/commons/utils/app_constants.dart';
 import 'core/data/database_instance.dart';
 import 'core/di/locator.dart';
@@ -96,12 +97,12 @@ class YeebusApp extends StatelessWidget {
                 // brightness: Brightness.light
               ),
 
-              // home: const HomeScreen(),
+              //home: const GiftTestPage(),
               home: locator
                   .get<SharedPreferences>()
                   .getBool("isOldUser") !=
                   true ? const NewWelcomeScreen() : const HomeScreen(),
-              // home: const MapScreen(),
+              //home: const MapScreen(),
 
               // home: FlutterSplashScreen.gif(
               //   gifPath: 'assets/example.gif',
