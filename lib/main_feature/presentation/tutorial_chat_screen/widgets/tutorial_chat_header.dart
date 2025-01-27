@@ -7,9 +7,7 @@ import 'package:page_transition/page_transition.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../../core/commons/theme/app_colors.dart';
-import '../../../../core/commons/utils/custom_pop_up_menu.dart';
 import '../../../../core/di/locator.dart';
-import '../../../../core/presentation/app_global_widgets.dart';
 import '../../../domain/model/yeeguide.dart';
 
 class TutorialChatScreenHeader extends StatefulWidget {

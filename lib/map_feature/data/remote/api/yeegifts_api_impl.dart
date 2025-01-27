@@ -6,13 +6,9 @@ import 'package:yeebus_filthy_mvp/main_feature/data/remote/api/yeebot_api.dart';
 import 'package:yeebus_filthy_mvp/map_feature/data/remote/api/yeegifts_api.dart';
 
 import '../../../../core/commons/utils/resource.dart';
-import '../../../../core/di/locator.dart';
 
-import 'dart:convert';
-import 'package:flutter/cupertino.dart';
 import 'package:http/http.dart' as http;
 
-import '../../../../core/commons/utils/resource.dart';
 
 class YeegiftsApiImpl extends YeegiftsApi {
 

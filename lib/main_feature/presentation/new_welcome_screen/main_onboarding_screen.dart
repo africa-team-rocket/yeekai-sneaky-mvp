@@ -1,12 +1,9 @@
-import 'dart:io';
 import 'dart:math';
 
 import 'package:animated_size_and_fade/animated_size_and_fade.dart';
 import 'package:animated_text_kit/animated_text_kit.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter/widgets.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:local_hero/local_hero.dart';
 import 'package:lottie/lottie.dart';

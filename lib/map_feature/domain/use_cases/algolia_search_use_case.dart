@@ -5,8 +5,6 @@ import 'package:flutter/cupertino.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:rxdart/rxdart.dart';
 import '../../../core/commons/utils/resource.dart';
-import '../../../core/commons/utils/toolbox.dart';
-import '../../../core/di/locator.dart';
 import '../../presentation/search_screen/bloc/search_state.dart';
 import '../model/hits_page.dart';
 import '../model/search_hit_entity.dart';

@@ -11,7 +11,6 @@ import 'package:yeebus_filthy_mvp/map_feature/domain/use_cases/sync_gifts_use_ca
 import '../../../../core/commons/theme/app_colors.dart';
 import '../../../../core/commons/utils/app_constants.dart';
 import '../../../../core/commons/utils/resource.dart';
-import '../../../../core/domain/models/user_position.dart';
 import '../../../domain/model/bus.dart';
 import '../../../domain/model/main_place.dart';
 import '../../../domain/model/place.dart';

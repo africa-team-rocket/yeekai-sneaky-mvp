@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:developer';
 
 import '../../../core/commons/utils/resource.dart';
 import '../../../core/di/locator.dart';

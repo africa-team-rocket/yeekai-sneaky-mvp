@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'dart:ui';
 
 import 'package:animated_switcher_plus/animated_switcher_plus.dart';

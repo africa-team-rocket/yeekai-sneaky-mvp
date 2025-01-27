@@ -1,12 +1,8 @@
-import 'dart:io';
-import 'dart:math';
 
 import 'package:animated_size_and_fade/animated_size_and_fade.dart';
 import 'package:animated_text_kit/animated_text_kit.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter/widgets.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:local_hero/local_hero.dart';
 import 'package:lottie/lottie.dart';
@@ -15,7 +11,6 @@ import 'package:yeebus_filthy_mvp/main_feature/presentation/new_welcome_screen/w
 
 import '../../../core/commons/theme/app_colors.dart';
 import '../../../core/commons/utils/app_constants.dart';
-import '../../../core/commons/utils/custom_elastic_curve.dart';
 import 'confirm_yeeguide_screen.dart';
 
 class ChooseYeeguideScreen extends StatefulWidget {
