@@ -5,6 +5,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../../core/commons/theme/app_colors.dart';
+import '../../../../core/commons/utils/firebase_engine.dart';
 import '../../../../core/di/locator.dart';
 import '../../../../core/presentation/app_global_widgets.dart';
 import '../bloc/chat_bloc.dart';
@@ -43,6 +44,9 @@ class _ChatScreenFooterState extends State<ChatScreenFooter> {
     if (widget.initialPrompt != null) {
       if (widget.initialPrompt!.shouldSendInitialPrompt) {
         Future.delayed(const Duration(milliseconds: 300), () {
+          FirebaseEngine.logCustomEvent("send_ai_message",{"yeeguideId":locator.get<SharedPreferences>().getString("yeeguide_id") ??
+          "raruto","message":widget.initialPrompt!.text,"username": locator.get<SharedPreferences>().getString("username") ?? "unknown"});
+
           widget.chatBloc.add(SendMessageByStream(
               message: widget.initialPrompt!.text,
               yeeguideId:
@@ -114,7 +118,10 @@ class _ChatScreenFooterState extends State<ChatScreenFooter> {
                     color: Colors.transparent,
                     child: InkWell(
                       borderRadius: BorderRadius.circular(15),
-                      onTap: () {},
+                      onTap: () {
+                        FirebaseEngine.logCustomEvent("send_photos_message_clicked", {});
+
+                      },
                       child: SizedBox(
                         height: 55,
                         width: 47,
@@ -202,6 +209,9 @@ class _ChatScreenFooterState extends State<ChatScreenFooter> {
                               return;
                             }
 
+                            FirebaseEngine.logCustomEvent("send_ai_message",{"yeeguideId":locator.get<SharedPreferences>().getString("yeeguide_id") ??
+                                "raruto","message": _chatText,"username": locator.get<SharedPreferences>().getString("username") ?? "unknown"});
+
                             widget.chatBloc.add(SendMessageByStream(
                                 message: _chatText,
                                 yeeguideId: locator
@@ -217,8 +227,8 @@ class _ChatScreenFooterState extends State<ChatScreenFooter> {
                                   curve: Curves.easeInOut);
                             });
                           } else {
-                            debugPrint(
-                                "Pas encore d'audio/Attend qu'il aie fini de parler");
+                            FirebaseEngine.logCustomEvent("mic_unavailable_usecase",{});
+                            debugPrint("Pas encore d'audio/Attend qu'il aie fini de parler");
                           }
                         },
                         child: SizedBox(

@@ -4,6 +4,7 @@
 
 list(APPEND FLUTTER_PLUGIN_LIST
   connectivity_plus
+  firebase_core
   geolocator_windows
   irondash_engine_context
   super_native_extensions

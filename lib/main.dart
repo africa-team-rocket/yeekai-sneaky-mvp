@@ -1,17 +1,21 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
+import 'package:yeebus_filthy_mvp/core/commons/utils/firebase_engine.dart';
 import 'package:yeebus_filthy_mvp/map_feature/presentation/gift_test_page.dart';
 import 'core/commons/utils/app_constants.dart';
 import 'core/data/database_instance.dart';
 import 'core/di/locator.dart';
+import 'firebase_options.dart';
 import 'main_feature/presentation/home_screen/home_screen.dart';
 import 'main_feature/presentation/new_welcome_screen/new_welcome_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
   // await initializeDateFormatting('fr_FR', '');
   // Intl.defaultLocale = 'fr_FR';
   SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp])
@@ -28,8 +32,7 @@ Future<void> main() async {
       debugPrint(
           "Il n'y avait pas de valeur pour yeeguide_id, on en a donc mis un : ${prefs.getString('yeeguide_id')}");
     } else {
-      debugPrint(
-          "Il y avait déjà une valeur pour yeeguide_id, la voici : ${prefs.getString('yeeguide_id')}");
+      debugPrint("Il y avait déjà une valeur pour yeeguide_id, la voici : ${prefs.getString('yeeguide_id')}");
     }
 
     // On vérifie s'il y'a une valeur initiale pour le user id, si non, on en met une.
@@ -54,6 +57,9 @@ Future<void> main() async {
     //   // Si la base de données n'est pas encore initialisée, créez-la.
     //   await _databaseInstance.createDatabase();
     // }
+
+    await FirebaseEngine.init();
+    WidgetsFlutterBinding.ensureInitialized();
 
     runApp(const YeebusApp());
   });
@@ -114,11 +120,11 @@ class YeebusApp extends StatelessWidget {
               //     debugPrint("onInit");
               //   },
               //   onEnd: () async {
-              //     debugPrint("onEnd 1");
+              //     debugPrint(  "onEnd 1");
               //   },
               // ),
               // home: IntermediateScreen(),
-              // debugShowCheckedModeBanner: false,
+               debugShowCheckedModeBanner: false,
             ));
     // );
   }

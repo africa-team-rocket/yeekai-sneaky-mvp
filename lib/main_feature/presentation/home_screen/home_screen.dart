@@ -4,6 +4,7 @@ import 'dart:ui';
 
 import 'package:animated_switcher_plus/animated_switcher_plus.dart';
 import 'package:confetti/confetti.dart';
+import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/painting.dart';
@@ -16,6 +17,7 @@ import 'package:http/http.dart';
 import 'package:page_transition/page_transition.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:transparent_pointer/transparent_pointer.dart';
+import 'package:yeebus_filthy_mvp/core/commons/utils/firebase_engine.dart';
 import 'package:yeebus_filthy_mvp/main_feature/presentation/home_screen/widgets/yeeguide_subpage.dart';
 
 import '../../../core/commons/theme/app_colors.dart';
@@ -135,6 +137,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   ];
 
   final _scrollViewController = ScrollController();
+  final FirebaseAnalytics anal = FirebaseAnalytics.instance;
+
 
   @override
   void dispose() {
@@ -194,7 +198,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   void initState() {
     super.initState();
 
-
+    anal.setAnalyticsCollectionEnabled(true);
 
     _controllerCenterRight =
         ConfettiController(duration: const Duration(milliseconds: 400));
@@ -252,7 +256,18 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           _bsController.forward();
         }
       }
+
+
+      // 📌 **Ajout du tracking Firebase** :
+      if (value == 0.0) {
+        debugPrint("Pinged ai");
+        FirebaseEngine.pagesTracked("ai_tab_screen");  // Onglet 0
+      } else if (value == 1.0) {
+        debugPrint("Pinged info");
+        FirebaseEngine.pagesTracked("info_tab_screen");   // Onglet 1
+      }
     });
+
   }
 
   double _initialScrollPosition = 0.0;
@@ -589,6 +604,14 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                             onTap: () {
                                               // widget.onPop();
                                               // Navigator.pop(context);
+                                              // FirebaseEngine.addsItemToCart("1", "tez", 2.0);
+                                              FirebaseEngine.pagesTracked("map_screen");
+                                              //anal.logEvent(
+                                              //  name: "pages_tracked",
+                                              //  parameters: {
+                                              //    "page_name": "map_screen"
+                                              //  }
+                                              //);
                                               Navigator.push(
                                                   context,
                                                   PageTransition(
@@ -622,6 +645,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                             borderRadius:
                                                 BorderRadius.circular(30),
                                             onTap: () {
+                                              FirebaseEngine.pagesTracked("profile_screen");
+
                                               Navigator.push(
                                                   context,
                                                   PageTransition(
@@ -777,6 +802,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                               BorderRadius.circular(15),
                                           // borderRadius: BorderRadius.circular(15),
                                           onTap: () {
+                                            FirebaseEngine.pagesTracked("chat_screen");
+
                                             Navigator.push(
                                                 context,
                                                 PageTransition(
@@ -799,6 +826,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                                     )));
                                           },
                                           onDoubleTap: () {
+                                            FirebaseEngine.pagesTracked("map_screen");
+
                                             Navigator.push(
                                                 context,
                                                 PageTransition(
@@ -904,6 +933,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                                 ),
                                                 CupertinoActionSheetAction(
                                                   onPressed: () {
+                                                    FirebaseEngine.pagesTracked("catalog_screen");
+
                                                     Navigator.push(
                                                             context,
                                                             PageTransition(
@@ -996,6 +1027,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                           borderRadius:
                                               BorderRadius.circular(15),
                                           onTap: () {
+                                            FirebaseEngine.pagesTracked("chat_screen");
+
                                             Navigator.push(
                                                 context,
                                                 PageTransition(
@@ -1055,6 +1088,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                                         BorderRadius.circular(
                                                             10),
                                                     onTap: () {
+                                                      FirebaseEngine.logCustomEvent("mic_unavailable_usecase",{});
+
                                                       ScaffoldMessenger.of(context).showSnackBar(
                                                         buildCustomSnackBar(
                                                           context,
@@ -1171,6 +1206,8 @@ class CompanyChannel extends StatelessWidget {
       child: InkWell(
           // borderRadius: BorderRadius.circular(30),
           onTap: () {
+            FirebaseEngine.logCustomEvent("canal_unavailable_usecase",{});
+
             ScaffoldMessenger.of(context).showSnackBar(
               buildCustomSnackBar(
                 context,
@@ -1348,7 +1385,10 @@ class CompanyStatus extends StatelessWidget {
           color: Colors.transparent,
           child: InkWell(
             splashColor: Colors.black.withOpacity(.6),
-            onTap: () {},
+            onTap: () {
+              FirebaseEngine.logCustomEvent("status_unavailable_usecase",{});
+
+            },
             borderRadius: BorderRadius.circular(15),
             child: Padding(
               padding: EdgeInsets.symmetric(horizontal: 7, vertical: 7),

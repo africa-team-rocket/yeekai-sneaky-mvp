@@ -9,6 +9,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../../core/commons/theme/app_colors.dart';
 import '../../../../core/commons/utils/custom_pop_up_menu.dart';
+import '../../../../core/commons/utils/firebase_engine.dart';
 import '../../../../core/di/locator.dart';
 import '../../../../core/presentation/app_global_widgets.dart';
 import '../../../domain/model/yeeguide.dart';
@@ -177,6 +178,7 @@ class _ChatScreenHeaderState extends State<ChatScreenHeader> {
                                         borderRadius: BorderRadius.circular(30),
                                         onTap: () {
                                           FocusScope.of(context).unfocus();
+                                          FirebaseEngine.pagesTracked("home_screen");
                                           Future.delayed(Duration.zero, () {
                                             Navigator.push(
                                                 context,
@@ -218,6 +220,8 @@ class _ChatScreenHeaderState extends State<ChatScreenHeader> {
                                           borderRadius:
                                               BorderRadius.circular(30),
                                           onTap: () {
+                                            FirebaseEngine.pagesTracked("yeeguide_profile_screen");
+
                                             Navigator.push(
                                                 context,
                                                 PageTransition(
@@ -351,6 +355,8 @@ class _ChatScreenHeaderState extends State<ChatScreenHeader> {
                                   // Navigator.pop(context);
 
                                   //////////////////////////
+                                  FirebaseEngine.logCustomEvent("ai_search_unavailable_usecase",{});
+
                                   //While this feature is not available
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     buildCustomSnackBar(
@@ -435,6 +441,8 @@ class _ChatScreenHeaderState extends State<ChatScreenHeader> {
                                     items: [
                                       PopupBlurryMenuItem(
                                         onTap: () {
+                                          FirebaseEngine.logCustomEvent("supprimer_conversation_clicked", {});
+
                                           ScaffoldMessenger.of(context)
                                               .showSnackBar(
                                             buildCustomSnackBar(
@@ -467,6 +475,8 @@ class _ChatScreenHeaderState extends State<ChatScreenHeader> {
                                       ),
                                       PopupBlurryMenuItem(
                                         onTap: () {
+                                          FirebaseEngine.logCustomEvent("renommer_conversation_clicked", {});
+
                                           ScaffoldMessenger.of(context)
                                               .showSnackBar(
                                             buildCustomSnackBar(
@@ -502,6 +512,8 @@ class _ChatScreenHeaderState extends State<ChatScreenHeader> {
                                       ),
                                       PopupBlurryMenuItem(
                                         onTap: () {
+                                          FirebaseEngine.logCustomEvent("nouvelle_conversation_clicked", {});
+
                                           ScaffoldMessenger.of(context)
                                               .showSnackBar(
                                             buildCustomSnackBar(
@@ -532,6 +544,8 @@ class _ChatScreenHeaderState extends State<ChatScreenHeader> {
                                       ),
                                       PopupBlurryMenuItem(
                                         onTap: () {
+                                          FirebaseEngine.logCustomEvent("historique_conversation_clicked", {});
+
                                           ScaffoldMessenger.of(context)
                                               .showSnackBar(
                                             buildCustomSnackBar(
@@ -564,6 +578,8 @@ class _ChatScreenHeaderState extends State<ChatScreenHeader> {
                                       ),
                                       PopupBlurryMenuItem(
                                         onTap: () {
+                                          FirebaseEngine.logCustomEvent("parametres_vocaux_clicked", {});
+
                                           ScaffoldMessenger.of(context)
                                               .showSnackBar(
                                             buildCustomSnackBar(
@@ -596,6 +612,8 @@ class _ChatScreenHeaderState extends State<ChatScreenHeader> {
                                       ),
                                       PopupBlurryMenuItem(
                                         onTap: () {
+                                          FirebaseEngine.pagesTracked("catalog_screen");
+
                                           Navigator.push(
                                             context,
                                             PageTransition(

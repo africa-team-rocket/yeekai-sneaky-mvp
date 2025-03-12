@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "914362024742",
+    "project_id": "yeekai-de9a8",
+    "storage_bucket": "yeekai-de9a8.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:914362024742:android:f02122372f09c3b92337e7",
+        "android_client_info": {
+          "package_name": "com.sn.atr.yeekai"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAuRmprfFglmOKeoSuwhghX2kQdua9QkwY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import '../../../../core/commons/theme/app_colors.dart';
+import '../../../../core/commons/utils/firebase_engine.dart';
 import '../../../../core/presentation/app_global_widgets.dart';
 
 class CatalogScreenHeader extends StatefulWidget {
@@ -86,6 +87,8 @@ class _CatalogScreenHeaderState extends State<CatalogScreenHeader> {
                                     child: InkWell(
                                       borderRadius: BorderRadius.circular(30),
                                       onTap: () {
+                                        FirebaseEngine.logCustomEvent("unavailable_infoabout_catalog_yeeguide", {});
+
                                         ScaffoldMessenger.of(context).showSnackBar(
                                           buildCustomSnackBar(
                                             context,
@@ -205,6 +208,7 @@ class _CatalogScreenHeaderState extends State<CatalogScreenHeader> {
                                     borderRadius: BorderRadius.circular(30),
                                     onTap: () {
                                       //TODO: Implement search
+                                      FirebaseEngine.logCustomEvent("unavailable_search_catalog_yeeguide", {});
 
                                       // // widget.onPop();
                                       // setState(() {
@@ -241,6 +245,8 @@ class _CatalogScreenHeaderState extends State<CatalogScreenHeader> {
                                   child: InkWell(
                                     borderRadius: BorderRadius.circular(30),
                                     onTap: () {
+                                      FirebaseEngine.logCustomEvent("unavailable_search_catalog_yeeguide", {});
+
                                       ScaffoldMessenger.of(context).showSnackBar(
                                         buildCustomSnackBar(
                                           context,

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:flutter/cupertino.dart';
 
 import 'dart:convert';
@@ -25,6 +26,7 @@ import 'package:yeebus_filthy_mvp/map_feature/presentation/map_screen/widgets/gi
 
 import '../../../core/commons/theme/app_colors.dart';
 import '../../../core/commons/utils/app_constants.dart';
+import '../../../core/commons/utils/firebase_engine.dart';
 import '../../../core/commons/utils/raw_explandable_bottom_sheet.dart';
 import '../../../core/presentation/app_global_widgets.dart';
 import '../../../core/presentation/root_app_bar/root_app_bar.dart';
@@ -69,11 +71,16 @@ class _MapScreenState extends State<MapScreen> {
   final TextEditingController textEditingController = TextEditingController();
   late MapBloc mapBloc;
 
+
   onPop() {
     if (mapBloc.state.selectedEntity != null) {
+      FirebaseEngine.pagesTracked("pop_from_selected_map_entity");
       mapBloc.add(SetSelectedMapEntity(null));
       return;
     }
+    FirebaseEngine.pagesTracked("pop_from_map_screen");
+
+
     Navigator.of(context).maybePop();
   }
 
@@ -294,6 +301,8 @@ class _MapScreenState extends State<MapScreen> {
                           iconUrl: "assets/icons/map_level.png",
                           isUpper: true,
                           onTap: () {
+                            FirebaseEngine.logCustomEvent("unavailable_map_level_mode", {});
+
                             ScaffoldMessenger.of(context).showSnackBar(
                               buildCustomSnackBar(
                                 context,
@@ -311,6 +320,8 @@ class _MapScreenState extends State<MapScreen> {
                           isUpper: true,
                           backgroundColor: AppColors.primaryVar0,
                           onTap: () {
+                            FirebaseEngine.logCustomEvent("unavailable_map_more_mode", {});
+
                             ScaffoldMessenger.of(context).showSnackBar(
                               buildCustomSnackBar(
                                 context,
@@ -326,6 +337,8 @@ class _MapScreenState extends State<MapScreen> {
                           backgroundColor: AppColors.primaryVar0,
                           isUpper: true,
                           onTap: () {
+                            FirebaseEngine.logCustomEvent("unavailable_map_settings_mode", {});
+
                             ScaffoldMessenger.of(context).showSnackBar(
                               buildCustomSnackBar(
                                 context,
@@ -352,6 +365,8 @@ class _MapScreenState extends State<MapScreen> {
                                       .placeName
                                   : mapBloc.state.selectedEntity?.entityName,
                           onTap: () {
+                            FirebaseEngine.logCustomEvent("unavailable_map_search_mode", {});
+
                             ScaffoldMessenger.of(context).showSnackBar(
                               buildCustomSnackBar(
                                 context,
@@ -6833,6 +6848,8 @@ class _FloorFloatingButtonState extends State<FloorFloatingButton> {
 
   void updateLocalFloorLevel(int level) {
     // Mettre à jour localement le floorLevel et appeler updateFloorLevel
+    FirebaseEngine.logCustomEvent("update_map_floor_level", {"level":level.toString()});
+
     setState(() {
       localFloorLevel = level;
     });
@@ -7526,6 +7543,13 @@ class _BottomSheetExpandableContentState
                                                     BorderRadius.circular(17),
                                                     child: InkWell(
                                                       onTap: () {
+
+                                                        FirebaseEngine.logCustomEvent("map_see_details_pressed", {"selected_entity":context
+                                                            .read<
+                                                            MapBloc>()
+                                                            .state
+                                                            .selectedEntity!.entityName});
+
                                                         if ((context
                                                             .read<
                                                             MapBloc>()

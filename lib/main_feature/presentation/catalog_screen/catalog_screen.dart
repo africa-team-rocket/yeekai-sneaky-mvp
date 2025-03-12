@@ -8,6 +8,7 @@ import 'package:yeebus_filthy_mvp/main_feature/presentation/catalog_screen/widge
 
 import '../../../core/commons/theme/app_colors.dart';
 import '../../../core/commons/utils/app_constants.dart';
+import '../../../core/commons/utils/firebase_engine.dart';
 import '../../../core/di/locator.dart';
 import '../../../core/presentation/app_global_widgets.dart';
 import '../../domain/model/yeeguide.dart';
@@ -41,6 +42,8 @@ void _showAlertDialog(BuildContext innerContext, Yeeguide newYeeguide) {
           /// and turns the action's text to bold text.
           // isDefaultAction: true,
           onPressed: () {
+            FirebaseEngine.pagesTracked("pop_from_catalog_screen");
+
             Navigator.pop(context);
           },
           child: Text(
@@ -55,6 +58,9 @@ void _showAlertDialog(BuildContext innerContext, Yeeguide newYeeguide) {
           isDestructiveAction: true,
           isDefaultAction: true,
           onPressed: () {
+            FirebaseEngine.logCustomEvent("yeeguide_available_selected_from_catalog", {"yeeguide_id":newYeeguide.id});
+
+
             locator
                 .get<SharedPreferences>()
                 .setString("yeeguide_id", newYeeguide.id);
@@ -99,6 +105,8 @@ class _CatalogScreenState extends State<CatalogScreen> {
           elevation: 3.0,
           onPressed: () {
             // TODO: Implement the add yeeguide feature
+
+            FirebaseEngine.logCustomEvent("unavailable_add_yeeguide", {});
 
             //While this is not implemented, we will show a snackbar
             ScaffoldMessenger.of(context).showSnackBar(
@@ -168,6 +176,7 @@ class YeeguideResumeWidget extends StatelessWidget {
           borderRadius: BorderRadius.circular(10),
           onTap: () {
             if (!isAvailable) {
+              FirebaseEngine.logCustomEvent("yeeguide_unavailable_pressed_from_catalog", {"yeeguide_id":Yeeguide.getById(locator.get<SharedPreferences>().getString("yeeguide_id") ?? 'unknown')});
               ScaffoldMessenger.of(context).showSnackBar(
                 buildCustomSnackBar(
                   context,

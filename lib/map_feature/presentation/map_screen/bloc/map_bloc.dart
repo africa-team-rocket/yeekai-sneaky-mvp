@@ -10,6 +10,7 @@ import 'package:yeebus_filthy_mvp/map_feature/domain/use_cases/sync_gifts_use_ca
 
 import '../../../../core/commons/theme/app_colors.dart';
 import '../../../../core/commons/utils/app_constants.dart';
+import '../../../../core/commons/utils/firebase_engine.dart';
 import '../../../../core/commons/utils/resource.dart';
 import '../../../../core/domain/models/user_position.dart';
 import '../../../domain/model/bus.dart';
@@ -45,7 +46,6 @@ class MapBloc extends Bloc<MapEvent, MapState>{
   final _getAllGiftsFromCacheUseCase = GetAllGiftsFromCacheUseCase();
   final _syncGifts = SyncGiftsUseCase();
   // final _algoliaSearchUseCase = locator.get<MultimodalSearchUseCase>();
-
   // Les mécanismes de fermeture et d'ouverture ne sont pas encore au point pour le update user position
   // tu dois aussi le mettre en place plus proprement pour get buses nearby
   @override
@@ -409,6 +409,9 @@ class MapBloc extends Bloc<MapEvent, MapState>{
           // Tu viendras ajouter la line après.
         }else if(event.newMapEntity is MainPlace || event.newMapEntity is GiftMapEntity){
 
+
+          FirebaseEngine.logCustomEvent("selected_map_entity", {"entity_id": event.newMapEntity!.entityName});
+
           debugPrint("added a MainPlace or Gift from bloc");
           emit(state.copyWith(selectedEntity: event.newMapEntity));
 
@@ -423,8 +426,6 @@ class MapBloc extends Bloc<MapEvent, MapState>{
     }
 
     // Si dans le futur tu prévois de retirer le marqueur après la recherche, il faudra y remédier.
-
-
 
   }
 

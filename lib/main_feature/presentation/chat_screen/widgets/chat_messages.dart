@@ -8,6 +8,7 @@ import 'package:super_context_menu/src/default_builder/mobile_menu_widget_builde
 import 'package:super_context_menu/super_context_menu.dart';
 
 import '../../../../core/commons/theme/app_colors.dart';
+import '../../../../core/commons/utils/firebase_engine.dart';
 import '../../../../core/di/locator.dart';
 import '../../../../core/presentation/app_global_widgets.dart';
 import '../../../domain/model/chat_message.dart';
@@ -157,6 +158,8 @@ class AssistantMessagesSectionWidget extends StatelessWidget {
                     // shape: BoxShape.circle,
                     child: InkWell(
                       onTap: () {
+                        FirebaseEngine.logCustomEvent("retry_message_clicked", {});
+
                         ScaffoldMessenger.of(context).showSnackBar(
                           buildCustomSnackBar(
                             context,
@@ -179,6 +182,8 @@ class AssistantMessagesSectionWidget extends StatelessWidget {
                       fontSize: 14,
                       fontWeight: FontWeight.normal),
                   onTap: (CompletionHandler handler) {
+                    FirebaseEngine.logCustomEvent("retry_message_clicked", {});
+
                     ScaffoldMessenger.of(context).showSnackBar(
                       buildCustomSnackBar(
                         context,
@@ -196,7 +201,9 @@ class AssistantMessagesSectionWidget extends StatelessWidget {
                     // shape: BoxShape.circle,
                     child: InkWell(
     onTap: () {
-    ScaffoldMessenger.of(context).showSnackBar(
+      FirebaseEngine.logCustomEvent("listen_message_clicked", {});
+
+      ScaffoldMessenger.of(context).showSnackBar(
     buildCustomSnackBar(
     context,
     "Fonctionnalité disponible prochainement 😉",
@@ -338,11 +345,20 @@ class AIMessageBubble extends StatelessWidget {
                     children: [
                       MenuAction(title: 'Signaler la réponse', callback: () {}),
                       MenuSeparator(),
-                      MenuAction(title: 'Copier', callback: () {}),
+                      MenuAction(title: 'Copier', callback: () {
+                        FirebaseEngine.logCustomEvent("copy_message_clicked", {});
+
+                      }),
                       MenuSeparator(),
-                      MenuAction(title: 'Réessayer', callback: () {}),
+                      MenuAction(title: 'Réessayer', callback: () {
+                        FirebaseEngine.logCustomEvent("retry_message_clicked", {});
+
+                      }),
                       MenuSeparator(),
-                      MenuAction(title: 'Écouter en audio', callback: () {}),
+                      MenuAction(title: 'Écouter en audio', callback: () {
+                        FirebaseEngine.logCustomEvent("listen_message_clicked", {});
+
+                      }),
                     ],
                   );
                 },
@@ -524,6 +540,8 @@ class HumanChatMessageWidget extends StatelessWidget {
                     // shape: BoxShape.circle,
                     child: InkWell(
                       onTap: () {
+                        FirebaseEngine.logCustomEvent("delete_message_clicked", {});
+
                         ScaffoldMessenger.of(context).showSnackBar(
                           buildCustomSnackBar(
                             context,
@@ -563,7 +581,9 @@ class HumanChatMessageWidget extends StatelessWidget {
                     // shape: BoxShape.circle,
                     child: InkWell(
                       onTap: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
+                        FirebaseEngine.logCustomEvent("edit_message_clicked", {});
+
+                        ScaffoldMessenger.of(context).showSnackBar(
                       buildCustomSnackBar(
                       context,
                       "Fonctionnalité disponible prochainement 😉",
@@ -666,11 +686,20 @@ class HumanChatMessageWidget extends StatelessWidget {
                     menuProvider: (_) {
                       return Menu(
                         children: [
-                          MenuAction(title: 'Copier', callback: () {}),
+                          MenuAction(title: 'Copier', callback: () {
+                            FirebaseEngine.logCustomEvent("copy_message_clicked", {});
+
+                          }),
                           MenuSeparator(),
-                          MenuAction(title: 'Modifier', callback: () {}),
+                          MenuAction(title: 'Modifier', callback: () {
+                            FirebaseEngine.logCustomEvent("edit_message_clicked", {});
+
+                          }),
                           MenuSeparator(),
-                          MenuAction(title: 'Supprimer', callback: () {}),
+                          MenuAction(title: 'Supprimer', callback: () {
+                            FirebaseEngine.logCustomEvent("delete_message_clicked", {});
+
+                          }),
                         ],
                       );
                     },
