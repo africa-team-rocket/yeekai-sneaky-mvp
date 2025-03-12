@@ -1,12 +1,9 @@
 
-import 'dart:io';
 
-import 'package:flutter/cupertino.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:widget_to_marker/widget_to_marker.dart';
 
 import '../../../core/commons/utils/resource.dart';
-import '../../../core/di/locator.dart';
 import '../../data/local/entity/current_dest_local_entity.dart';
 
 class GetFavoriteDestsFromCacheUseCase{

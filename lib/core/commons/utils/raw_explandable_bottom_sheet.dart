@@ -503,9 +503,9 @@ class ExpandableBottomSheetState extends State<ExpandableBottomSheet>
                             height: 100,
                             color: Colors.white.withOpacity(_newOpacity),
                           ),
-                          if(widget != null) ...[
-                            child!
-                          ]
+                          ...[
+                          child!
+                        ]
                         ]),
                       ),
                     );

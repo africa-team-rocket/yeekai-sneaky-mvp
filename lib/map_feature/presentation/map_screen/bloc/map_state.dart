@@ -1,7 +1,6 @@
 
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
-import '../../../../core/domain/models/user_position.dart';
 import '../../../domain/model/bus_nearby.dart';
 import '../../../domain/model/gift.dart';
 import '../../../domain/model/hits_page.dart';

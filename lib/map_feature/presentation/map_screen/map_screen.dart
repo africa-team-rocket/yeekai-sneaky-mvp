@@ -7110,151 +7110,149 @@ class _BottomSheetExpandableContentState
                                 sheetPosition: sheetPosition,
                                 pagingController: widget.pagingController,
                                 onTapSuggestion: (mapEntity, searchHitEntity) {
-                                  if (searchHitEntity != null) {
-                                    if (searchHitEntity.entityType == "place") {
-                                      context
-                                          .read<MapBloc>()
-                                          .add(const SetSelectedMapEntity(Place(
-                                            entityName:
-                                                'Ecole supérieure multinationale des télécommunications (ESMT)',
-                                            placeName:
-                                                'Ecole supérieure multinationale des télécommunications (ESMT)',
-                                            entityPosition: LatLng(
-                                                14.700029517700326,
-                                                -17.451019219831917),
-                                          )));
-                                    } else if (searchHitEntity.entityType ==
-                                        "stop") {
-                                      context.read<MapBloc>().add(
-                                            const SetSelectedMapEntity(
-                                              Stop(
-                                                  entityName:
-                                                      'Arrêt Dardanelles',
-                                                  stopName: 'Arrêt Dardanelles',
-                                                  entityPosition: LatLng(
-                                                      14.695223067123997,
-                                                      -17.44946546833327)),
-                                            ),
-                                          );
-                                    } else {
-                                      context.read<MapBloc>().add(
-                                            const SetSelectedMapEntity(Bus(
+                                  if (searchHitEntity.entityType == "place") {
+                                    context
+                                        .read<MapBloc>()
+                                        .add(const SetSelectedMapEntity(Place(
+                                          entityName:
+                                              'Ecole supérieure multinationale des télécommunications (ESMT)',
+                                          placeName:
+                                              'Ecole supérieure multinationale des télécommunications (ESMT)',
+                                          entityPosition: LatLng(
+                                              14.700029517700326,
+                                              -17.451019219831917),
+                                        )));
+                                  } else if (searchHitEntity.entityType ==
+                                      "stop") {
+                                    context.read<MapBloc>().add(
+                                          const SetSelectedMapEntity(
+                                            Stop(
                                                 entityName:
-                                                    "Ligne 001 - Dakar Dem Dikk",
-                                                state: BusState.UNKNOWN,
-                                                capacity: 45,
-                                                line: Line(
-                                                  arrival: 'LECLERC',
-                                                  departure:
-                                                      'PARCELLES ASSAINIES',
-                                                  lineNumber: "001",
-                                                  description:
-                                                      'Cette ligne couvre la distance PARCELLES ASSAINIES-LECLERC',
-                                                  rating: 5,
-                                                  fareRange: '200-300',
-                                                  onwardShape: [
-                                                    LatLng(14.76033717791818,
-                                                        -17.438687495664922),
-                                                    LatLng(14.763940762120395,
-                                                        -17.441183406746163),
-                                                    LatLng(14.762826227208505,
-                                                        -17.446516269735618),
-                                                    LatLng(14.75983177074642,
-                                                        -17.44810450812752),
-                                                    LatLng(14.758248455408173,
-                                                        -17.44776497933181),
-                                                    LatLng(14.756328841098107,
-                                                        -17.44733680657224),
-                                                    LatLng(14.754299800845413,
-                                                        -17.446884226197255),
-                                                    LatLng(14.750523231135967,
-                                                        -17.446540219732984),
-                                                    LatLng(14.750049793921685,
-                                                        -17.44799082092741),
-                                                    LatLng(14.7502938867721,
-                                                        -17.44962752085666),
-                                                    LatLng(14.750618183071591,
-                                                        -17.451216308405563),
-                                                    LatLng(14.751908674768655,
-                                                        -17.45432092949277),
-                                                    LatLng(14.751323779488551,
-                                                        -17.45614723355753),
-                                                    LatLng(14.750277612687961,
-                                                        -17.45788510152128),
-                                                    LatLng(14.746394954969995,
-                                                        -17.466588512861758),
-                                                    LatLng(14.744905821864554,
-                                                        -17.46887636539269),
-                                                    LatLng(14.740497732127464,
-                                                        -17.471505759915615),
-                                                    LatLng(14.735673214191454,
-                                                        -17.473247964998105),
-                                                    LatLng(14.729655629460476,
-                                                        -17.472863237737428),
-                                                    LatLng(14.72590576002534,
-                                                        -17.471812771657483),
-                                                    LatLng(14.722566078908324,
-                                                        -17.471226477452866),
-                                                    LatLng(14.719750523903995,
-                                                        -17.47138906188038),
-                                                    LatLng(14.712284520605824,
-                                                        -17.471902590631213),
-                                                    LatLng(14.709249652444962,
-                                                        -17.471284811984475),
-                                                    LatLng(14.70503495422966,
-                                                        -17.470293948214813),
-                                                    LatLng(14.700211986761264,
-                                                        -17.468850235517714),
-                                                    LatLng(14.695885291241627,
-                                                        -17.465384372683875),
-                                                    LatLng(14.69356583153468,
-                                                        -17.46262004957258),
-                                                    LatLng(14.691573627552767,
-                                                        -17.460203620061222),
-                                                    LatLng(14.689322117315578,
-                                                        -17.457816311477483),
-                                                    LatLng(14.686677185172137,
-                                                        -17.45551296891371),
-                                                    LatLng(14.683540150827751,
-                                                        -17.452373935181324),
-                                                    LatLng(14.68151197255026,
-                                                        -17.450238695218715),
-                                                    LatLng(14.679699854072759,
-                                                        -17.4482861599848),
-                                                    LatLng(14.678560024739568,
-                                                        -17.447046170035282),
-                                                    LatLng(14.675097340711405,
-                                                        -17.443518609858753),
-                                                    LatLng(14.670725088433215,
-                                                        -17.440326509804457),
-                                                    LatLng(14.669173822827892,
-                                                        -17.43795000330283),
-                                                    LatLng(14.6693667259859,
-                                                        -17.434781353950044),
-                                                    LatLng(14.669498559521607,
-                                                        -17.432615841203198),
-                                                    LatLng(14.669904854641885,
-                                                        -17.43170395936341),
-                                                    LatLng(14.6742458189469,
-                                                        -17.43261082618835),
-                                                    LatLng(14.673962216827931,
-                                                        -17.43167132154245),
-                                                    LatLng(14.671892986596275,
-                                                        -17.42734131811217),
-                                                    LatLng(14.67212311504506,
-                                                        -17.42733760332219),
-                                                  ],
-                                                  lineId: 1,
-                                                ),
-                                                isAccessible: false,
+                                                    'Arrêt Dardanelles',
+                                                stopName: 'Arrêt Dardanelles',
                                                 entityPosition: LatLng(
-                                                    14.67212311504506,
-                                                    -17.42733760332219))),
-                                            // Ajoutez d'autres éléments de la liste ici
-                                          );
-                                    }
+                                                    14.695223067123997,
+                                                    -17.44946546833327)),
+                                          ),
+                                        );
+                                  } else {
+                                    context.read<MapBloc>().add(
+                                          const SetSelectedMapEntity(Bus(
+                                              entityName:
+                                                  "Ligne 001 - Dakar Dem Dikk",
+                                              state: BusState.UNKNOWN,
+                                              capacity: 45,
+                                              line: Line(
+                                                arrival: 'LECLERC',
+                                                departure:
+                                                    'PARCELLES ASSAINIES',
+                                                lineNumber: "001",
+                                                description:
+                                                    'Cette ligne couvre la distance PARCELLES ASSAINIES-LECLERC',
+                                                rating: 5,
+                                                fareRange: '200-300',
+                                                onwardShape: [
+                                                  LatLng(14.76033717791818,
+                                                      -17.438687495664922),
+                                                  LatLng(14.763940762120395,
+                                                      -17.441183406746163),
+                                                  LatLng(14.762826227208505,
+                                                      -17.446516269735618),
+                                                  LatLng(14.75983177074642,
+                                                      -17.44810450812752),
+                                                  LatLng(14.758248455408173,
+                                                      -17.44776497933181),
+                                                  LatLng(14.756328841098107,
+                                                      -17.44733680657224),
+                                                  LatLng(14.754299800845413,
+                                                      -17.446884226197255),
+                                                  LatLng(14.750523231135967,
+                                                      -17.446540219732984),
+                                                  LatLng(14.750049793921685,
+                                                      -17.44799082092741),
+                                                  LatLng(14.7502938867721,
+                                                      -17.44962752085666),
+                                                  LatLng(14.750618183071591,
+                                                      -17.451216308405563),
+                                                  LatLng(14.751908674768655,
+                                                      -17.45432092949277),
+                                                  LatLng(14.751323779488551,
+                                                      -17.45614723355753),
+                                                  LatLng(14.750277612687961,
+                                                      -17.45788510152128),
+                                                  LatLng(14.746394954969995,
+                                                      -17.466588512861758),
+                                                  LatLng(14.744905821864554,
+                                                      -17.46887636539269),
+                                                  LatLng(14.740497732127464,
+                                                      -17.471505759915615),
+                                                  LatLng(14.735673214191454,
+                                                      -17.473247964998105),
+                                                  LatLng(14.729655629460476,
+                                                      -17.472863237737428),
+                                                  LatLng(14.72590576002534,
+                                                      -17.471812771657483),
+                                                  LatLng(14.722566078908324,
+                                                      -17.471226477452866),
+                                                  LatLng(14.719750523903995,
+                                                      -17.47138906188038),
+                                                  LatLng(14.712284520605824,
+                                                      -17.471902590631213),
+                                                  LatLng(14.709249652444962,
+                                                      -17.471284811984475),
+                                                  LatLng(14.70503495422966,
+                                                      -17.470293948214813),
+                                                  LatLng(14.700211986761264,
+                                                      -17.468850235517714),
+                                                  LatLng(14.695885291241627,
+                                                      -17.465384372683875),
+                                                  LatLng(14.69356583153468,
+                                                      -17.46262004957258),
+                                                  LatLng(14.691573627552767,
+                                                      -17.460203620061222),
+                                                  LatLng(14.689322117315578,
+                                                      -17.457816311477483),
+                                                  LatLng(14.686677185172137,
+                                                      -17.45551296891371),
+                                                  LatLng(14.683540150827751,
+                                                      -17.452373935181324),
+                                                  LatLng(14.68151197255026,
+                                                      -17.450238695218715),
+                                                  LatLng(14.679699854072759,
+                                                      -17.4482861599848),
+                                                  LatLng(14.678560024739568,
+                                                      -17.447046170035282),
+                                                  LatLng(14.675097340711405,
+                                                      -17.443518609858753),
+                                                  LatLng(14.670725088433215,
+                                                      -17.440326509804457),
+                                                  LatLng(14.669173822827892,
+                                                      -17.43795000330283),
+                                                  LatLng(14.6693667259859,
+                                                      -17.434781353950044),
+                                                  LatLng(14.669498559521607,
+                                                      -17.432615841203198),
+                                                  LatLng(14.669904854641885,
+                                                      -17.43170395936341),
+                                                  LatLng(14.6742458189469,
+                                                      -17.43261082618835),
+                                                  LatLng(14.673962216827931,
+                                                      -17.43167132154245),
+                                                  LatLng(14.671892986596275,
+                                                      -17.42734131811217),
+                                                  LatLng(14.67212311504506,
+                                                      -17.42733760332219),
+                                                ],
+                                                lineId: 1,
+                                              ),
+                                              isAccessible: false,
+                                              entityPosition: LatLng(
+                                                  14.67212311504506,
+                                                  -17.42733760332219))),
+                                          // Ajoutez d'autres éléments de la liste ici
+                                        );
                                   }
-                                  context.read<MapBloc>().add(
+                                                                  context.read<MapBloc>().add(
                                       AddSearchHitToCache(
                                           searchHitEntity: searchHitEntity));
                                 },

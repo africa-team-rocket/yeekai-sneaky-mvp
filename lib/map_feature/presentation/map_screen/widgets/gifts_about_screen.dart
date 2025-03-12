@@ -4,9 +4,7 @@ import 'dart:ui';
 import 'package:animated_switcher_plus/animated_switcher_plus.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter/widgets.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:local_hero/local_hero.dart';
 import 'package:page_transition/page_transition.dart';
@@ -17,8 +15,6 @@ import 'package:yeebus_filthy_mvp/map_feature/presentation/map_screen/map_screen
 import '../../../../core/commons/theme/app_colors.dart';
 import '../../../../core/commons/utils/app_constants.dart';
 import '../../../../core/di/locator.dart';
-import '../../../../core/presentation/app_global_widgets.dart';
-import '../../../domain/model/main_place.dart';
 
 class GiftsAboutScreen extends StatefulWidget {
   const GiftsAboutScreen({super.key, required this.closeGiftsPage});

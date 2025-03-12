@@ -1,11 +1,8 @@
 
-import 'package:flutter/cupertino.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:widget_to_marker/widget_to_marker.dart';
 
 import '../../../core/commons/utils/resource.dart';
-import '../../../core/di/locator.dart';
-import '../model/bus.dart';
 import '../model/search_hit_entity.dart';
 
 class AddSearchHitToCacheUseCase{

@@ -575,8 +575,7 @@ class _SearchScreenDisplayerState extends State<SearchScreenDisplayer> {
                         ),
                       ),
                     )
-                  ]else if(widget.blocState.filteredSearchHits == null ||
-                      widget.blocState.filteredSearchHits.length == 0) ...[
+                  ]else if(widget.blocState.filteredSearchHits.length == 0) ...[
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 10.0),
                       child: SizedBox(

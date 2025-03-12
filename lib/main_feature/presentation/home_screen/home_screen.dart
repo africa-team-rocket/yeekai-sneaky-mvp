@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'dart:math';
 import 'dart:ui';
 
@@ -7,10 +6,8 @@ import 'package:confetti/confetti.dart';
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/painting.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter/widgets.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:http/http.dart';
@@ -22,7 +19,6 @@ import 'package:yeebus_filthy_mvp/main_feature/presentation/home_screen/widgets/
 
 import '../../../core/commons/theme/app_colors.dart';
 import '../../../core/di/locator.dart';
-import '../../../core/domain/models/chatbot_conversation.dart';
 import '../../../core/presentation/app_global_widgets.dart';
 import '../../../map_feature/presentation/map_screen/map_screen.dart';
 import '../../domain/model/yeeguide.dart';
