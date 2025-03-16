@@ -1,0 +1,20 @@
+{
+  "buildFiles": [
+    "/Users/pulsar/development/flutter/packages/flutter_tools/gradle/src/main/groovy/CMakeLists.txt"
+  ],
+  "cleanCommandsComponents": [
+    [
+      "/Users/pulsar/Library/Android/sdk/cmake/3.22.1/bin/ninja",
+      "-C",
+      "/Users/pulsar/development/flutter_workspace/yeekai-sneaky-mvp/android/app/.cxx/RelWithDebInfo/59k4r3q4/x86",
+      "clean"
+    ]
+  ],
+  "buildTargetsCommandComponents": [
+    "/Users/pulsar/Library/Android/sdk/cmake/3.22.1/bin/ninja",
+    "-C",
+    "/Users/pulsar/development/flutter_workspace/yeekai-sneaky-mvp/android/app/.cxx/RelWithDebInfo/59k4r3q4/x86",
+    "{LIST_OF_TARGETS_TO_BUILD}"
+  ],
+  "libraries": {}
+}
