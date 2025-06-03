@@ -2,6 +2,8 @@ PODS:
   - connectivity_plus (0.0.1):
     - Flutter
     - FlutterMacOS
+  - dchs_motion_sensors (0.0.1):
+    - Flutter
   - device_info_plus (0.0.1):
     - Flutter
   - Firebase/Analytics (11.8.0):
@@ -130,6 +132,7 @@ PODS:
 
 DEPENDENCIES:
   - connectivity_plus (from `.symlinks/plugins/connectivity_plus/darwin`)
+  - dchs_motion_sensors (from `.symlinks/plugins/dchs_motion_sensors/ios`)
   - device_info_plus (from `.symlinks/plugins/device_info_plus/ios`)
   - firebase_analytics (from `.symlinks/plugins/firebase_analytics/ios`)
   - firebase_core (from `.symlinks/plugins/firebase_core/ios`)
@@ -159,6 +162,8 @@ SPEC REPOS:
 EXTERNAL SOURCES:
   connectivity_plus:
     :path: ".symlinks/plugins/connectivity_plus/darwin"
+  dchs_motion_sensors:
+    :path: ".symlinks/plugins/dchs_motion_sensors/ios"
   device_info_plus:
     :path: ".symlinks/plugins/device_info_plus/ios"
   firebase_analytics:
@@ -184,6 +189,7 @@ EXTERNAL SOURCES:
 
 SPEC CHECKSUMS:
   connectivity_plus: 18382e7311ba19efcaee94442b23b32507b20695
+  dchs_motion_sensors: 9cef816635a39345cda9f0c4943e061f6429f453
   device_info_plus: 97af1d7e84681a90d0693e63169a5d50e0839a0d
   Firebase: d80354ed7f6df5f9aca55e9eb47cc4b634735eaf
   firebase_analytics: 7ec1166af61987fa968766eb11587c562a5650ee
@@ -209,4 +215,4 @@ SPEC CHECKSUMS:
 
 PODFILE CHECKSUM: 1959d098c91d8a792531a723c4a9d7e9f6a01e38
 
-COCOAPODS: 1.16.2
+COCOAPODS: 1.15.2

@@ -44,7 +44,7 @@ class _TestPageState extends State<TestPage> {
               ElevatedButton(
                 onPressed: () async {
                   final Stream<YeeguideResponse> rep = yeebotRepo
-                      .streamYeeguide("sane_madio", "Bonsoir Sané Madio !");
+                      .streamYeeguide("sane_madio", "Bonsoir Sané Madio !", []);
                   await for (var chunk in rep) {
                     debugPrint("Chunk $chunk");
                   }
@@ -54,7 +54,7 @@ class _TestPageState extends State<TestPage> {
               ElevatedButton(
                 onPressed: () async {
                   final Resource<YeeguideResponse> rep = await yeebotRepo
-                      .invokeYeeguide("sane_madio", "Bonsoir Sané Madio !");
+                      .invokeYeeguide("sane_madio", "Bonsoir Sané Madio !", []);
                   setState(() {
                     if (rep.data != null) {
                       answer = rep.data?.output ?? "";

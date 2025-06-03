@@ -6,9 +6,9 @@ import '../model/yeeguide_response.dart';
 
 abstract class YeebotRepo{
 
-  Future<Resource<YeeguideResponse>> invokeYeeguide(String yeeguideId, String message);
+  Future<Resource<YeeguideResponse>> invokeYeeguide(String yeeguideId, String message, List<List<String>> chatHistory);
 
-  Stream<YeeguideResponse> streamYeeguide(String yeeguideId, String message);
+  Stream<YeeguideResponse> streamYeeguide(String yeeguideId, String message, List<List<String>> chatHistory);
 
   void addConvoMessageToCache(ChatMessage message);
 

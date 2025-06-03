@@ -4,6 +4,6 @@ abstract class YeebotApi {
 
   static const String API_BASE_URL = "https://yeegpt.replit.app";
 
-  Future<Resource<String>> invokeYeeguide(String yeeguideId, String message);
-  Stream<String> streamYeeguide(String yeeguideId, String message);
+  Future<Resource<String>> invokeYeeguide(String yeeguideId, String message, List<List<String>> chatHistory);
+  Stream<String> streamYeeguide(String yeeguideId, String message, List<List<String>> chatHistory);
 }

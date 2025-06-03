@@ -66,6 +66,7 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     await for (final resource in _sendMessageByInvokeUseCase.execute(
       event.yeeguideId,
       event.message,
+      event.chatHistory
       // state.sender,
     )) {
       // Examinez le type de ressource et effectuez des actions en conséquence.
@@ -106,7 +107,7 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     // Ajoutez le message AI vide au state
 
     await for (final resource in _sendMessageByStreamUseCase.execute(
-        event.yeeguideId, event.message)) {
+        event.yeeguideId, event.message, event.chatHistory)) {
       // Examinez le type de ressource et effectuez des actions en conséquence.
       switch (resource.type) {
         case ResourceType.success:
@@ -217,11 +218,7 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
 
             if(resource.data!.isEmpty){
               emit(state.copyWith(messages: [
-                HumanChatMessage(message: "Comment puis-je avoir un duplicata de mon bulletin ? \nJe suis étudiant en L2.", conversationId: "0", yeeguideId: "rita"),
-                AIChatMessage(message: "Bonjour, pour avoir un duplicata de ton bulletin c'est simple :", conversationId: "0", yeeguideId: "rita"),
-                AIChatMessage(message: "1 - Aller voir Madame Barro avec ta carte d'identité scolaire en 2000 FCFA de frais.", conversationId: "0", yeeguideId: "rita"),
-                AIChatMessage(message: "2 - Revenir une semaine après (ou au délai que vous aura donné Mme Barro", conversationId: "0", yeeguideId: "rita"),
-                AIChatMessage(message: "3 - Veux-tu que je t'indique où est le bureau de Mme Barro ?", conversationId: "0", yeeguideId: "rita"),
+
                   // const HumanChatMessage(message: "Comment puis-je avoir un duplicata de mon bulletin ? \nJe suis étudiant en L2.", conversationId: "0", yeeguideId: "rita"),
 
               ]));

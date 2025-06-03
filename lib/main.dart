@@ -12,6 +12,7 @@ import 'core/di/locator.dart';
 import 'firebase_options.dart';
 import 'main_feature/presentation/home_screen/home_screen.dart';
 import 'main_feature/presentation/new_welcome_screen/new_welcome_screen.dart';
+import 'main_feature/presentation/test_speech_to_text.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -104,10 +105,12 @@ class YeebusApp extends StatelessWidget {
               ),
 
               //home: const GiftTestPage(),
+              //home: ManualSpeechRecognitionExample(),
               home: locator
                   .get<SharedPreferences>()
                   .getBool("isOldUser") !=
                   true ? const NewWelcomeScreen() : const HomeScreen(),
+              //home: SpeechSampleApp(),
               //home: const MapScreen(),
 
               // home: FlutterSplashScreen.gif(

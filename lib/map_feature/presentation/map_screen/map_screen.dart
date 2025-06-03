@@ -39,6 +39,7 @@ import '../../domain/model/place.dart';
 import '../../domain/model/product.dart';
 import '../../domain/model/search_hit_entity.dart';
 import '../../domain/model/stop.dart';
+import '../3d_view_screen/3d_view_screen.dart';
 import '../search_screen/search_screen.dart';
 import 'bloc/map_bloc.dart';
 import 'bloc/map_event.dart';
@@ -298,19 +299,17 @@ class _MapScreenState extends State<MapScreen> {
                       upperRightFloatingButtons: FloatingButtonsContainer(
                         isUpper: true,
                         floatingButton2: MapFloatingButton(
-                          iconUrl: "assets/icons/map_level.png",
+                          iconUrl: "assets/icons/3d_view.png",
                           isUpper: true,
                           onTap: () {
                             FirebaseEngine.logCustomEvent("unavailable_map_level_mode", {});
-
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              buildCustomSnackBar(
+                            Navigator.push(
                                 context,
-                                "Fonctionnalité disponible prochainement 😉",
-                                SnackBarType.info,
-                                showCloseIcon: false,
-                              ),
-                            );
+                                PageTransition(
+                                    type: PageTransitionType.fade,
+                                    duration: const Duration(milliseconds: 500),
+                                    child: ThreeDViewScreen(title: 'Test',)));
+
                           },
                         ),
                       ),
@@ -6812,7 +6811,7 @@ class MapFloatingButton extends StatelessWidget {
           child: Center(
             child: Image.asset(
               iconUrl,
-              height: 16,
+              height: 22,
               width: 16,
             ),
           ),

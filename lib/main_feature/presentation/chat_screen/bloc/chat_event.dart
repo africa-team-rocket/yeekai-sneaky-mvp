@@ -8,15 +8,18 @@ abstract class ChatEvent {
 class SendMessageByInvoke extends ChatEvent {
   final String message;
   final String yeeguideId;
+  final List<List<String>> chatHistory;
 
-  SendMessageByInvoke({required this.message, required this.yeeguideId});
+  SendMessageByInvoke({required this.message, required this.yeeguideId, required this.chatHistory});
 }
 
 class SendMessageByStream extends ChatEvent {
   final String message;
   final String yeeguideId;
+  final List<List<String>> chatHistory;
 
-  SendMessageByStream({required this.message, required this.yeeguideId});
+
+  SendMessageByStream({required this.message, required this.yeeguideId, required this.chatHistory});
 }
 
 class AddMessageToHistory extends ChatEvent {

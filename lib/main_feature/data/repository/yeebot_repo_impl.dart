@@ -25,8 +25,8 @@ class YeebotRepoImpl extends YeebotRepo {
 
   @override
   Future<Resource<YeeguideResponse>> invokeYeeguide(
-      String yeeguideId, String message) async {
-    final response = await _yeebotApi.invokeYeeguide(yeeguideId, message);
+      String yeeguideId, String message,  List<List<String>> chatHistory) async {
+    final response = await _yeebotApi.invokeYeeguide(yeeguideId, message, chatHistory);
     if (response.data != null) {
       return Resource.success(YeeguideResponse.fromJson(
           jsonDecode(utf8.decode(response.data!.codeUnits))));
@@ -40,13 +40,13 @@ class YeebotRepoImpl extends YeebotRepo {
 
   @override
   Stream<YeeguideResponse> streamYeeguide(
-      String yeeguideId, String message) async* {
+      String yeeguideId, String message, List<List<String>> chatHistory) async* {
     // /!\ TODO : Il faudra, une fois que l'API sera de nouveau connecté à OpenAI, revenir sur cette partie de l'app
     // le split actuel fonctionne mais n'est pas fiable car part en couilles si dans la réponse il y'a les caractères "event: " ou "data:" ou "metadata:"
     // Idéalement, il faudrait que le stream ne soit pas un string mais un json ou autre, utiliser un regex pour les split peut être pertinent aussi on verra.
 
     // /!\ TODO : Régle aussi le soucis du guillemet sur la fin
-    final streamResponse = await _yeebotApi.streamYeeguide(yeeguideId, message);
+    final streamResponse = await _yeebotApi.streamYeeguide(yeeguideId, message, chatHistory);
 
     Metadata? metadata;
     String? responseData;

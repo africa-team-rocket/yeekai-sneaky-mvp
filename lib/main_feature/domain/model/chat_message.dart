@@ -27,6 +27,27 @@ abstract class ChatMessage {
     String? conversationId,
     String? yeeguideId,
   });
+
+  // Méthode utilitaire pour transformer une liste de messages en chat_history
+  static List<List<String>> toChatHistory(List<ChatMessage> messages, {int limit = 3}) {
+    final chatHistory = <List<String>>[];
+
+    for (int i = 0; i < messages.length - 1; i++) {
+      final userMessage = messages[i];
+      final nextMessage = messages[i + 1];
+
+      if (userMessage is HumanChatMessage && nextMessage is AIChatMessage) {
+        chatHistory.add([userMessage.message, nextMessage.message]);
+        i++; // On saute le suivant car on l’a déjà traité
+      }
+    }
+
+
+    // Garder uniquement les dernières `limit` interactions
+    final start = chatHistory.length > limit ? chatHistory.length - limit : 0;
+    return chatHistory.sublist(start);
+  }
+
 }
 
 // Classe représentant un message de l'IA
