@@ -12,11 +12,17 @@ class YeebotApiImpl extends YeebotApi {
 
   static const String API_BASE_URL = "https://yeekai-bot.replit.app";
 
+
+  http.Client? _client;
+
+
   @override
   Future<Resource<String>> invokeYeeguide(
       String yeeguideId, String message, List<List<String>> chatHistory) async {
 
     // TODO: Implémenter la récupération de l'historique later
+
+
 
     final url = Uri.parse("$API_BASE_URL/yeegpt-1.0/invoke");
     final body = {
@@ -82,13 +88,16 @@ class YeebotApiImpl extends YeebotApi {
       "kwargs": {}
     };
 
+    _client = http.Client(); // 👈 Nouvelle instance
+
     try {
       final request = http.Request('POST', url);
       request.headers['Content-Type'] = 'application/json';
       request.headers['Access-Control-Allow-Origin'] = '*';
       request.body = jsonEncode(body);
 
-      final streamResponse = await request.send();
+      // final streamResponse = await request.send();
+      final streamResponse = await _client!.send(request);
 
       if (streamResponse.statusCode == 200) {
         // Récupérer le flux de données binaires
@@ -102,6 +111,17 @@ class YeebotApiImpl extends YeebotApi {
       }
     } catch (e) {
       throw Exception("Une erreur s'est produite lors de la requête: $e");
+    } finally {
+      _client?.close(); // 👈 Toujours fermer proprement après
+      _client = null;
     }
+  }
+
+  @override
+  Resource<String> cancelStream() {
+    debugPrint("CancelStreaming called");
+    _client?.close(); // 🛑 Ferme le client et stoppe la requête en cours
+    _client = null;
+    return Resource.success("Annulé avec succès");
   }
 }

@@ -32,6 +32,14 @@ class GetAllConvoHistory extends ChatEvent {
   GetAllConvoHistory();
 }
 
+class CancelAiStream extends ChatEvent {
+  final ChatMessage lastMessage;
+  final String yeeguideId;
+
+  CancelAiStream({required this.lastMessage, required this.yeeguideId});
+}
+
+
 class GetAllConvoHistoryByYeeguide extends ChatEvent {
   final String yeeguideId;
 

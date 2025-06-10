@@ -3,21 +3,25 @@ import '../../../domain/model/chat_message.dart';
 class ChatState {
   final List<ChatMessage> messages;
   // final Resource<String>? sendMessageStatus;
-  final bool isAITyping;
+  final bool isAIThinking;
+  final bool isAIWriting;
 
   const ChatState({
     this.messages = const [],
-    this.isAITyping = false,
+    this.isAIThinking = false,
+    this.isAIWriting = false,
     // this.sendMessageStatus,
   });
 
   ChatState copyWith({
     List<ChatMessage>? messages,
-    bool? isAITyping,
+    bool? isAIThinking,
+    bool? isAIWriting,
   }) {
     return ChatState(
       messages: messages ?? this.messages,
-      isAITyping: isAITyping ?? this.isAITyping
+        isAIThinking: isAIThinking ?? this.isAIThinking,
+        isAIWriting: isAIWriting ?? this.isAIWriting
       // sendMessageStatus: sendMessageStatus ?? this.sendMessageStatus,
     );
   }

@@ -12,6 +12,8 @@ abstract class YeebotRepo{
 
   void addConvoMessageToCache(ChatMessage message);
 
+  void cancelStream();
+
   Future<Resource<List<ChatMessage>>> getAllMessages();
 
   Future<Resource<List<ChatMessage>>> getAllMessagesByYeeguideId(String yeeguideId);

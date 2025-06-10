@@ -14,6 +14,7 @@ import '../../../../core/commons/theme/app_colors.dart';
 import '../../../../core/commons/utils/firebase_engine.dart';
 import '../../../../core/di/locator.dart';
 import '../../../../core/presentation/app_global_widgets.dart';
+import '../../../domain/repository/yeebot_repo.dart';
 import '../../test_speech_to_text.dart';
 import '../bloc/chat_bloc.dart';
 import '../bloc/chat_event.dart';
@@ -210,8 +211,12 @@ class _ChatScreenFooterState extends State<ChatScreenFooter> {
                         borderRadius: BorderRadius.circular(10),
                         onTap: () {
 
-                        if (widget.chatBloc.state.isAITyping) {
-                            debugPrint("L'IA est entrain de parler, tu peux faire pause ici.");
+                        if (widget.chatBloc.state.isAIThinking || widget.chatBloc.state.isAIWriting) {
+                            debugPrint("L'IA est entrain de parler ou de réfléchir, tu peux faire pause ici.");
+                            widget.chatBloc.add(CancelAiStream(lastMessage: widget.chatBloc.state.messages.last, yeeguideId: locator
+                                .get<SharedPreferences>()
+                                .getString("yeeguide_id") ??
+                                "raruto",));
                             return;
                         }
 
@@ -271,15 +276,6 @@ class _ChatScreenFooterState extends State<ChatScreenFooter> {
                           return;
                         }
 
-
-                        // Ceci ne sert à rien à priori, on ne devrait pas arriver là.
-                          if (!widget.chatBloc.state.isAITyping &&
-                              _chatTextController.text.isNotEmpty) {
-
-                          } else {
-                            // FirebaseEngine.logCustomEvent("mic_unavailable_usecase",{});
-                            debugPrint("Pas encore d'audio/Attend qu'il aie fini de parler (dissocie les deux cas)");
-                          }
                         },
 
                         child: SizedBox(
@@ -287,7 +283,7 @@ class _ChatScreenFooterState extends State<ChatScreenFooter> {
                           width: 47,
                           child: Center(
                             child: Image.asset(
-                              widget.chatBloc.state.isAITyping
+                              widget.chatBloc.state.isAIThinking || widget.chatBloc.state.isAIWriting
                                   ? "assets/icons/pause_bold.png"
                                   : _chatText.isEmpty
                                   ? "assets/icons/mic_bold.png"

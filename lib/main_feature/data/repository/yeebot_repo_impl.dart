@@ -66,7 +66,57 @@ class YeebotRepoImpl extends YeebotRepo {
               metadata: metadata,
               output: responseData?.substring(1, responseData.length) ?? "");
         } else if (event.startsWith('data')) {
-          final data = event.split('\n')[1].split('data: "')[1].split('"')[0];
+          final data = event.split('\n')[1].split('data: "')[1].split('"')[0];@override
+          Stream<YeeguideResponse> streamYeeguide(
+              String yeeguideId, String message, List<List<String>> chatHistory) async* {
+            // /!\ TODO : Il faudra, une fois que l'API sera de nouveau connecté à OpenAI, revenir sur cette partie de l'app
+            // le split actuel fonctionne mais n'est pas fiable car part en couilles si dans la réponse il y'a les caractères "event: " ou "data:" ou "metadata:"
+            // Idéalement, il faudrait que le stream ne soit pas un string mais un json ou autre, utiliser un regex pour les split peut être pertinent aussi on verra.
+
+            // /!\ TODO : Régle aussi le soucis du guillemet sur la fin
+            final streamResponse = await _yeebotApi.streamYeeguide(yeeguideId, message, chatHistory);
+
+            Metadata? metadata;
+            String? responseData;
+
+            await for (final chunk in streamResponse) {
+              debugPrint("Chunk: $chunk");
+
+              final events = chunk.split('event: ');
+              for (final event in events) {
+                debugPrint("An event: $event");
+                if (event.startsWith('metadata')) {
+                  final metadataJson = event.split('\n')[1].split('data: ')[1];
+                  debugPrint("Metadata JSON: $metadataJson");
+                  metadata = Metadata.fromJson(jsonDecode(metadataJson));
+
+                  yield YeeguideResponse(
+                      metadata: metadata,
+                      output: responseData?.substring(1, responseData.length) ?? "");
+                } else if (event.startsWith('data')) {
+                  final data = event.split('\n')[1].split('data: "')[1].split('"')[0];
+                  responseData = data.replaceAll("\\n", "\n");
+                  debugPrint("Response Data: $responseData");
+
+                  yield YeeguideResponse(metadata: metadata, output: responseData);
+                } else if (event.startsWith('end')) {
+                  yield YeeguideResponse(isOver: true);
+                  // La réponse est terminée
+                  // if (metadata != null && responseData != null) {
+                  //   final response = YeeguideResponse(
+                  //     metadata: metadata,
+                  //     output: responseData,
+                  //   );
+                  //   yield response;
+                  // }
+                  // Réinitialiser les variables pour la prochaine réponse
+                  metadata = null;
+                  responseData = null;
+                }
+              }
+            }
+          }
+
           responseData = data.replaceAll("\\n", "\n");
           debugPrint("Response Data: $responseData");
 
@@ -119,5 +169,10 @@ class YeebotRepoImpl extends YeebotRepo {
     // } catch (e) {
     //   return Resource.error('Erreur lors de la récupération des messages dans le repo: $e');
     // }
+  }
+
+  @override
+  void cancelStream() {
+    _yeebotApi.cancelStream();
   }
 }

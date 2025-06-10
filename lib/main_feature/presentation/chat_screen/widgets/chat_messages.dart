@@ -44,28 +44,9 @@ class MessageLoader extends StatelessWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
+
             Flexible(
-              flex: 2,
-              child: SizedBox(
-                height: 50,
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    Image.asset(
-                      Yeeguide.getById(locator
-                                  .get<SharedPreferences>()
-                                  .getString("yeeguide_id") ??
-                              "raruto")
-                          .profilePictureAsset,
-                      height: 43,
-                      width: 43,
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            Flexible(
-              flex: 8,
+              flex: 1,
               child: SizedBox(
                 width: 1.sw,
                 child: AnimatedContainer(
@@ -106,7 +87,10 @@ class MessageLoader extends StatelessWidget {
   }
 }
 
-class AssistantMessagesSectionWidget extends StatelessWidget {
+
+
+
+class AssistantMessagesSectionWidget extends StatefulWidget {
   const AssistantMessagesSectionWidget({
     super.key,
     required this.chatResponse,
@@ -121,40 +105,67 @@ class AssistantMessagesSectionWidget extends StatelessWidget {
   final ChatBloc chatBloc;
 
   @override
+  State<AssistantMessagesSectionWidget> createState() => _AssistantMessagesSectionWidgetState();
+}
+
+class _AssistantMessagesSectionWidgetState extends State<AssistantMessagesSectionWidget> {
+
+  List<String> splitByNewLine(String text) {
+    return text.split('\n\n').where((line) => line.trim().isNotEmpty).toList();
+  }
+
+
+  List<String> textMessages = [];
+
+  @override
+  void initState() {
+
+    textMessages = splitByNewLine(widget.chatResponse.message);
+    // TODO: implement initState
+    super.initState();
+  }
+
+
+  @override
   Widget build(BuildContext context) {
     return Column(
       children: [
 
-        if (currentIndex == 0 ||
-            _isDifferentDay(chatBloc.state.messages[currentIndex].creationDate,
-                chatBloc.state.messages[currentIndex - 1].creationDate)) ...[
+        if (widget.currentIndex == 0 ||
+            _isDifferentDay(widget.chatBloc.state.messages.reversed.toList()[widget.currentIndex].creationDate,
+                widget.chatBloc.state.messages.reversed.toList()[widget.currentIndex - 1].creationDate)) ...[
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 7),
             child: Text(
               _getFormattedDate(
-                  chatBloc.state.messages[currentIndex].creationDate),
+                  widget.chatBloc.state.messages.reversed.toList()[widget.currentIndex].creationDate),
               style: TextStyle(color: AppColors.secondaryText, fontSize: 12.5),
               textAlign: TextAlign.center,
             ),
           )
         ],
-        SizedBox(
+        for (int index = 0;
+        index < textMessages.length;
+        index++)
+          SizedBox(
           width: 1.sw,
           // color: Colors.red,
           child: SwipeActionCell(
             // controller: SwipeActionControlle,
-            backgroundColor: Colors.white,
+            backgroundColor: Colors.transparent,
             openAnimationCurve: Curves.easeInOut,
             openAnimationDuration: 200,
             fullSwipeFactor: 0.2,
-            key: key ?? ValueKey(currentIndex.toString()),
+            key: widget.key ?? ValueKey(widget.currentIndex.toString()),
             trailingActions: [
               SwipeAction(
                   closeOnTap: true,
                   backgroundRadius: 0.5,
                   widthSpace: 53,
                   content: Material(
-                    color: Colors.white,
+                    //back to white here
+
+                  color: Colors.transparent,
                     // shape: BoxShape.circle,
                     child: InkWell(
                       onTap: () {
@@ -237,39 +248,20 @@ class AssistantMessagesSectionWidget extends StatelessWidget {
             ],
             child: Padding(
               padding:
-                  const EdgeInsets.symmetric(vertical: 7, horizontal: 10.0),
+                  const EdgeInsets.symmetric(vertical: 0, horizontal: 10.0),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  Flexible(
-                    flex: 2,
-                    child: SizedBox(
-                      height: 50,
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.end,
-                        children: [
-                          Image.asset(
-                            Yeeguide.getById(locator
-                                        .get<SharedPreferences>()
-                                        .getString("yeeguide_id") ??
-                                    "raruto")
-                                .profilePictureAsset,
-                            height: 43,
-                            width: 43,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
                   AIMessageBubble(
-                    chatResponse: chatResponse,
-                    isTyping: isTyping,
+                    chatResponse: AIChatMessage(message: textMessages[index], conversationId: widget.chatResponse.conversationId, yeeguideId: widget.chatResponse.yeeguideId),
+                    isTyping: widget.isTyping,
                   )
                 ],
               ),
             ),
           ),
         ),
+
       ],
     );
   }
@@ -286,7 +278,7 @@ class AIMessageBubble extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Flexible(
-      flex: 8,
+      flex: 1,
       child: SizedBox(
         width: 1.sw,
         child: AnimatedContainer(
@@ -510,13 +502,13 @@ class HumanChatMessageWidget extends StatelessWidget {
     return Column(
       children: [
         if (currentIndex == 0 ||
-            _isDifferentDay(chatBloc.state.messages[currentIndex].creationDate,
-                chatBloc.state.messages[currentIndex - 1].creationDate)) ...[
+            _isDifferentDay(chatBloc.state.messages.reversed.toList()[currentIndex].creationDate,
+                chatBloc.state.messages.reversed.toList()[currentIndex - 1].creationDate)) ...[
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 7),
             child: Text(
               _getFormattedDate(
-                  chatBloc.state.messages[currentIndex].creationDate),
+                  chatBloc.state.messages.reversed.toList()[currentIndex].creationDate),
               style: TextStyle(color: AppColors.secondaryText, fontSize: 12.5),
               textAlign: TextAlign.center,
             ),
@@ -525,7 +517,8 @@ class HumanChatMessageWidget extends StatelessWidget {
         SizedBox(
           width: 1.sw,
           child: SwipeActionCell(
-            backgroundColor: Colors.white,
+            //back to white here
+            backgroundColor: Colors.transparent,
             openAnimationCurve: Curves.easeInOut,
             openAnimationDuration: 200,
             fullSwipeFactor: 0.2,
@@ -577,7 +570,7 @@ class HumanChatMessageWidget extends StatelessWidget {
                   backgroundRadius: 0.5,
                   widthSpace: 53,
                   content: Material(
-                    color: Colors.white,
+                    color: Colors.transparent,
                     // shape: BoxShape.circle,
                     child: InkWell(
                       onTap: () {
@@ -612,7 +605,7 @@ class HumanChatMessageWidget extends StatelessWidget {
             ],
             child: Padding(
               // /!\ TODO : Etudie pourquoi ici y'avait un soucis et régle ça
-              // padding: chatBloc.state.messages[currentIndex+1] is HumanChatMessage || (currentIndex != 0 && chatBloc.state.messages[currentIndex-1] is HumanChatMessage) ? const EdgeInsets.symmetric(vertical: 1.3, horizontal: 10.0) : const EdgeInsets.symmetric(vertical: 7.0, horizontal: 10.0),
+              // padding: chatBloc.state.messages.reversed.toList()[currentIndex+1] is HumanChatMessage || (currentIndex != 0 && chatBloc.state.messages.reversed.toList()[currentIndex-1] is HumanChatMessage) ? const EdgeInsets.symmetric(vertical: 1.3, horizontal: 10.0) : const EdgeInsets.symmetric(vertical: 7.0, horizontal: 10.0),
               padding:
                   const EdgeInsets.symmetric(vertical: 7.0, horizontal: 10.0),
               child: Row(
@@ -626,7 +619,7 @@ class HumanChatMessageWidget extends StatelessWidget {
                       // Il y'a un peu une boucle ici, tu devrais recréer un flat widget pour ce use case
                       // Et il gérerait aussi la longueur du message donc parfait
                       return Padding(
-                        // padding: chatBloc.state.messages[currentIndex+1] is HumanChatMessage || (currentIndex != 0 && chatBloc.state.messages[currentIndex-1] is HumanChatMessage) ? const EdgeInsets.symmetric(vertical: 1.3, horizontal: 10.0) : const EdgeInsets.symmetric(vertical: 7.0, horizontal: 10.0),
+                        // padding: chatBloc.state.messages.reversed.toList()[currentIndex+1] is HumanChatMessage || (currentIndex != 0 && chatBloc.state.messages.reversed.toList()[currentIndex-1] is HumanChatMessage) ? const EdgeInsets.symmetric(vertical: 1.3, horizontal: 10.0) : const EdgeInsets.symmetric(vertical: 7.0, horizontal: 10.0),
                         padding: const EdgeInsets.symmetric(
                             vertical: 7.0, horizontal: 10.0),
                         child: Row(
@@ -657,7 +650,7 @@ class HumanChatMessageWidget extends StatelessWidget {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      (chatBloc.state.messages[currentIndex]
+                                      (chatBloc.state.messages.reversed.toList()[currentIndex]
                                               as HumanChatMessage)
                                           .message,
                                       style: const TextStyle(
@@ -670,7 +663,7 @@ class HumanChatMessageWidget extends StatelessWidget {
                                     ),
                                     Text(
                                       _getFormattedDateWithPretext(
-                                          (chatBloc.state.messages[currentIndex]
+                                          (chatBloc.state.messages.reversed.toList()[currentIndex]
                                                   as HumanChatMessage)
                                               .creationDate),
                                       style: TextStyle(
@@ -721,7 +714,7 @@ class HumanChatMessageWidget extends StatelessWidget {
                           borderRadius: BorderRadius.circular(20),
                         ),
                         child: Text(
-                          (chatBloc.state.messages[currentIndex]
+                          (chatBloc.state.messages.reversed.toList()[currentIndex]
                                   as HumanChatMessage)
                               .message,
                           style: const TextStyle(color: Colors.white),

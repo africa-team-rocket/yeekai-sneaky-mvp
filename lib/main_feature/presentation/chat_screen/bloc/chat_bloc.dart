@@ -5,7 +5,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../core/commons/utils/resource.dart';
 import '../../../../core/di/locator.dart';
 import '../../../domain/model/chat_message.dart';
+import '../../../domain/repository/yeebot_repo.dart';
 import '../../../domain/use_cases/add_message_to_history.dart';
+import '../../../domain/use_cases/cancel_yeeguide_stream.dart';
 import '../../../domain/use_cases/get_all_convo_history.dart';
 import '../../../domain/use_cases/get_all_convo_history_by_yeeguide.dart';
 import '../../../domain/use_cases/invoke_yeeguide.dart';
@@ -29,6 +31,7 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
 
   InvokeYeeguideUseCase _sendMessageByInvokeUseCase = InvokeYeeguideUseCase();
   StreamYeeguideUseCase _sendMessageByStreamUseCase = StreamYeeguideUseCase();
+  CancelAiStreamUseCase _cancelAiStreamUseCase = CancelAiStreamUseCase();
   AddMessageToHistoryUseCase _addMessageToHistoryUseCase =
       AddMessageToHistoryUseCase();
   GetAllConvoHistoryUseCase _getAllConvoHistoryUseCase =
@@ -42,6 +45,7 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     on<AddMessageToHistory>(_addMessageToHistory);
     on<GetAllConvoHistory>(_getAllConvoHistory);
     on<GetAllConvoHistoryByYeeguide>(_getAllConvoHistoryByYeeguide);
+    on<CancelAiStream>(_cancelAiStream);
 
     add(GetAllConvoHistoryByYeeguide(
         yeeguideId: locator.get<SharedPreferences>().getString("yeeguide_id") ??
@@ -72,7 +76,7 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
       // Examinez le type de ressource et effectuez des actions en conséquence.
       switch (resource.type) {
         case ResourceType.success:
-          emit(state.copyWith(isAITyping: false));
+          emit(state.copyWith(isAIThinking: false));
           debugPrint("Nouveau message reçu et envoyé avec succès !");
           add(AddMessageToHistory(
               chatMessage: AIChatMessage(message: resource.data?.output ?? "",conversationId:  "",
@@ -80,7 +84,7 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
           // emit(state.copyWith(messages: [...state.messages, AIChatMessage(resource.data?.output ?? "", "", yeeguideId: event.yeeguideId)]));
           break;
         case ResourceType.error:
-          emit(state.copyWith(isAITyping: false));
+          emit(state.copyWith(isAIThinking: false));
           debugPrint("Erreur lors de la connexion : ${resource.message}");
           // emit(state.copyWith(loginMessage: Resource.error(resource.message ?? "")));
 
@@ -89,7 +93,7 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
         case ResourceType.loading:
           debugPrint(
               "Est entrain d'écrire... (tu devrais peut-être juste utiliser une variable");
-          emit(state.copyWith(isAITyping: true));
+          emit(state.copyWith(isAIThinking: true));
           // Vous pouvez gérer le chargement si nécessaire.
           break;
       }
@@ -106,6 +110,11 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
 
     // Ajoutez le message AI vide au state
 
+
+    try{
+
+
+
     await for (final resource in _sendMessageByStreamUseCase.execute(
         event.yeeguideId, event.message, event.chatHistory)) {
       // Examinez le type de ressource et effectuez des actions en conséquence.
@@ -113,10 +122,11 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
         case ResourceType.success:
 
           // /!\ TODO : N'oublie pas d'ajouter le message à l'historique
-          if (state.isAITyping) {
+          if (state.isAIThinking) {
             emit(state.copyWith(
               messages: [...state.messages, aiMessage],
-              isAITyping: false,
+              isAIThinking: false,
+              isAIWriting: true,
             ));
           }
 
@@ -130,9 +140,11 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
                 ...state.messages.take(state.messages.length - 1),
                 aiMessage,
               ],
-              isAITyping: false,
+              isAIThinking: false,
+              isAIWriting: true,
             ));
           } else if (resource.data != null && resource.data!.isOver != null) {
+            emit(state.copyWith(isAIThinking: false, isAIWriting: false));
             add(AddMessageToHistory(
                 chatMessage: AIChatMessage(message: aiMessage.message,conversationId: "",
                     yeeguideId: aiMessage.yeeguideId)));
@@ -140,7 +152,7 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
 
           break;
         case ResourceType.error:
-          emit(state.copyWith(isAITyping: false));
+          emit(state.copyWith(isAIThinking: false, isAIWriting: false));
           debugPrint("Erreur lors de la connexion : ${resource.message}");
           // emit(state.copyWith(loginMessage: Resource.error(resource.message ?? "")));
 
@@ -149,10 +161,14 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
         case ResourceType.loading:
           debugPrint(
               "Est entrain d'écrire... (tu devrais peut-être juste utiliser une variable");
-          emit(state.copyWith(isAITyping: true));
+          emit(state.copyWith(isAIThinking: true, isAIWriting: false));
           // Vous pouvez gérer le chargement si nécessaire.
           break;
       }
+    }
+
+    }catch(e){
+      throw Exception("Une erreur s'est produite lors de la requête, choisis quoi faire: $e");
     }
   }
 
@@ -205,6 +221,20 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
           break;
       }
     }
+  }
+
+  Future<void> _cancelAiStream(CancelAiStream event, Emitter<ChatState> emit) async {
+
+    // Y'avait un probléme chelou donc pour aller vite j'appelle le repo directement ici
+    final YeebotRepo _yeebotRepo = locator.get<YeebotRepo>();
+    _yeebotRepo.cancelStream();
+    debugPrint("messages : " +  event.lastMessage.toString());
+    //_cancelAiStreamUseCase.execute();
+
+    final aiMessage = AIChatMessage(message: "", conversationId: "", yeeguideId: event.yeeguideId);
+
+    add(AddMessageToHistory(
+        chatMessage: event.lastMessage));
   }
 
   Future<void> _getAllConvoHistoryByYeeguide(

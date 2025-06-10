@@ -6811,8 +6811,8 @@ class MapFloatingButton extends StatelessWidget {
           child: Center(
             child: Image.asset(
               iconUrl,
-              height: 22,
-              width: 16,
+              height: iconUrl == "assets/icons/3d_view.png" ? 44 : 22,
+              width:  iconUrl == "assets/icons/3d_view.png" ? 29 : 16,
             ),
           ),
         ),
