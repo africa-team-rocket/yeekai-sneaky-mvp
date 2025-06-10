@@ -112,5 +112,19 @@ class AppLocalDatabase {
         creation_date TEXT NOT NULL
       )
     ''');
+
+    // Création de la table gifts
+    await database.execute('''
+    CREATE TABLE IF NOT EXISTS gifts (
+      gift_id TEXT PRIMARY KEY NOT NULL,
+      title TEXT NOT NULL,
+      description TEXT,
+      lat REAL NOT NULL,
+      lng REAL NOT NULL,
+      marker_type INTEGER NOT NULL,
+      event INTEGER NOT NULL,
+      was_found INTEGER NOT NULL
+    )
+  ''');
   }
 }

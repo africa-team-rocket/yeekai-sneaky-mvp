@@ -1,21 +1,20 @@
-import 'dart:io';
-import 'dart:math';
 
 import 'package:animated_size_and_fade/animated_size_and_fade.dart';
 import 'package:animated_text_kit/animated_text_kit.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter/widgets.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:local_hero/local_hero.dart';
 import 'package:lottie/lottie.dart';
 import 'package:page_transition/page_transition.dart';
+import 'package:yeebus_filthy_mvp/core/commons/utils/firebase_engine.dart';
 import 'package:yeebus_filthy_mvp/main_feature/presentation/new_welcome_screen/widgets/yeeguides_snap_list.dart';
 
 import '../../../core/commons/theme/app_colors.dart';
 import '../../../core/commons/utils/app_constants.dart';
 import '../../../core/commons/utils/custom_elastic_curve.dart';
+import '../../../core/presentation/app_global_widgets.dart';
+
 import 'confirm_yeeguide_screen.dart';
 
 class ChooseYeeguideScreen extends StatefulWidget {
@@ -32,12 +31,14 @@ class _ChooseYeeguideScreenState extends State<ChooseYeeguideScreen> {
   @override
   void initState() {
     super.initState();
+    FirebaseEngine.startOnboardingTracking();
     debugPrint(
         "Screen width and height : " + 1.sw.toString() + " " + 1.sh.toString());
     _startAnimation();
   }
 
   Future<void> _startAnimation() async {
+
     // await Future.delayed(const Duration(milliseconds: 200));
 
     // setState(() {
@@ -91,8 +92,10 @@ class _ChooseYeeguideScreenState extends State<ChooseYeeguideScreen> {
               onPressed: () {
                 if(AppConstants.availableYeeguides.contains(
                     AppConstants.yeeguidesList[selectedYeeguide].id)){
+                  FirebaseEngine.logCustomEvent("yeeguide_available_selected", {"yeeguide_id":AppConstants.yeeguidesList[selectedYeeguide].id});
+                  FirebaseEngine.logOnboardingNextPressed(5);
 
-                Navigator.push(
+                  Navigator.push(
                     context,
                     PageTransition(
                         type: PageTransitionType.fade,
@@ -100,6 +103,15 @@ class _ChooseYeeguideScreenState extends State<ChooseYeeguideScreen> {
                         child: ConfirmYeeguideScreen(
                           selectedIndex: selectedYeeguide,
                         )));
+                }else{
+                  FirebaseEngine.logCustomEvent("yeeguide_unavailable_selected", {"yeeguide_id":AppConstants.yeeguidesList[selectedYeeguide].id});
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    buildCustomSnackBar(
+                      context,
+                      "Ce yeeguide n'est pas encore disponible",
+                      SnackBarType.info,
+                    ),
+                  );
                 }
 
               },
@@ -217,6 +229,9 @@ class _ChooseYeeguideScreenState extends State<ChooseYeeguideScreen> {
                           if(index == selectedYeeguide) {
                             if (AppConstants.availableYeeguides.contains(
                                 AppConstants.yeeguidesList[index].id)) {
+                              FirebaseEngine.logCustomEvent("yeeguide_available_selected", {"yeeguide_id":AppConstants.yeeguidesList[selectedYeeguide].id});
+                              FirebaseEngine.logOnboardingNextPressed(5);
+
                               Navigator.push(
                                   context,
                                   PageTransition(
@@ -227,6 +242,14 @@ class _ChooseYeeguideScreenState extends State<ChooseYeeguideScreen> {
                                         selectedIndex: index,
                                       )));
                             } else {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                buildCustomSnackBar(
+                                  context,
+                                  "Ce yeeguide n'est pas encore disponible",
+                                  SnackBarType.info,
+                                ),
+                              );
+                              FirebaseEngine.logCustomEvent("yeeguide_unavailable_selected", {"yeeguide_id":AppConstants.yeeguidesList[selectedYeeguide].id});
                               setState(() {
                                 selectedYeeguide = index;
                               });

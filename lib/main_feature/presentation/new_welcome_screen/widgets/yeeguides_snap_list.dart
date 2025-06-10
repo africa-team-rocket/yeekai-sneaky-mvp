@@ -107,6 +107,7 @@ class _YeeguidesSnapListState extends State<YeeguidesSnapList> {
                 child: InkWell(
                   borderRadius: BorderRadius.circular(10),
                   onTap: () {
+
                     widget.onTapYeeguide(index);
                     _snapListKey.currentState?.focusToItem(index);
                     // _onItemFocus(index);

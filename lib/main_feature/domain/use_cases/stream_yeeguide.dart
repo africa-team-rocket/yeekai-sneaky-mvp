@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:developer';
 
 import '../../../core/commons/utils/resource.dart';
 import '../../../core/di/locator.dart';
@@ -11,10 +10,10 @@ class StreamYeeguideUseCase {
   final YeebotRepo _yeebotRepo = locator.get<YeebotRepo>();
 
   Stream<Resource<YeeguideResponse>> execute(
-      String yeeguideId, String message) async* {
+      String yeeguideId, String message, List<List<String>> chatHistory) async* {
     yield Resource.loading();
 
-    final responseStream = _yeebotRepo.streamYeeguide(yeeguideId, message);
+    final responseStream = _yeebotRepo.streamYeeguide(yeeguideId, message, chatHistory);
 
     await for (final chunk in responseStream) {
       if (chunk.output != null) {

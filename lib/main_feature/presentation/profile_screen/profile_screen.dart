@@ -3,15 +3,14 @@ import 'dart:ui';
 import 'package:animated_switcher_plus/animated_switcher_plus.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter/widgets.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:local_hero/local_hero.dart';
 import 'package:page_transition/page_transition.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../core/commons/theme/app_colors.dart';
+import '../../../core/commons/utils/firebase_engine.dart';
 import '../../../core/di/locator.dart';
 import '../../../core/presentation/app_global_widgets.dart';
 import '../new_welcome_screen/new_welcome_screen.dart';
@@ -91,6 +90,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
             isDestructiveAction: true,
             isDefaultAction: true,
             onPressed: () {
+              FirebaseEngine.logCustomEvent("disconnect_user", {"username":locator.get<SharedPreferences>().getString("username") ??
+              "unknown"});
               locator
                   .get<SharedPreferences>().clear();
 
@@ -170,7 +171,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                           child: InkWell(
                                             borderRadius:
                                                 BorderRadius.circular(100),
-                                            onTap: () { 
+                                            onTap: () {
+                                              FirebaseEngine.logCustomEvent("unavailable_edit_profile", {});
+
                             ScaffoldMessenger.of(context).showSnackBar(
                               buildCustomSnackBar(
                                 context,
@@ -258,8 +261,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   borderRadius: BorderRadius.circular(15),
                                   child: InkWell(
                                     borderRadius: BorderRadius.circular(15),
-                                    onTap: () { 
-                            ScaffoldMessenger.of(context).showSnackBar(
+                                    onTap: () {
+                                      FirebaseEngine.logCustomEvent("unavailable_contributions", {});
+
+                                      ScaffoldMessenger.of(context).showSnackBar(
                               buildCustomSnackBar(
                                 context,
                                 "Fonctionnalité disponible prochainement 😉",
@@ -297,7 +302,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   borderRadius: BorderRadius.circular(15),
                                   child: InkWell(
                                     borderRadius: BorderRadius.circular(15),
-                                    onTap: () { 
+                                    onTap: () {
+                                      FirebaseEngine.logCustomEvent("unavailable_yeemoney", {});
+
                             ScaffoldMessenger.of(context).showSnackBar(
                               buildCustomSnackBar(
                                 context,
@@ -350,64 +357,75 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 ProfileSection(
                                   title: "Notifications",
                                   isTrueTopOrBottomFalse: true,
-                                  onTap: () { 
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              buildCustomSnackBar(
-                                context,
-                                "Fonctionnalité disponible prochainement 😉",
-                                SnackBarType.info,
-                                showCloseIcon: false,
-                              ),
-                            );},
+                                  onTap: () {
+                                    FirebaseEngine.logCustomEvent("view_notifications", {});
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      buildCustomSnackBar(
+                                        context,
+                                        "Fonctionnalité disponible prochainement 😉",
+                                        SnackBarType.info,
+                                        showCloseIcon: false,
+                                      ),
+                                    );
+                                  },
                                 ),
                                 ProfileSection(
                                   title: "Utilisation des données IA",
-                                  onTap: () { 
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              buildCustomSnackBar(
-                                context,
-                                "Fonctionnalité disponible prochainement 😉",
-                                SnackBarType.info,
-                                showCloseIcon: false,
-                              ),
-                            );},
+                                  onTap: () {
+                                    FirebaseEngine.logCustomEvent("view_ai_data_usage", {});
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      buildCustomSnackBar(
+                                        context,
+                                        "Fonctionnalité disponible prochainement 😉",
+                                        SnackBarType.info,
+                                        showCloseIcon: false,
+                                      ),
+                                    );
+                                  },
                                 ),
                                 ProfileSection(
-                                  title: "Message éphémères",
-                                  onTap: () { 
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              buildCustomSnackBar(
-                                context,
-                                "Fonctionnalité disponible prochainement 😉",
-                                SnackBarType.info,
-                                showCloseIcon: false,
-                              ),
-                            );},
+                                  title: "Messages éphémères",
+                                  onTap: () {
+                                    FirebaseEngine.logCustomEvent("view_ephemeral_messages", {});
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      buildCustomSnackBar(
+                                        context,
+                                        "Fonctionnalité disponible prochainement 😉",
+                                        SnackBarType.info,
+                                        showCloseIcon: false,
+                                      ),
+                                    );
+                                  },
                                 ),
                                 ProfileSection(
                                   title: "Supprimer mon compte",
-                                  onTap: () { 
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              buildCustomSnackBar(
-                                context,
-                                "Fonctionnalité disponible prochainement 😉",
-                                SnackBarType.info,
-                                showCloseIcon: false,
-                              ),
-                            );},
+                                  onTap: () {
+                                    FirebaseEngine.logCustomEvent("delete_account", {});
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      buildCustomSnackBar(
+                                        context,
+                                        "Fonctionnalité disponible prochainement 😉",
+                                        SnackBarType.info,
+                                        showCloseIcon: false,
+                                      ),
+                                    );
+                                  },
                                 ),
                                 ProfileSection(
                                   title: "Déconnexion",
-                                  onTap: () { 
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              buildCustomSnackBar(
-                                context,
-                                "Fonctionnalité disponible prochainement 😉",
-                                SnackBarType.info,
-                                showCloseIcon: false,
-                              ),
-                            );},
+                                  onTap: () {
+                                    FirebaseEngine.logCustomEvent("logout", {});
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      buildCustomSnackBar(
+                                        context,
+                                        "Fonctionnalité disponible prochainement 😉",
+                                        SnackBarType.info,
+                                        showCloseIcon: false,
+                                      ),
+                                    );
+                                  },
                                 ),
+
                               ],
                             ),
                             const SizedBox(
@@ -431,65 +449,76 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 ProfileSection(
                                   title: "Thème et apparence",
                                   isTrueTopOrBottomFalse: true,
-                                  onTap: () { 
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              buildCustomSnackBar(
-                                context,
-                                "Fonctionnalité disponible prochainement 😉",
-                                SnackBarType.info,
-                                showCloseIcon: false,
-                              ),
-                            );},
+                                  onTap: () {
+                                    FirebaseEngine.logCustomEvent("view_theme_settings", {});
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      buildCustomSnackBar(
+                                        context,
+                                        "Fonctionnalité disponible prochainement 😉",
+                                        SnackBarType.info,
+                                        showCloseIcon: false,
+                                      ),
+                                    );
+                                  },
                                 ),
                                 ProfileSection(
                                   title: "Langue de l'application",
-                                  onTap: () { 
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              buildCustomSnackBar(
-                                context,
-                                "Fonctionnalité disponible prochainement 😉",
-                                SnackBarType.info,
-                                showCloseIcon: false,
-                              ),
-                            );},
+                                  onTap: () {
+                                    FirebaseEngine.logCustomEvent("view_language_settings", {});
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      buildCustomSnackBar(
+                                        context,
+                                        "Fonctionnalité disponible prochainement 😉",
+                                        SnackBarType.info,
+                                        showCloseIcon: false,
+                                      ),
+                                    );
+                                  },
                                 ),
                                 ProfileSection(
                                   title: "Centre d'aide",
-                                  onTap: () { 
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              buildCustomSnackBar(
-                                context,
-                                "Fonctionnalité disponible prochainement 😉",
-                                SnackBarType.info,
-                                showCloseIcon: false,
-                              ),
-                            );},
+                                  onTap: () {
+                                    FirebaseEngine.logCustomEvent("view_help_center", {});
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      buildCustomSnackBar(
+                                        context,
+                                        "Fonctionnalité disponible prochainement 😉",
+                                        SnackBarType.info,
+                                        showCloseIcon: false,
+                                      ),
+                                    );
+                                  },
                                 ),
                                 ProfileSection(
                                   title: "Conditions d'utilisation",
-                                  onTap: () { 
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              buildCustomSnackBar(
-                                context,
-                                "Fonctionnalité disponible prochainement 😉",
-                                SnackBarType.info,
-                                showCloseIcon: false,
-                              ),
-                            );},
+                                  onTap: () {
+                                    FirebaseEngine.logCustomEvent("view_terms_of_service", {});
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      buildCustomSnackBar(
+                                        context,
+                                        "Fonctionnalité disponible prochainement 😉",
+                                        SnackBarType.info,
+                                        showCloseIcon: false,
+                                      ),
+                                    );
+                                  },
                                 ),
                                 ProfileSection(
                                   title: "Politique de confidentialité",
                                   isTrueTopOrBottomFalse: false,
-                                  onTap: () { 
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              buildCustomSnackBar(
-                                context,
-                                "Fonctionnalité disponible prochainement 😉",
-                                SnackBarType.info,
-                                showCloseIcon: false,
-                              ),
-                            );},
+                                  onTap: () {
+                                    FirebaseEngine.logCustomEvent("view_privacy_policy", {});
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      buildCustomSnackBar(
+                                        context,
+                                        "Fonctionnalité disponible prochainement 😉",
+                                        SnackBarType.info,
+                                        showCloseIcon: false,
+                                      ),
+                                    );
+                                  },
                                 ),
+
                                 const SizedBox(height: 15),
                                 Container(
                                   constraints: const BoxConstraints(

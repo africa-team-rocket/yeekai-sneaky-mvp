@@ -10,15 +10,24 @@ import '../../../../core/di/locator.dart';
 class YeebotApiImpl extends YeebotApi {
   // /!\ TODO : Il faudrait penser à créer des classes d'exception custom ce serait plus pratique
 
-  static const String API_BASE_URL = "https://yeegpt.replit.app";
+  static const String API_BASE_URL = "https://yeekai-bot.replit.app";
 
   @override
   Future<Resource<String>> invokeYeeguide(
-      String yeeguideId, String message) async {
+      String yeeguideId, String message, List<List<String>> chatHistory) async {
+
+    // TODO: Implémenter la récupération de l'historique later
+
     final url = Uri.parse("$API_BASE_URL/yeegpt-1.0/invoke");
     final body = {
       "input": {
         "question": message,
+        "user_profile": {
+          // TODO : Implémenter le type d'utilisateur plus tard (visiteur ou étudiant)
+          "user_type": "student",
+          "pseudo": locator.get<SharedPreferences>().getString("username")
+        },
+        "chat_history": chatHistory,
         "yeeguide_id": yeeguideId
       },
       "config": {
@@ -48,12 +57,20 @@ class YeebotApiImpl extends YeebotApi {
   }
 
   @override
-  Stream<String> streamYeeguide(String yeeguideId, String message) async* {
+  Stream<String> streamYeeguide(String yeeguideId, String message, List<List<String>> chatHistory) async* {
     final url = Uri.parse("$API_BASE_URL/yeegpt-1.0/stream");
+
+    // TODO: Implémenter la récupération de l'historique later
+
     final body = {
       "input": {
         "question": message,
-        "yeeguide_id": yeeguideId,
+        "user_profile": {
+          "user_type": "student",
+          "pseudo": "Al Amine"
+        },
+        "chat_history": chatHistory,
+        "yeeguide_id": yeeguideId
       },
       "config": {
         "configurable": {

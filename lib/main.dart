@@ -1,19 +1,22 @@
-import 'package:device_preview/device_preview.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
-import 'package:yeebus_filthy_mvp/main_feature/presentation/tutorial_chat_screen/tutorial_chat_screen.dart';
-
+import 'package:yeebus_filthy_mvp/core/commons/utils/firebase_engine.dart';
+import 'package:yeebus_filthy_mvp/map_feature/presentation/gift_test_page.dart';
 import 'core/commons/utils/app_constants.dart';
 import 'core/data/database_instance.dart';
 import 'core/di/locator.dart';
+import 'firebase_options.dart';
 import 'main_feature/presentation/home_screen/home_screen.dart';
 import 'main_feature/presentation/new_welcome_screen/new_welcome_screen.dart';
+import 'main_feature/presentation/test_speech_to_text.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
   // await initializeDateFormatting('fr_FR', '');
   // Intl.defaultLocale = 'fr_FR';
   SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp])
@@ -30,8 +33,7 @@ Future<void> main() async {
       debugPrint(
           "Il n'y avait pas de valeur pour yeeguide_id, on en a donc mis un : ${prefs.getString('yeeguide_id')}");
     } else {
-      debugPrint(
-          "Il y avait déjà une valeur pour yeeguide_id, la voici : ${prefs.getString('yeeguide_id')}");
+      debugPrint("Il y avait déjà une valeur pour yeeguide_id, la voici : ${prefs.getString('yeeguide_id')}");
     }
 
     // On vérifie s'il y'a une valeur initiale pour le user id, si non, on en met une.
@@ -56,6 +58,9 @@ Future<void> main() async {
     //   // Si la base de données n'est pas encore initialisée, créez-la.
     //   await _databaseInstance.createDatabase();
     // }
+
+    await FirebaseEngine.init();
+    WidgetsFlutterBinding.ensureInitialized();
 
     runApp(
       DevicePreview(
@@ -173,12 +178,14 @@ class YeebusApp extends StatelessWidget {
                 // brightness: Brightness.light
               ),
 
-              // home: const HomeScreen(),
-              home:
-                  locator.get<SharedPreferences>().getBool("isOldUser") != true
-                      ? const NewWelcomeScreen()
-                      : const TutorialChatScreen(selectedYeeguideIndex: 1, username: "utilisateur"),
-              // home: const MapScreen(),
+              //home: const GiftTestPage(),
+              //home: ManualSpeechRecognitionExample(),
+              home: locator
+                  .get<SharedPreferences>()
+                  .getBool("isOldUser") !=
+                  true ? const NewWelcomeScreen() : const HomeScreen(),
+              //home: SpeechSampleApp(),
+              //home: const MapScreen(),
 
               // home: FlutterSplashScreen.gif(
               //   gifPath: 'assets/example.gif',
@@ -190,11 +197,11 @@ class YeebusApp extends StatelessWidget {
               //     debugPrint("onInit");
               //   },
               //   onEnd: () async {
-              //     debugPrint("onEnd 1");
+              //     debugPrint(  "onEnd 1");
               //   },
               // ),
               // home: IntermediateScreen(),
-              // debugShowCheckedModeBanner: false,
+               debugShowCheckedModeBanner: false,
             ));
     // );
   }

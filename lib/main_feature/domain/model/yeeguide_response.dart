@@ -12,7 +12,6 @@ class YeeguideResponse {
   YeeguideResponse.fromJson(Map<String, dynamic> json) {
     output =  json['output'];
     // output =  utf8.decode(json['output']);
-
     // if (json['callback_events'] != null) {
     //   // callbackEvents = <Null>[];
     //   json['callback_events'].forEach((v) {

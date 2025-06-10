@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter/widgets.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:gif/gif.dart';
 import 'dart:math' as math;
@@ -10,6 +9,7 @@ import 'package:yeebus_filthy_mvp/main_feature/presentation/new_welcome_screen/w
 
 import '../../../core/commons/theme/app_colors.dart';
 import '../../../core/commons/utils/custom_elastic_curve.dart';
+import '../../../core/commons/utils/firebase_engine.dart';
 import 'main_onboarding_screen.dart';
 
 class NewWelcomeScreen extends StatefulWidget {
@@ -31,6 +31,7 @@ class _NewWelcomeScreenState extends State<NewWelcomeScreen>
   @override
   void initState() {
     super.initState();
+    FirebaseEngine.startOnboardingTracking();
     _controller = GifController(vsync: this);
     debugPrint(
         "Screen width and height : " + 1.sw.toString() + " " + 1.sh.toString());
@@ -95,6 +96,7 @@ class _NewWelcomeScreenState extends State<NewWelcomeScreen>
 
               child: ElevatedButton(
                 onPressed: () {
+                  FirebaseEngine.logOnboardingNextPressed(1);
                   Navigator.pushReplacement(
                       context,
                       PageTransition(
@@ -117,7 +119,7 @@ class _NewWelcomeScreenState extends State<NewWelcomeScreen>
                       55), // Pour que le bouton prenne toute la largeur de l'écran
                 ),
                 child: Text(
-                  "J'avoue 😭",
+                  "Suivant ➡️",
                   style: const TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.w400,

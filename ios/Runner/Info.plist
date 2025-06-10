@@ -26,8 +26,12 @@
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+    <key>NSSpeechRecognitionUsageDescription</key>
+    <string>Cette application a besoin d'accéder à votre micro pour vous permettre de dialoger oralement avec l'IA.</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
 	<string>This app needs access to location when open and in the background.</string>
+	<key>NSMicrophoneUsageDescription</key>
+    <string>Cette application a besoin d'accéder à votre micro pour vous permettre de dialoger oralement avec l'IA.</string>
 	<key>NSLocationAlwaysUsageDescription</key>
 	<string>This app needs access to location when in the background.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>

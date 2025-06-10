@@ -3,9 +3,7 @@ import 'dart:ui';
 import 'package:animated_switcher_plus/animated_switcher_plus.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter/widgets.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:local_hero/local_hero.dart';
 import 'package:page_transition/page_transition.dart';
@@ -14,6 +12,7 @@ import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 import 'package:yeebus_filthy_mvp/map_feature/presentation/map_screen/map_screen.dart';
 
 import '../../../../core/commons/theme/app_colors.dart';
+import '../../../../core/commons/utils/firebase_engine.dart';
 import '../../../../core/di/locator.dart';
 import '../../../../core/presentation/app_global_widgets.dart';
 import '../../../domain/model/main_place.dart';
@@ -46,6 +45,8 @@ class _DetailsScreenState extends State<DetailsScreen> {
   @override
   void initState() {
     // TODO: implement initState
+    FirebaseEngine.pagesTracked("map_details_screen");
+
     scrollController.addListener(() {
       debugPrint(
           "Current scroll:" + scrollController.position.pixels.toString());
@@ -385,7 +386,8 @@ class _DetailsScreenState extends State<DetailsScreen> {
 
                                             borderRadius: BorderRadius.circular(7),
                                             onTap: () {
-                                                ScaffoldMessenger.of(context).showSnackBar(
+                                              FirebaseEngine.logCustomEvent("unavailable_responsable_details_pressed", {});
+                                              ScaffoldMessenger.of(context).showSnackBar(
                                                   buildCustomSnackBar(
                                                     context,
                                                     "Fonctionnalité bientôt disponible 😉",
@@ -1140,7 +1142,10 @@ class _DetailsScreenState extends State<DetailsScreen> {
                       ),
                     ),
                   ],
-                ))));
+                )
+            )
+        )
+    );
   }
 }
 

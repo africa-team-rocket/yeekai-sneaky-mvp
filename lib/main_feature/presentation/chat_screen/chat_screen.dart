@@ -1,3 +1,6 @@
+import 'dart:async';
+
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -77,16 +80,62 @@ class _ChatScreenState extends State<ChatScreen> {
   final ScrollController _scrollController = ScrollController();
   bool showScrollButton = false;
 
+  List<ConnectivityResult> _connectionStatus = [ConnectivityResult.other];
+  final Connectivity _connectivity = Connectivity();
+  late StreamSubscription<List<ConnectivityResult>> _connectivitySubscription;
+
+  // Platform messages are asynchronous, so we initialize in an async method.
+  Future<void> initConnectivity() async {
+    late List<ConnectivityResult> result;
+    // Platform messages may fail, so we use a try/catch PlatformException.
+    try {
+      result = await _connectivity.checkConnectivity();
+    } on PlatformException catch (e) {
+      debugPrint('Couldn\'t check connectivity status : $e');
+      return;
+    }
+
+    // If the widget was removed from the tree while the asynchronous platform
+    // message was in flight, we want to discard the reply rather than calling
+    // setState to update our non-existent appearance.
+    if (!mounted) {
+      return Future.value(null);
+    }
+
+    return _updateConnectionStatus(result);
+  }
+
+  Future<void> _updateConnectionStatus(List<ConnectivityResult> result) async {
+    setState(() {
+      _connectionStatus = result;
+    });
+
+
+    // ignore: avoid_print
+    debugPrint('Connectivity changed: $_connectionStatus');
+  }
+
+
+
   @override
   void initState() {
     // initializeDateFormatting("fr_FR");
     // initializeDateFormatting("fr_FR", n).then((value) => (){
     // Intl.systemLocale = await findSystemLocale();
     // });
+
+
+    initConnectivity();
+
+    _connectivitySubscription =
+        _connectivity.onConnectivityChanged.listen(_updateConnectionStatus);
+
   }
 
   @override
   void dispose() {
+    _connectivitySubscription.cancel();
+
     _scrollController.dispose();
     super.dispose();
   }
@@ -240,9 +289,33 @@ class _ChatScreenState extends State<ChatScreen> {
                         initialPrompt: widget.initialPrompt,
                         shouldOpenKeyboard: widget.shouldOpenKeyboard,
                         chatBloc: context.read<ChatBloc>(),
+                        isConnected : _connectionStatus.first != ConnectivityResult.none,
                         scrollController: _scrollController,),
                   ),
                   const ChatScreenHeader(),
+                  AnimatedPositioned(
+                    bottom:
+                    // -80,
+                    _connectionStatus.first == ConnectivityResult.none
+                        ? -9 //(up)
+                     : -70,
+                    duration: Duration(milliseconds: 200),
+                    child: Container(
+                        width: 1.sw,
+                        height: 0 + MediaQuery.of(context).padding.top,
+                        color: Colors.redAccent,
+                        child: Column(
+                          children: [
+                            Padding(padding: EdgeInsets.only(top: 10)),
+                            Text("Vous n'êtes pas connecté à internet",
+                              style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 15
+                              ),
+                            ),
+                          ],
+                        )),
+                  ),
                   Positioned(
                     bottom: 100.0,
                     right: 15.0,
@@ -288,6 +361,8 @@ class _ChatScreenState extends State<ChatScreen> {
                               )
                             : null),
                   ),
+
+
 
                   // Je retire le scroll listener pour l'instant si ça redevient utile tu sauras où le trouver
 

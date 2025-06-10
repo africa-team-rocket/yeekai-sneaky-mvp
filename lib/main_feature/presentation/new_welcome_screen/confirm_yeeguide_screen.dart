@@ -1,12 +1,10 @@
-import 'dart:io';
 
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter/widgets.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:page_transition/page_transition.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:yeebus_filthy_mvp/core/commons/utils/firebase_engine.dart';
 
 import '../../../core/commons/theme/app_colors.dart';
 import '../../../core/commons/utils/app_constants.dart';
@@ -92,6 +90,8 @@ class _ConfirmYeeguideScreenState extends State<ConfirmYeeguideScreen> {
 
                   child: ElevatedButton(
                     onPressed: () {
+                      FirebaseEngine.logCustomEvent("yeeguide_unselected_(userwentback)", {"yeeguide_id":AppConstants.yeeguidesList[widget.selectedIndex].id});
+
                       Navigator.pop(context);
 
                       // Navigator.push(
@@ -139,6 +139,7 @@ class _ConfirmYeeguideScreenState extends State<ConfirmYeeguideScreen> {
 
                   child: ElevatedButton(
                     onPressed: () {
+                      FirebaseEngine.logCustomEvent("yeeguide_done_selected", {"yeeguide_id":AppConstants.yeeguidesList[widget.selectedIndex].id});
                       locator.get<SharedPreferences>().setString("yeeguide_id",
                           AppConstants.yeeguidesList[widget.selectedIndex].id);
                       Navigator.pushReplacement(

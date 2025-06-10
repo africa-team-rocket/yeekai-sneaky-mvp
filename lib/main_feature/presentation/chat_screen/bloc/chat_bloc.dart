@@ -66,6 +66,7 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     await for (final resource in _sendMessageByInvokeUseCase.execute(
       event.yeeguideId,
       event.message,
+      event.chatHistory
       // state.sender,
     )) {
       // Examinez le type de ressource et effectuez des actions en conséquence.
@@ -106,7 +107,7 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     // Ajoutez le message AI vide au state
 
     await for (final resource in _sendMessageByStreamUseCase.execute(
-        event.yeeguideId, event.message)) {
+        event.yeeguideId, event.message, event.chatHistory)) {
       // Examinez le type de ressource et effectuez des actions en conséquence.
       switch (resource.type) {
         case ResourceType.success:
@@ -219,7 +220,7 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
 
             if(resource.data!.isEmpty){
               emit(state.copyWith(messages: [
-                AIChatMessage(message: "Dans quelle salle a eu lieu la démo de l'appli Yeekai durant la campagne ?", conversationId: "0", yeeguideId: "rita"),
+
                   // const HumanChatMessage(message: "Comment puis-je avoir un duplicata de mon bulletin ? \nJe suis étudiant en L2.", conversationId: "0", yeeguideId: "rita"),
 
               ]));

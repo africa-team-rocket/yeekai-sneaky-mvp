@@ -111,7 +111,6 @@
 
 import 'dart:async';
 import 'dart:math';
-import 'dart:ui';
 
 // import 'package:algolia_helper_flutter/algolia_helper_flutter.dart';
 import 'package:flutter/cupertino.dart';

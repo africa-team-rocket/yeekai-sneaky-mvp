@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'dart:ui';
 
 import 'package:animated_switcher_plus/animated_switcher_plus.dart';
@@ -10,6 +9,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../../core/commons/theme/app_colors.dart';
 import '../../../../core/commons/utils/custom_pop_up_menu.dart';
+import '../../../../core/commons/utils/firebase_engine.dart';
 import '../../../../core/di/locator.dart';
 import '../../../../core/presentation/app_global_widgets.dart';
 import '../../../domain/model/yeeguide.dart';
@@ -243,19 +243,17 @@ class _ChatScreenHeaderState extends State<ChatScreenHeader> {
                                         borderRadius: BorderRadius.circular(30),
                                         onTap: () {
                                           FocusScope.of(context).unfocus();
-                                          /// AJOUTER UNE ALERTE POUR RELANCER L'APP ICI ?
-                                          ///
-                                          _showAlertDialog(context);
-                                          // Future.delayed(Duration.zero, () {
-                                          //   Navigator.push(
-                                          //       context,
-                                          //       PageTransition(
-                                          //           type:
-                                          //               PageTransitionType.fade,
-                                          //           duration: const Duration(
-                                          //               milliseconds: 100),
-                                          //           child: HomeScreen()));
-                                          // });
+                                          FirebaseEngine.pagesTracked("home_screen");
+                                          Future.delayed(Duration.zero, () {
+                                            Navigator.push(
+                                                context,
+                                                PageTransition(
+                                                    type:
+                                                        PageTransitionType.fade,
+                                                    duration: const Duration(
+                                                        milliseconds: 100),
+                                                    child: HomeScreen()));
+                                          });
                                           // widget.onPop();
                                         },
                                         child: SizedBox(
@@ -287,8 +285,9 @@ class _ChatScreenHeaderState extends State<ChatScreenHeader> {
                                           borderRadius:
                                               BorderRadius.circular(30),
                                           onTap: () {
-                                            ScaffoldMessenger.of(context).showSnackBar(
-                                              buildCustomSnackBar(
+                                            FirebaseEngine.pagesTracked("yeeguide_profile_screen");
+
+                                            Navigator.push(
                                                 context,
                                                 "Concentre toi sur le trésor 😡",
                                                 SnackBarType.info,
@@ -428,6 +427,8 @@ class _ChatScreenHeaderState extends State<ChatScreenHeader> {
                                   // Navigator.pop(context);
 
                                   //////////////////////////
+                                  FirebaseEngine.logCustomEvent("ai_search_unavailable_usecase",{});
+
                                   //While this feature is not available
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     buildCustomSnackBar(
@@ -512,6 +513,8 @@ class _ChatScreenHeaderState extends State<ChatScreenHeader> {
                                     items: [
                                       PopupBlurryMenuItem(
                                         onTap: () {
+                                          FirebaseEngine.logCustomEvent("supprimer_conversation_clicked", {});
+
                                           ScaffoldMessenger.of(context)
                                               .showSnackBar(
                                             buildCustomSnackBar(
@@ -544,6 +547,8 @@ class _ChatScreenHeaderState extends State<ChatScreenHeader> {
                                       ),
                                       PopupBlurryMenuItem(
                                         onTap: () {
+                                          FirebaseEngine.logCustomEvent("renommer_conversation_clicked", {});
+
                                           ScaffoldMessenger.of(context)
                                               .showSnackBar(
                                             buildCustomSnackBar(
@@ -579,6 +584,8 @@ class _ChatScreenHeaderState extends State<ChatScreenHeader> {
                                       ),
                                       PopupBlurryMenuItem(
                                         onTap: () {
+                                          FirebaseEngine.logCustomEvent("nouvelle_conversation_clicked", {});
+
                                           ScaffoldMessenger.of(context)
                                               .showSnackBar(
                                             buildCustomSnackBar(
@@ -609,6 +616,8 @@ class _ChatScreenHeaderState extends State<ChatScreenHeader> {
                                       ),
                                       PopupBlurryMenuItem(
                                         onTap: () {
+                                          FirebaseEngine.logCustomEvent("historique_conversation_clicked", {});
+
                                           ScaffoldMessenger.of(context)
                                               .showSnackBar(
                                             buildCustomSnackBar(
@@ -641,6 +650,8 @@ class _ChatScreenHeaderState extends State<ChatScreenHeader> {
                                       ),
                                       PopupBlurryMenuItem(
                                         onTap: () {
+                                          FirebaseEngine.logCustomEvent("parametres_vocaux_clicked", {});
+
                                           ScaffoldMessenger.of(context)
                                               .showSnackBar(
                                             buildCustomSnackBar(
@@ -673,14 +684,16 @@ class _ChatScreenHeaderState extends State<ChatScreenHeader> {
                                       ),
                                       PopupBlurryMenuItem(
                                         onTap: () {
-                                          // Navigator.push(
-                                          //   context,
-                                          //   PageTransition(
-                                          //       type: PageTransitionType.fade,
-                                          //       duration: const Duration(
-                                          //           milliseconds: 500),
-                                          //       child: const CatalogScreen()),
-                                          // ).then((value) => {setState(() {})});
+                                          FirebaseEngine.pagesTracked("catalog_screen");
+
+                                          Navigator.push(
+                                            context,
+                                            PageTransition(
+                                                type: PageTransitionType.fade,
+                                                duration: const Duration(
+                                                    milliseconds: 500),
+                                                child: const CatalogScreen()),
+                                          ).then((value) => {setState(() {})});
                                         },
                                         child: Row(
                                           mainAxisAlignment:

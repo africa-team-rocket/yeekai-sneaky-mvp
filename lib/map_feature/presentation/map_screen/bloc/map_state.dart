@@ -1,8 +1,8 @@
 
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
-import '../../../../core/domain/models/user_position.dart';
 import '../../../domain/model/bus_nearby.dart';
+import '../../../domain/model/gift.dart';
 import '../../../domain/model/hits_page.dart';
 import '../../../domain/model/map_entity.dart';
 import '../../../domain/model/search_hit_entity.dart';
@@ -25,6 +25,10 @@ class MapState {
   final List<BusNearby> busesNearby;
   final GoogleMapController? gMapController;
 
+  // Gifts section
+  final List<Gift> gifts;
+  final bool giftLoading;
+
   const MapState({
     // Search section
     this.userPrompt = "",
@@ -40,7 +44,11 @@ class MapState {
     this.cachedEntity,
     this.busesNearby = const [],
     this.markersSet = const {},
-    this.polylinesSet = const {}
+    this.polylinesSet = const {},
+
+    // Gifts section
+    this.gifts = const [],
+    this.giftLoading = true
   });
 
   MapState copyWith({
@@ -52,7 +60,6 @@ class MapState {
     List<SearchHitEntity>? searchHistory,
     SearchLoading? searchLoading,
 
-
     GoogleMapController? gMapController,
     UserPosition? userCurrentLocation,
     MapEntity? selectedEntity,
@@ -61,6 +68,10 @@ class MapState {
     Set<Marker>? markersSet,
     Set<Polyline>? polylinesSet,
     FilterValues? searchFilter,
+
+    // Gifts section :
+    List<Gift>? gifts,
+    bool? giftLoading,
 
   }) {
     return MapState(
@@ -79,6 +90,10 @@ class MapState {
       cachedEntity: cachedEntity ?? this.cachedEntity,
       markersSet: markersSet ?? this.markersSet,
       polylinesSet: polylinesSet ?? this.polylinesSet,
+
+      // Gifts section :
+      gifts: gifts ?? this.gifts,
+      giftLoading : giftLoading ?? this.giftLoading
     );
   }
 
@@ -98,6 +113,7 @@ class MapState {
       markersSet: resetMarkersSet ? {} : markersSet,
       polylinesSet: resetPolylinesSet ? {} : polylinesSet,
       searchHitsPage: searchHitsPage,
+      gifts: gifts,
       searchFilter: searchFilter
     );
   }

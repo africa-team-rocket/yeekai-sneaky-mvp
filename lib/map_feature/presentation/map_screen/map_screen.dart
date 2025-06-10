@@ -1,5 +1,8 @@
+import 'dart:async';
 import 'dart:io';
 
+import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:flutter/cupertino.dart';
 
 import 'dart:convert';
@@ -19,13 +22,16 @@ import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 import 'package:widget_to_marker/widget_to_marker.dart';
 import 'package:yeebus_filthy_mvp/main_feature/presentation/profile_screen/profile_screen.dart';
 import 'package:yeebus_filthy_mvp/map_feature/presentation/map_screen/widgets/details_screen.dart';
+import 'package:yeebus_filthy_mvp/map_feature/presentation/map_screen/widgets/gifts_about_screen.dart';
 
 import '../../../core/commons/theme/app_colors.dart';
 import '../../../core/commons/utils/app_constants.dart';
+import '../../../core/commons/utils/firebase_engine.dart';
 import '../../../core/commons/utils/raw_explandable_bottom_sheet.dart';
 import '../../../core/presentation/app_global_widgets.dart';
 import '../../../core/presentation/root_app_bar/root_app_bar.dart';
 import '../../domain/model/bus.dart';
+import '../../domain/model/gift.dart';
 import '../../domain/model/line.dart';
 import '../../domain/model/main_place.dart';
 import '../../domain/model/map_entity.dart';
@@ -33,6 +39,7 @@ import '../../domain/model/place.dart';
 import '../../domain/model/product.dart';
 import '../../domain/model/search_hit_entity.dart';
 import '../../domain/model/stop.dart';
+import '../3d_view_screen/3d_view_screen.dart';
 import '../search_screen/search_screen.dart';
 import 'bloc/map_bloc.dart';
 import 'bloc/map_event.dart';
@@ -65,18 +72,68 @@ class _MapScreenState extends State<MapScreen> {
   final TextEditingController textEditingController = TextEditingController();
   late MapBloc mapBloc;
 
+
   onPop() {
     if (mapBloc.state.selectedEntity != null) {
+      FirebaseEngine.pagesTracked("pop_from_selected_map_entity");
       mapBloc.add(SetSelectedMapEntity(null));
       return;
     }
+    FirebaseEngine.pagesTracked("pop_from_map_screen");
+
+
     Navigator.of(context).maybePop();
   }
+
+  List<ConnectivityResult> _connectionStatus = [ConnectivityResult.other];
+  final Connectivity _connectivity = Connectivity();
+  late StreamSubscription<List<ConnectivityResult>> _connectivitySubscription;
+
+  // Platform messages are asynchronous, so we initialize in an async method.
+  Future<void> initConnectivity() async {
+    late List<ConnectivityResult> result;
+    // Platform messages may fail, so we use a try/catch PlatformException.
+    try {
+      result = await _connectivity.checkConnectivity();
+    } on PlatformException catch (e) {
+      debugPrint('Couldn\'t check connectivity status : $e');
+      return;
+    }
+
+    // If the widget was removed from the tree while the asynchronous platform
+    // message was in flight, we want to discard the reply rather than calling
+    // setState to update our non-existent appearance.
+    if (!mounted) {
+      return Future.value(null);
+    }
+
+    return _updateConnectionStatus(result);
+  }
+
+  Future<void> _updateConnectionStatus(List<ConnectivityResult> result) async {
+    setState(() {
+      _connectionStatus = result;
+    });
+
+    if(_connectionStatus.first != ConnectivityResult.none && _connectionStatus.first != ConnectivityResult.other){
+      mapBloc.add(GetGifts(isConnectedToInternet: true));
+    }
+    // ignore: avoid_print
+    debugPrint('Connectivity changed: $_connectionStatus');
+  }
+
 
   @override
   void initState() {
     // J'essaye d'update à partir d'ici mais je ne suis pas sur de si c'est convenable
     // on verra.
+
+    initConnectivity();
+
+    _connectivitySubscription =
+        _connectivity.onConnectivityChanged.listen(_updateConnectionStatus);
+
+
     mapBloc = MapBloc();
     // _pagingController.addPageRequestListener(
     //         (pageKey) => mapBloc.add(ApplyAlgoliaState(stateUpdater: (state) => state.copyWith(
@@ -94,6 +151,9 @@ class _MapScreenState extends State<MapScreen> {
   @override
   void dispose() {
     // mapBloc.state.gMapController?.dispose();
+
+    _connectivitySubscription.cancel();
+
     textEditingController.dispose();
     _pagingController.dispose();
     mapBloc.close();
@@ -102,6 +162,8 @@ class _MapScreenState extends State<MapScreen> {
 
   int floorLevel = 0;
   MainPlace? detailsPage = null;
+  bool showGiftsPage = false;
+
 
   @override
   Widget build(BuildContext context) {
@@ -137,8 +199,6 @@ class _MapScreenState extends State<MapScreen> {
         ),
         child: BlocProvider(
           create: (_) {
-            // mapBloc.
-
             if (widget.searchMode == true) {
               mapBloc.add(const UpdateSearchMode(newSearchMode: true));
             }
@@ -211,7 +271,11 @@ class _MapScreenState extends State<MapScreen> {
                           setState(() {
                             detailsPage = newDetailsPage;
                           });
-                        },
+                        }, toggleGiftsPage: () {
+                          setState(() {
+                            showGiftsPage = !showGiftsPage;
+                          });
+                      },
                       ),
                       lowerLeftFloatingButtons: FloatingButtonsContainer(
                           isUpper: false,
@@ -235,17 +299,17 @@ class _MapScreenState extends State<MapScreen> {
                       upperRightFloatingButtons: FloatingButtonsContainer(
                         isUpper: true,
                         floatingButton2: MapFloatingButton(
-                          iconUrl: "assets/icons/map_level.png",
+                          iconUrl: "assets/icons/3d_view.png",
                           isUpper: true,
                           onTap: () {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              buildCustomSnackBar(
+                            FirebaseEngine.logCustomEvent("unavailable_map_level_mode", {});
+                            Navigator.push(
                                 context,
-                                "Fonctionnalité disponible prochainement 😉",
-                                SnackBarType.info,
-                                showCloseIcon: false,
-                              ),
-                            );
+                                PageTransition(
+                                    type: PageTransitionType.fade,
+                                    duration: const Duration(milliseconds: 500),
+                                    child: ThreeDViewScreen(title: 'Test',)));
+
                           },
                         ),
                       ),
@@ -255,6 +319,8 @@ class _MapScreenState extends State<MapScreen> {
                           isUpper: true,
                           backgroundColor: AppColors.primaryVar0,
                           onTap: () {
+                            FirebaseEngine.logCustomEvent("unavailable_map_more_mode", {});
+
                             ScaffoldMessenger.of(context).showSnackBar(
                               buildCustomSnackBar(
                                 context,
@@ -270,6 +336,8 @@ class _MapScreenState extends State<MapScreen> {
                           backgroundColor: AppColors.primaryVar0,
                           isUpper: true,
                           onTap: () {
+                            FirebaseEngine.logCustomEvent("unavailable_map_settings_mode", {});
+
                             ScaffoldMessenger.of(context).showSnackBar(
                               buildCustomSnackBar(
                                 context,
@@ -296,6 +364,8 @@ class _MapScreenState extends State<MapScreen> {
                                       .placeName
                                   : mapBloc.state.selectedEntity?.entityName,
                           onTap: () {
+                            FirebaseEngine.logCustomEvent("unavailable_map_search_mode", {});
+
                             ScaffoldMessenger.of(context).showSnackBar(
                               buildCustomSnackBar(
                                 context,
@@ -475,6 +545,20 @@ class _MapScreenState extends State<MapScreen> {
               ),
               AnimatedSwitcher(
                   duration: Duration(milliseconds: 300),
+                  child: showGiftsPage
+                      ? Container(
+                    width: 1.sw,
+                    height: 1.sh,
+                    child: GiftsAboutScreen(
+                        closeGiftsPage: () {
+                          setState(() {
+                            showGiftsPage = false;
+                          });
+                        }),
+                  )
+                      : null),
+              AnimatedSwitcher(
+                  duration: Duration(milliseconds: 300),
                   child: detailsPage != null
                       ? Container(
                           width: 1.sw,
@@ -488,6 +572,27 @@ class _MapScreenState extends State<MapScreen> {
                               }),
                         )
                       : null),
+              AnimatedPositioned(
+                bottom:
+                // -80,
+               _connectionStatus.first == ConnectivityResult.none ? -9 : -70,
+                duration: Duration(milliseconds: 200),
+                child: Material(child: Container(
+                  width: 1.sw,
+                    height: 0 + MediaQuery.of(context).padding.top,
+                    color: Colors.redAccent,
+                    child: Column(
+                      children: [
+                        Padding(padding: EdgeInsets.only(top: 10)),
+                        Text("Vous n'êtes pas connecté à internet",
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 15
+                          ),
+                        ),
+                      ],
+                    )),),
+              )
             ],
           ),
         ),
@@ -721,6 +826,34 @@ class MapWState extends State<GMap> {
 
     // Main Building 2 : (bat E)
 
+    // Version Bat E only
+    // Polygon(
+    //   polygonId: PolygonId('Main building 2 (bat E)'),
+    //   points: [
+    //     LatLng(14.7001549, -17.4512144),
+    //     LatLng(14.7001931, -17.4510934),
+    //     LatLng(14.700308, -17.4511384),
+    //     LatLng(14.7004012, -17.450841),
+    //     LatLng(14.7001765, -17.4507615),
+    //     LatLng(14.7001519, -17.4508304),
+    //     LatLng(14.7000509, -17.4507924),
+    //     LatLng(14.7000889, -17.4506834),
+    //     LatLng(14.7001816, -17.4507187),
+    //     LatLng(14.7002039, -17.4506514),
+    //     LatLng(14.7004085, -17.4507223),
+    //     LatLng(14.7004022, -17.450739),
+    //     LatLng(14.7004292, -17.450749),
+    //     LatLng(14.7004342, -17.4507326),
+    //     LatLng(14.7005299, -17.4507654),
+    //     LatLng(14.7003569, -17.4512894),
+    //     LatLng(14.7001549, -17.4512144),
+    //   ],
+    //   strokeColor: const Color(0xFFD5D5D7),
+    //   strokeWidth: 1,
+    //   fillColor: const Color(0xFFF8F9FB),
+    // ),
+
+    // Version administration :
     Polygon(
       polygonId: PolygonId('Main building 2 (bat E)'),
       points: [
@@ -729,7 +862,11 @@ class MapWState extends State<GMap> {
         LatLng(14.700308, -17.4511384),
         LatLng(14.7004012, -17.450841),
         LatLng(14.7001765, -17.4507615),
-        LatLng(14.7001519, -17.4508304),
+        LatLng(14.7001545, -17.4508311),
+        LatLng(14.700171, -17.450837),
+        LatLng(14.7000582, -17.4511724),
+        LatLng(14.6999225, -17.4511184),
+        LatLng(14.7000356, -17.450786),
         LatLng(14.7000509, -17.4507924),
         LatLng(14.7000889, -17.4506834),
         LatLng(14.7001816, -17.4507187),
@@ -742,10 +879,45 @@ class MapWState extends State<GMap> {
         LatLng(14.7003569, -17.4512894),
         LatLng(14.7001549, -17.4512144),
       ],
-      strokeColor: const Color(0xFFD5D5D7),
-      strokeWidth: 1,
       fillColor: const Color(0xFFF8F9FB),
+      strokeColor: const Color(0xFFD5D5D7),
+      zIndex: -999999,
+      strokeWidth: 1,
     ),
+
+    // ESCALIERS BAT A :
+
+    Polygon(
+      polygonId: const PolygonId('Bureau Mr Lemrabott (Secrétaire Général)'),
+      points: const [
+        LatLng(14.70014, -17.450827),
+        LatLng(14.700171, -17.450837),
+        LatLng(14.7001511, -17.4508963),
+        LatLng(14.70012, -17.450885),
+        LatLng(14.70014, -17.450827),
+      ],
+      fillColor: const Color.fromRGBO(217, 217, 217, 1.0),
+      strokeColor: const Color.fromRGBO(182, 182, 182, 1.0),
+      zIndex: -999999,
+
+      strokeWidth: 2,
+    ),
+
+    Polygon(
+      polygonId: const PolygonId('Escaliers 2'),
+      points: const [
+        LatLng(14.7001, -17.451048),
+        LatLng(14.7000896, -17.4510773),
+        LatLng(14.7000599, -17.451064),
+        LatLng(14.700069, -17.451036),
+        LatLng(14.7001, -17.451048),
+      ],
+      fillColor: const Color(0XFFF2F3F7),
+      strokeColor: const Color(0XFFDCDCDE),
+      zIndex: -999999,
+      strokeWidth: 2,
+    ),
+
 
     // Escaliers 1 BAT E :
 
@@ -781,6 +953,7 @@ class MapWState extends State<GMap> {
 
   };
   Set<Polygon> _firstFloorPolygons = {
+
     // MainBYellowZone1 :
     Polygon(
       zIndex: 2,
@@ -1424,16 +1597,16 @@ class MapWState extends State<GMap> {
     Polygon(
       polygonId: PolygonId('E-11 ÉLECTRONIQUE (Mr Rabé)'),
       points: [
-        LatLng(14.7001402, -17.4508263),
+        LatLng(14.7001314, -17.4508243),
         LatLng(14.7000509, -17.4507924),
         LatLng(14.7000889, -17.4506834),
         LatLng(14.7001816, -17.4507187),
         LatLng(14.7002039, -17.4506514),
         LatLng(14.7002374, -17.4506633),
         LatLng(14.7002052, -17.4507546),
-        LatLng(14.7001682, -17.4507412),
-        LatLng(14.7001402, -17.4508263),
-      ],
+        LatLng(14.7001614, -17.4507375),
+        LatLng(14.7001314, -17.4508243),
+        ],
       strokeColor: Color.fromRGBO(129, 199, 132, 1.0),
       fillColor: Color.fromRGBO(232, 253, 232, 1.0),
       strokeWidth: 2,
@@ -1568,7 +1741,263 @@ class MapWState extends State<GMap> {
     ),
 
 
+    // Batiment A Etage 0 :
+
+    // Accueil ESMT
+    Polygon(
+      polygonId: PolygonId('Accueil ESMT'),
+      points: [
+        LatLng(14.7000809, -17.450923),
+        LatLng(14.7000446, -17.45091),
+        LatLng(14.700052, -17.4508894),
+        LatLng(14.7000791, -17.4508757),
+        LatLng(14.7000886, -17.4508973),
+        LatLng(14.7000809, -17.450923),
+      ],
+      strokeColor: const Color(0XFFE6E1CE),
+      strokeWidth: 2,
+      fillColor: const Color(0XFFFDF9EE),
+    ),
+
+    // Agents de liaison
+    Polygon(
+      polygonId: PolygonId('Agents de liaison'),
+      points: [
+        LatLng(14.7000564, -17.450996),
+        LatLng(14.7000204, -17.4509813),
+        LatLng(14.7000324, -17.4509457),
+        LatLng(14.700068, -17.4509597),
+        LatLng(14.7000564, -17.450996),
+      ],
+      fillColor: const Color.fromRGBO(217, 217, 217, 1.0), // grey fill
+      strokeColor: const Color.fromRGBO(182, 182, 182, 1.0), // darker grey border
+      strokeWidth: 2,
+    ),
+
+
+    // Bureau DEFR (M.Kora)
+    Polygon(
+      polygonId: PolygonId('Bureau DEFR (M.Kora)'),
+      points: [
+        LatLng(14.7000327, -17.4511024),
+        LatLng(14.700016, -17.4511557),
+        LatLng(14.6999551, -17.4511307),
+        LatLng(14.6999724, -17.451078),
+        LatLng(14.7000327, -17.4511024),
+      ],
+      fillColor: const Color.fromRGBO(217, 217, 217, 1.0), // grey fill
+      strokeColor: const Color.fromRGBO(182, 182, 182, 1.0), // darker grey border
+      strokeWidth: 2,
+    ),
+
+
+    // Bureau Mme Marthe
+    Polygon(
+      polygonId: PolygonId('Bureau Mme Marthe'),
+      points: [
+        LatLng(14.700083, -17.451098),
+        LatLng(14.7000582, -17.4511724),
+        LatLng(14.700016, -17.4511557),
+        LatLng(14.7000327, -17.4511024),
+        LatLng(14.7000534, -17.4511107),
+        LatLng(14.7000606, -17.4510897),
+        LatLng(14.700083, -17.451098),
+      ],
+      fillColor: const Color.fromRGBO(217, 217, 217, 1.0), // grey fill
+      strokeColor: const Color.fromRGBO(182, 182, 182, 1.0), // darker grey border
+      strokeWidth: 2,
+    ),
+
+
+// Bureau Mr Alpha Barry
+    Polygon(
+      polygonId: PolygonId('Bureau Mr Alpha Barry'),
+      points: [
+        LatLng(14.6999637, -17.4509957),
+        LatLng(14.699982, -17.450945),
+        LatLng(14.7000127, -17.450957),
+        LatLng(14.699996, -17.451008),
+        LatLng(14.6999637, -17.4509957),
+      ],
+      fillColor: const Color.fromRGBO(217, 217, 217, 1.0), // grey fill
+      strokeColor: const Color.fromRGBO(182, 182, 182, 1.0), // darker grey border
+      strokeWidth: 2,
+    ),
+
+// Bureau Mr BA & Mr Preira
+    Polygon(
+      polygonId: PolygonId('Bureau Mr BA & Mr Preira'),
+      points: [
+        LatLng(14.6999551, -17.4511307),
+        LatLng(14.6999225, -17.4511184),
+        LatLng(14.6999471, -17.451047),
+        LatLng(14.699979, -17.45106),
+        LatLng(14.6999551, -17.4511307),
+      ],
+      fillColor: const Color.fromRGBO(217, 217, 217, 1.0), // grey fill
+      strokeColor: const Color.fromRGBO(182, 182, 182, 1.0), // darker grey border
+      strokeWidth: 2,
+    ),
+
+    // Bureau Mr Boudal Niang
+    Polygon(
+      polygonId: const PolygonId('bureau_mr_boudal_niang'),
+      points: const [
+        LatLng(14.7000356, -17.450786),
+        LatLng(14.7000896, -17.450807),
+        LatLng(14.70008, -17.450832),
+        LatLng(14.700063, -17.450826),
+        LatLng(14.700053, -17.450856),
+        LatLng(14.7000173, -17.4508407),
+        LatLng(14.7000356, -17.450786),
+      ],
+      strokeColor: const Color.fromRGBO(182, 182, 182, 1.0),
+      fillColor: const Color.fromRGBO(217, 217, 217, 1.0),
+      strokeWidth: 2,
+    ),
+    // Bureau Mr Doumbia
+    Polygon(
+      polygonId: const PolygonId('bureau_mr_doumbia'),
+      points: const [
+        LatLng(14.699979, -17.45106),
+        LatLng(14.6999471, -17.451047),
+        LatLng(14.6999637, -17.4509957),
+        LatLng(14.699996, -17.451008),
+        LatLng(14.699979, -17.45106),
+      ],
+      strokeColor: const Color.fromRGBO(182, 182, 182, 1.0),
+      fillColor: const Color.fromRGBO(217, 217, 217, 1.0),
+      strokeWidth: 2,
+    ),
+    // Bureau Oumar Ndiaye
+    Polygon(
+      polygonId: const PolygonId('bureau_oumar_ndiaye'),
+      points: const [
+        LatLng(14.7001344, -17.4509447),
+        LatLng(14.7001244, -17.4509743),
+        LatLng(14.7000843, -17.4509587),
+        LatLng(14.7000936, -17.4509293),
+        LatLng(14.7001344, -17.4509447),
+      ],
+      strokeColor: const Color.fromRGBO(182, 182, 182, 1.0),
+      fillColor: const Color.fromRGBO(217, 217, 217, 1.0),
+      strokeWidth: 2,
+    ),
+
+
+
+    Polygon(
+      polygonId: const PolygonId('Escaliers 1'),
+      points: const [
+        LatLng(14.700145,-17.450915),
+        LatLng(14.7001344,-17.4509447),
+        LatLng(14.7001053,-17.450934),
+        LatLng(14.7001142,-17.4509041),
+        LatLng(14.700145,-17.450915),
+      ],
+      fillColor: const Color(0XFFF2F3F7),
+      strokeColor: const Color(0XFFDCDCDE),
+      zIndex: -999999,
+      strokeWidth: 2,
+    ),
+
+    Polygon(
+      polygonId: const PolygonId('Bureau Mme Diallo MDI'),
+      points: const [
+        LatLng(14.700068, -17.4509597),
+        LatLng(14.7000324, -17.4509457),
+        LatLng(14.7000446, -17.45091),
+        LatLng(14.7000809, -17.450923),
+        LatLng(14.700068, -17.4509597),
+      ],
+      fillColor: const Color.fromRGBO(217, 217, 217, 1.0),
+      strokeColor: const Color.fromRGBO(182, 182, 182, 1.0),
+      strokeWidth: 2,
+    ),
+
+    // Bureau mme Garba
+    Polygon(
+      polygonId: const PolygonId('Bureau Mme Garba'),
+      points: const <LatLng>[
+        LatLng(14.7000419, -17.4510746),
+        LatLng(14.7000327, -17.4511024),
+        LatLng(14.6999858, -17.451084),
+        LatLng(14.6999959, -17.4510556),
+        LatLng(14.7000419, -17.4510746),
+      ],
+      fillColor: const Color.fromRGBO(217, 217, 217, 1.0),
+      strokeColor: const Color.fromRGBO(182, 182, 182, 1.0),
+      strokeWidth: 2,
+    ),
+
+    // Mr Damoue
+
+    Polygon(
+      polygonId: const PolygonId('Bureau Mr Damoue'),
+      points: const <LatLng>[
+        LatLng(14.7000843, -17.4509587),
+        LatLng(14.7001244, -17.4509743),
+        LatLng(14.7001104, -17.451016),
+        LatLng(14.70007, -17.4510013),
+        LatLng(14.7000843, -17.4509587),
+      ],
+      fillColor: const Color.fromRGBO(217, 217, 217, 1.0),
+      strokeColor: const Color.fromRGBO(182, 182, 182, 1.0),
+      strokeWidth: 2,
+    ),
+
+    // Mr DER
+
+    Polygon(
+      polygonId: const PolygonId('Bureau Mr DER'),
+      points: const <LatLng>[
+        LatLng(14.7000127, -17.450957),
+        LatLng(14.699982, -17.450945),
+        LatLng(14.699998, -17.450896),
+        LatLng(14.7000284, -17.450907),
+        LatLng(14.7000127, -17.450957),
+      ],
+      fillColor: const Color.fromRGBO(217, 217, 217, 1.0),
+      strokeColor: const Color.fromRGBO(182, 182, 182, 1.0),
+      strokeWidth: 2,
+    ),
+
+    // Salle des profs
+
+    Polygon(
+      polygonId: const PolygonId('Salle des profs'),
+      points: const <LatLng>[
+        LatLng(14.7000411, -17.451043),
+        LatLng(14.7000044, -17.451029),
+        LatLng(14.7000204, -17.4509813),
+        LatLng(14.7000564, -17.450996),
+        LatLng(14.7000411, -17.451043),
+      ],
+      fillColor: const Color.fromRGBO(217, 217, 217, 1.0),
+      strokeColor: const Color.fromRGBO(182, 182, 182, 1.0),
+      strokeWidth: 2,
+    ),
+
+    // Toilettes personnels homme
+
+    Polygon(
+      polygonId: const PolygonId('Toilettes personnel homme'),
+      points: const <LatLng>[
+        LatLng(14.70007, -17.4510013),
+        LatLng(14.7001104, -17.451016),
+        LatLng(14.7001, -17.451048),
+        LatLng(14.7000603, -17.4510327),
+        LatLng(14.70007, -17.4510013),
+      ],
+      fillColor: const Color.fromRGBO(223, 227, 255, 1.0),
+      strokeColor: const Color.fromRGBO(152, 159, 228, 1.0),
+      strokeWidth: 2,
+
+    ),
+
+
   };
+
   Set<Polygon> _secondFloorPolygons = {
 
     // - Batiment E
@@ -1897,6 +2326,7 @@ class MapWState extends State<GMap> {
     ),
 
     // - Salle de classe
+
     Polygon(
       polygonId: PolygonId('Salle de classe mystère 1'),
       points: [
@@ -1912,7 +2342,8 @@ class MapWState extends State<GMap> {
       strokeWidth: 2, // Épaisseur de la bordure
     ),
 
-// - Salle de classe
+    // - Salle de classe
+
     Polygon(
       polygonId: PolygonId('Salle de classe mystère 2'),
       points: [
@@ -1927,7 +2358,8 @@ class MapWState extends State<GMap> {
       strokeWidth: 2,
     ),
 
-// - Bureau mystère
+    // - Bureau mystère
+
     Polygon(
       polygonId: PolygonId('Bureau mystère'),
       points: [
@@ -2101,9 +2533,9 @@ class MapWState extends State<GMap> {
       strokeWidth: 2,
     ),
 
-// - Salle de classe mystère (côté HB8)
+// - Salle de classe mystère (côté HA8)
     Polygon(
-      polygonId: PolygonId('Salle de classe mystère (côté HB8)'),
+      polygonId: PolygonId('Salle de classe mystère (côté HA8)'),
       points: [
         LatLng(14.6995913, -17.4513113),
         LatLng(14.6995173, -17.4512849),
@@ -2134,10 +2566,14 @@ class MapWState extends State<GMap> {
       "labo.png",
       "ne_venez_pas_ici.png",
       "point_priere.png",
+      "random_gifts.png",
+      "easter_egg_gifts.png",
+      "st_valentine_gifts.png",
+      "christmas_gifts.png",
       "salle_amicale.png",
       "salle_biblio.png",
       "salle_conference.png",
-      "salle_cyber_hb8.png",
+      "salle_cyber_HA8.png",
       "salle_dar.png",
       "salle_gymnase.png",
       "salle_ha_.png",
@@ -2150,8 +2586,8 @@ class MapWState extends State<GMap> {
       "salle_hb2.png",
       "salle_hb3.png",
       "salle_hb6.png",
-      "salle_hb7.png",
-      "salle_hb8.png",
+      "salle_HA7.png",
+      "salle_HA8.png",
       "salle_incubateur.png",
       "salle_infirmerie.png",
       "salle_mp_isi2.png",
@@ -2193,8 +2629,27 @@ class MapWState extends State<GMap> {
     print('Nombre total d\'images chargées : ${icons.length}');
   }
 
+  BitmapDescriptor _getIconForEvent(GiftEvent event, Map<String, BitmapDescriptor> icons) {
+    switch (event) {
+      case GiftEvent.CHRISTMAS:
+        return icons["christmas_gifts.png"] ?? BitmapDescriptor.defaultMarker;
+      case GiftEvent.EASTER_EGG:
+        return icons["easter_egg_gifts.png"]  ?? BitmapDescriptor.defaultMarker;
+      case GiftEvent.ST_VALENTINE:
+        return icons["st_valentine_gifts.png"] ?? BitmapDescriptor.defaultMarker;
+      case GiftEvent.NEW_YEAR:
+        // AJOUTER LES AUTRES EVENEMENTS PLUS TARD
+      default:
+        return icons["random_gifts.png"] ?? BitmapDescriptor.defaultMarker;
+    }
+  }
+
+
   @override
   void initState() {
+
+    // ezz
+
     DefaultAssetBundle.of(context)
         .loadString("assets/mapstyles/light_mode.json")
         .then((value) {
@@ -2215,14 +2670,131 @@ class MapWState extends State<GMap> {
 
   Future<void> _initializeTextMarkersOfLevel1() async {
     List<Map<String, dynamic>> markerData = [
-      // BAT E :
+
+      // BAT A :
 
       {
-        "markerId": "Admin",
-        "rotation": -5.0,
-        "position": LatLng(14.700011491543004, -17.45103120803833),
-        "title": "(Bientôt disponible)",
+        "markerId": "Bureau\nMr Boudal Niang",
+        "rotation": -18.0,
+        "position": LatLng(14.70004684043293, -17.450822666287422),
+        "title": "Bureau\nMr Boudal Niang",
       },
+
+      {
+        "markerId": "Bureau\nMr Lemrabott",
+        "rotation": -18.0,
+        "position": LatLng(14.7001444552277, -17.450862899422646),
+        "title": "Bureau\nMr Lemrabott",
+      },
+
+      {
+        "markerId": "Bureau\nMr O.Ndiaye",
+        "rotation": -18.0,
+        "position": LatLng(14.700109106353576, -17.45095442980528),
+        "title": "Bureau\nMr O.Ndiaye",
+      },
+
+      {
+        "markerId": "Bureau\nMr Damoue",
+        "rotation": -18.0,
+        "position": LatLng(14.700096782891524, -17.450988963246342),
+        "title": "Bureau\nMr Damoue",
+      },
+
+      {
+        "markerId": "Bureau\nMme Marthe",
+        "rotation": -18.0,
+        "position": LatLng(14.70004716473465, -17.451136149466038),
+        "title": "Bureau\nMme Marthe",
+      },
+
+      {
+        "markerId": "Bureau\nMr Kora",
+        "rotation": 73.0,
+        "position": LatLng(14.699995600755758, -17.451119385659695),
+        "title": "Bureau\nMr Kora",
+      },
+
+      {
+        "markerId": "Bureau\nMr Preira & Mr Ba",
+        "rotation": -18.0,
+        "position": LatLng(14.69995117140569, -17.451089210808274),
+        "title": "Bureau\nMr Preira & Mr Ba",
+      },
+
+
+      {
+        "markerId": "Bureau\nMr Doumbia",
+        "rotation": -18.0,
+        "position": LatLng(14.699969332309005, -17.451029866933823),
+        "title": "Bureau\nMr Doumbia",
+      },
+
+      {
+        "markerId": "Bureau\nMr Alpha Barry",
+        "rotation": -18.0,
+        "position": LatLng(14.69998846611621, -17.450980581343174),
+        "title": "Bureau\nMr Alpha Barry",
+      },
+
+      {
+        "markerId": "Bureau\nMr DER",
+        "rotation": -18.0,
+        "position": LatLng(14.700002735395076, -17.45092827826738),
+        "title": "Bureau\nMr DER",
+      },
+
+      {
+        "markerId": "Salle\ndes profs",
+        "rotation": 73.0,
+        "position": LatLng(14.700031273950001, -17.45101746171713),
+        "title": "Salle\ndes profs",
+      },
+
+      {
+        "markerId": "Agents\nde liaison",
+        "rotation": 73.0,
+        "position": LatLng(14.700044246019184, -17.450973205268383),
+        "title": "Agents\nde liaison",
+      },
+
+      {
+        "markerId": "Bureau\nMme Diallo MDI",
+        "rotation": 73.0,
+        "position": LatLng(14.700055920880796, -17.450935654342175),
+        "title": "Bureau\nMme Diallo\nMDI",
+      },
+
+      {
+        "markerId": "Accueil\nESMT",
+        "rotation": 73.0,
+        "position": LatLng(14.700067595741782, -17.450902797281742),
+        "title": "Accueil\nESMT",
+      },
+
+      {
+        "markerId": "Bureau\nMme Garba",
+        "rotation": 73.0,
+        "position": LatLng(14.700010518637686, -17.45108049362898),
+        "title": "Bureau\nMme Garba",
+      },
+
+      {
+        "markerId": "Salle E13",
+        "rotation": 73.0,
+        "position": LatLng(14.700335468769655, -17.45076399296522),
+        "title": "Salle E13\n(Commutateur)",
+      },
+
+      // BAT E :
+
+      // Administration bientôt disponible
+      // {
+      //   "markerId": "Admin",
+      //   "rotation": -5.0,
+      //   "position": LatLng(14.700011491543004, -17.45103120803833),
+      //   "title": "(Bientôt disponible)",
+      // },
 
       {
         "markerId": "Salle E18",
@@ -2269,7 +2841,7 @@ class MapWState extends State<GMap> {
       {
         "markerId": "Salle E11",
         "rotation": -18.0,
-        "position": LatLng(14.700105214734053, -17.450753934681416),
+        "position": LatLng(14.700095809986601, -17.450751587748528),
         "title": "Salle E11\n(Électronique - Mr.Rabé)",
       },
 
@@ -2287,23 +2859,26 @@ class MapWState extends State<GMap> {
         "title": "Salle HA4",
       },
       {
-        "markerId": "Salle HA?",
+        "markerId": "Bureau HA1",
         "rotation": -18.0,
         "position": LatLng(14.69958114267191, -17.45119046419859),
-        "title": "Salle HA?",
+        "title": "Bureau HA1",
       },
+
       {
         "markerId": "Bureau recouvrement",
         "rotation": 74.0,
         "position": LatLng(14.699544172194296, -17.45131216943264),
         "title": "Bureau\nrecouvrement",
       },
+
       {
         "markerId": "Bureausurveillants",
         "rotation": 70.0,
         "position": LatLng(14.6996, -17.45138),
         "title": "Bureau\nsurveillants",
       },
+
       {
         "markerId": "Bureau Mme Barro",
         "rotation": 70.0,
@@ -2419,7 +2994,9 @@ class MapWState extends State<GMap> {
             logicalSize: const Size(352, 352), imageSize: const Size(352, 352)),
         onTap: () {
           if (markerId == "Bureau Mr Kondengar") {
-            context.read<MapBloc>().add(SetSelectedMapEntity(Office(
+            context.read<MapBloc>().add(SetSelectedMapEntity(
+                Office(
+              hasDetails: true,
                   officeRole: "Responsable CISCO",
                   aboutOffice: "Bureau de Mr.Kondengar : Situé au bât..",
                   officeHours: [
@@ -2464,7 +3041,7 @@ class MapWState extends State<GMap> {
                       "N’hésitez pas à me contacter via Whatsapp si je ne suis pas joignable par appel téléphonique.",
                   isOpen: true,
                   photos: [
-                    "assets/images/bureau_esmt.jpg",
+                    "assets/images/bureau_kondengar.jpeg",
                     "assets/images/place_placeholder.png",
                     "assets/images/esmt_3.png"
                   ],
@@ -2473,19 +3050,589 @@ class MapWState extends State<GMap> {
                 )));
           } else {
             switch (markerId) {
-              case "Salle HA1":
+
+              case "Bureau Mr Ouedraogo":
+                context.read<MapBloc>().add(SetSelectedMapEntity(
+                    Office(
+                      hasDetails: false,
+                      officeRole: "Responsable",
+                      aboutOffice: "Bureau de Mr.Ouedraogo : Situé au bât..",
+                      officeHours: [
+                        "05:00 - 22:38",
+                        "05:00 - 22:38",
+                        "05:00 - 22:38",
+                        "05:00 - 22:38",
+                        "indisponible (congés)",
+                        "indisponible (congés)",
+                        "indisponible (congés)",
+                      ],
+                      servicesProvided: [
+                        "Assistance pour les demandes de bourses et autres financements",
+                        "Vérification des dossiers d'admission et suivi des candidatures",
+                        "Gestion et délivrance des certificats académiques"
+                      ],
+                      responsables: [
+                        Responsable(
+                          fullName: "Thierry Kondengar",
+                          email: "kondengar@esmt.sn",
+                          description:
+                          "Toujours à l'écoute, j'accompagne les étudiants dans leurs démarches et m'assure qu'ils aient toutes les ressources pour réussir. N'hésitez pas à venir me voir pour toute question ou besoin de conseil.",
+                          photos: [],
+                          // Liste de photos, à remplir si nécessaire
+                          isTeacher: true,
+                          phoneNumber: "+221 76 309 94 67",
+                          linkedin: "/in/thierry-49",
+                          position: "Assistant Labo CISCO",
+                        ),
+                      ],
+                      placeName: "Bureau Mr.Ouedraogo",
+                      shortDescription:
+                      "Responsable, assistance pour les demandes de bourses et autres financements",
+                      entityPosition: position,
+                      // Position approximative; à ajuster si nécessaire
+                      entityName: "Bureau Mr.Kondengar",
+                      rating: "4.7/5",
+                      floor: "Étage 0",
+                      building: "Bat H",
+                      timeDetail: "Ferme à 17h30",
+                      about:
+                      "N’hésitez pas à me contacter via Whatsapp si je ne suis pas joignable par appel téléphonique.",
+                      isOpen: true,
+                      photos: [
+                        "assets/images/bureau_ouedraogo.jpeg",
+                        "assets/images/place_placeholder.png",
+                        "assets/images/esmt_3.png"
+                      ],
+                      // Ajouter les photos disponibles ici
+                      placeType: "Bureau",
+                    )));
+                break;
+
+              case "Bureau Mme Barro":
+                context.read<MapBloc>().add(SetSelectedMapEntity(
+                    Office(
+                      hasDetails: false,
+                      officeRole: "Responsable scolarité",
+                      aboutOffice: "Bureau des surveillants : Mr Diatta & Mr Diene",
+                      officeHours: [
+                        "05:00 - 22:38",
+                        "05:00 - 22:38",
+                        "05:00 - 22:38",
+                        "05:00 - 22:38",
+                        "indisponible (congés)",
+                        "indisponible (congés)",
+                        "indisponible (congés)",
+                      ],
+                      servicesProvided: [
+                        "(les informations ne sont pas à jour)"
+                            "Assistance pour les demandes de bourses et autres financements",
+                        "Vérification des dossiers d'admission et suivi des candidatures",
+                        "Gestion et délivrance des certificats académiques"
+                      ],
+                      responsables: [
+                        Responsable(
+                          fullName: "Thierry Kondengar",
+                          email: "kondengar@esmt.sn",
+                          description:
+                          "Toujours à l'écoute, j'accompagne les étudiants dans leurs démarches et m'assure qu'ils aient toutes les ressources pour réussir. N'hésitez pas à venir me voir pour toute question ou besoin de conseil.",
+                          photos: [],
+                          // Liste de photos, à remplir si nécessaire
+                          isTeacher: true,
+                          phoneNumber: "+221 76 309 94 67",
+                          linkedin: "/in/thierry-49",
+                          position: "Assistant Labo CISCO",
+                        ),
+                      ],
+                      placeName: "Bureau surveillants",
+                      shortDescription:
+                      "Responsable CISCO, assistance pour les demandes de bourses et autres financements",
+                      entityPosition: position,
+                      // Position approximative; à ajuster si nécessaire
+                      entityName: "Bureau Mme Barro",
+                      rating: "4.7/5",
+                      floor: "Étage 0",
+                      building: "Bat H",
+                      timeDetail: "Ferme à 17h30",
+                      about:
+                      "N’hésitez pas à me contacter via Whatsapp si je ne suis pas joignable par appel téléphonique.",
+                      isOpen: true,
+                      photos: [
+                        "assets/images/bureau_surveillants.jpeg",
+                        "assets/images/place_placeholder.png",
+                        "assets/images/esmt_3.png"
+                      ],
+                      // Ajouter les photos disponibles ici
+                      placeType: "Bureau",
+                    )));
+                break;
+
+              case "Bureausurveillants":
+                context.read<MapBloc>().add(SetSelectedMapEntity(
+                    Office(
+                      hasDetails: false,
+                      officeRole: "Responsables surveillance",
+                      aboutOffice: "Bureau scolarité : Mme Barro",
+                      officeHours: [
+                        "05:00 - 22:38",
+                        "05:00 - 22:38",
+                        "05:00 - 22:38",
+                        "05:00 - 22:38",
+                        "indisponible (congés)",
+                        "indisponible (congés)",
+                        "indisponible (congés)",
+                      ],
+                      servicesProvided: [
+                        "(les informations ne sont pas à jour)"
+                            "Assistance pour les demandes de bourses et autres financements",
+                        "Vérification des dossiers d'admission et suivi des candidatures",
+                        "Gestion et délivrance des certificats académiques"
+                      ],
+                      responsables: [
+                        Responsable(
+                          fullName: "Thierry Kondengar",
+                          email: "kondengar@esmt.sn",
+                          description:
+                          "Toujours à l'écoute, j'accompagne les étudiants dans leurs démarches et m'assure qu'ils aient toutes les ressources pour réussir. N'hésitez pas à venir me voir pour toute question ou besoin de conseil.",
+                          photos: [],
+                          // Liste de photos, à remplir si nécessaire
+                          isTeacher: true,
+                          phoneNumber: "+221 76 309 94 67",
+                          linkedin: "/in/thierry-49",
+                          position: "Assistant Labo CISCO",
+                        ),
+                      ],
+                      placeName: "Bureau surveillants",
+                      shortDescription:
+                      "Responsable CISCO, assistance pour les demandes de bourses et autres financements",
+                      entityPosition: position,
+                      // Position approximative; à ajuster si nécessaire
+                      entityName: "Bureau scolarité : Mme Barro",
+                      rating: "4.7/5",
+                      floor: "Étage 0",
+                      building: "Bat H",
+                      timeDetail: "Ferme à 17h30",
+                      about:
+                      "N’hésitez pas à me contacter via Whatsapp si je ne suis pas joignable par appel téléphonique.",
+                      isOpen: true,
+                      photos: [
+                        "assets/images/bureau_mme_barro.jpeg",
+                        "assets/images/place_placeholder.png",
+                        "assets/images/esmt_3.png"
+                      ],
+                      // Ajouter les photos disponibles ici
+                      placeType: "Bureau",
+                    )));
+                break;
+
+              case "Bureau recouvrement":
+                context.read<MapBloc>().add(SetSelectedMapEntity(
+                    Office(
+                      hasDetails: false,
+                      officeRole: "Responsable recouvrement",
+                      aboutOffice: "Bureau de Mme Khadidiatou Diop : Situé au bât..",
+                      officeHours: [
+                        "05:00 - 22:38",
+                        "05:00 - 22:38",
+                        "05:00 - 22:38",
+                        "05:00 - 22:38",
+                        "indisponible (congés)",
+                        "indisponible (congés)",
+                        "indisponible (congés)",
+                      ],
+                      servicesProvided: [
+                        "(les informations ne sont pas à jour)"
+                        "Assistance pour les demandes de bourses et autres financements",
+                        "Vérification des dossiers d'admission et suivi des candidatures",
+                        "Gestion et délivrance des certificats académiques"
+                      ],
+                      responsables: [
+                        Responsable(
+                          fullName: "Thierry Kondengar",
+                          email: "kondengar@esmt.sn",
+                          description:
+                          "Toujours à l'écoute, j'accompagne les étudiants dans leurs démarches et m'assure qu'ils aient toutes les ressources pour réussir. N'hésitez pas à venir me voir pour toute question ou besoin de conseil.",
+                          photos: [],
+                          // Liste de photos, à remplir si nécessaire
+                          isTeacher: true,
+                          phoneNumber: "+221 76 309 94 67",
+                          linkedin: "/in/thierry-49",
+                          position: "Assistant Labo CISCO",
+                        ),
+                      ],
+                      placeName: "Bureau Mme Khadidiatou Diop",
+                      shortDescription:
+                      "Responsable CISCO, assistance pour les demandes de bourses et autres financements",
+                      entityPosition: position,
+                      // Position approximative; à ajuster si nécessaire
+                      entityName: "Bureau Mme Khadidiatou Diop",
+                      rating: "4.7/5",
+                      floor: "Étage 0",
+                      building: "Bat H",
+                      timeDetail: "Ferme à 17h30",
+                      about:
+                      "N’hésitez pas à me contacter via Whatsapp si je ne suis pas joignable par appel téléphonique.",
+                      isOpen: true,
+                      photos: [
+                        "assets/images/bureau_recouvrement.jpeg",
+                        "assets/images/place_placeholder.png",
+                        "assets/images/esmt_3.png"
+                      ],
+                      // Ajouter les photos disponibles ici
+                      placeType: "Bureau",
+                    )));
+                break;
+
+              case "Amicale":
                 context.read<MapBloc>().add(SetSelectedMapEntity(
                     Classroom(
-                      placeType: "Salle de classe",
-                      placeName: "Salle HA1",
-                      shortDescription: "Salle de classe situé au bâtiment H occupé par la classe HA1",
+                      hasDetails: false,
+                      placeType: "Bureau amicale",
+                      placeName: "Bureau amicale",
+                      shortDescription: "Bureau de l'amicale",
                       rating: "4.5",
                       floor: "Étage 0",
                       building: "Bâtiment H",
                       timeDetail: "Ouvert",
                       entityPosition: LatLng(14.69973, -17.45105),
                       photos: [
-                        "assets/images/salle_de_classe_esmt.jpg",
+                        "assets/images/bureau_amicale.jpeg",
+                        "assets/images/place_placeholder.png",
+                        "assets/images/esmt_3.png"
+                      ],
+                      about: "Salle de classe situé au bâtiment H occupé par la classe HA1",
+                      isOpen: true,
+                      entityName: "Salle HA1",
+                    )
+                ));
+                break;
+
+              case "Salle E27":
+                context.read<MapBloc>().add(SetSelectedMapEntity(
+                    Classroom(
+                      hasDetails: false,
+                      placeType: "Salle de classe",
+                      placeName: "Salle E27",
+                      shortDescription: "Salle en construction (MMTD1)",
+                      rating: "4.5",
+                      floor: "Étage 0",
+                      building: "Bâtiment E",
+                      timeDetail: "En construction",
+                      entityPosition: LatLng(14.70021450435587, -17.4511881172657),
+                      photos: [
+                        "assets/images/salle_e27.jpeg",
+                        "assets/images/place_placeholder.png",
+                        "assets/images/esmt_3.png"
+                      ],
+                      about: "Salle E27 occupée par MMTD1, actuellement en construction.",
+                      isOpen: false,
+                      entityName: "Salle E27",
+                    )
+                ));
+                break;
+
+              case "Salle E26":
+                context.read<MapBloc>().add(SetSelectedMapEntity(
+                    Classroom(
+                      hasDetails: false,
+                      placeType: "Salle de classe",
+                      placeName: "Salle E26",
+                      shortDescription: "Salle de classe occupée par LTI2A",
+                      rating: "4.5",
+                      floor: "Étage 0",
+                      building: "Bâtiment E",
+                      timeDetail: "Ouvert",
+                      entityPosition: LatLng(14.700309524665105, -17.45122231543064),
+                      photos: [
+                        "assets/images/salle_e26.jpeg",
+                        "assets/images/place_placeholder.png",
+                        "assets/images/esmt_3.png"
+                      ],
+                      about: "Salle E26 utilisée par la classe LTI2A.",
+                      isOpen: true,
+                      entityName: "Salle E26",
+                    )
+                ));
+                break;
+
+              case "Salle E25":
+                context.read<MapBloc>().add(SetSelectedMapEntity(
+                    Classroom(
+                      hasDetails: false,
+                      placeType: "Salle de classe",
+                      placeName: "Salle E25",
+                      shortDescription: "Salle de classe occupée par LP3",
+                      rating: "4.5",
+                      floor: "Étage 0",
+                      building: "Bâtiment E",
+                      timeDetail: "Ouvert",
+                      entityPosition: LatLng(14.70037924943911, -17.451102286577225),
+                      photos: [
+                        "assets/images/salle_e25.jpeg",
+                        "assets/images/place_placeholder.png",
+                        "assets/images/esmt_3.png"
+                      ],
+                      about: "Salle E25 utilisée par la classe LP3.",
+                      isOpen: true,
+                      entityName: "Salle E25",
+                    )
+                ));
+                break;
+
+              case "Salle E24":
+                context.read<MapBloc>().add(SetSelectedMapEntity(
+                    Classroom(
+                      hasDetails: false,
+                      placeType: "Salle de classe",
+                      placeName: "Salle E24",
+                      shortDescription: "Salle de classe occupée par LMEN3",
+                      rating: "4.5",
+                      floor: "Étage 0",
+                      building: "Bâtiment E",
+                      timeDetail: "Ouvert",
+                      entityPosition: LatLng(14.700398058909201, -17.451035231351852),
+                      photos: [
+                        "assets/images/salle_e24.jpeg",
+                        "assets/images/place_placeholder.png",
+                        "assets/images/esmt_3.png"
+                      ],
+                      about: "Salle E24 utilisée par la classe LMEN3.",
+                      isOpen: true,
+                      entityName: "Salle E24",
+                    )
+                ));
+                break;
+
+              case "Salle E22-23":
+                context.read<MapBloc>().add(SetSelectedMapEntity(
+                    Classroom(
+                      hasDetails: false,
+                      placeType: "Salle de classe",
+                      placeName: "Salle E22-23",
+                      shortDescription: "Salle de classe occupée par LTI2B",
+                      rating: "4.5",
+                      floor: "Étage 0",
+                      building: "Bâtiment E",
+                      timeDetail: "Ouvert",
+                      entityPosition: LatLng(14.700429840423974, -17.450936660170555),
+                      photos: [
+                        "assets/images/salle_e22_23.jpeg",
+                        "assets/images/place_placeholder.png",
+                        "assets/images/esmt_3.png"
+                      ],
+                      about: "Salle E22-23 utilisée par la classe LTI2B.",
+                      isOpen: true,
+                      entityName: "Salle E22-23",
+                    )
+                ));
+                break;
+
+              case "Salle mystere BATE E2 1":
+                context.read<MapBloc>().add(SetSelectedMapEntity(
+                    Classroom(
+                      hasDetails: false,
+                      placeType: "Salle de classe",
+                      placeName: "Salle mystère",
+                      shortDescription: "Salle mystérieuse au bâtiment E",
+                      rating: "4.0",
+                      floor: "Étage 0",
+                      building: "Bâtiment E",
+                      timeDetail: "Inconnu",
+                      entityPosition: LatLng(14.70043827225364, -17.450782097876072),
+                      photos: [
+                        "assets/images/salle_mystere_bate_e2_1.jpeg",
+                        "assets/images/place_placeholder.png",
+                        "assets/images/esmt_3.png"
+                      ],
+                      about: "Salle mystérieuse, contenu et classe inconnus.",
+                      isOpen: false,
+                      entityName: "Salle mystère",
+                    )
+                ));
+                break;
+
+
+              case "Salle E11":
+                context.read<MapBloc>().add(SetSelectedMapEntity(
+                    Classroom(
+                      hasDetails: false,
+                      placeType: "Salle de classe",
+                      placeName: "Salle E11 - Électronique",
+                      shortDescription: "Laboratoire d'electronique situé au bâtiment E (Mr Rabé).",
+                      rating: "4.5",
+                      floor: "Étage 0",
+                      building: "Bâtiment E",
+                      timeDetail: "Ouvert",
+                      entityPosition: LatLng(14.700095809986601, -17.450751587748528),
+                      photos: [
+                        "assets/images/salle_e11.jpeg",
+                        "assets/images/place_placeholder.png",
+                        "assets/images/esmt_3.png"
+                      ],
+                      about: "Laboratoire d'electronique situé au bâtiment E (Mr Rabé).",
+                      isOpen: true,
+                      entityName: "Salle E11",
+                    )
+                ));
+                break;
+
+              case "Salle E13":
+                context.read<MapBloc>().add(SetSelectedMapEntity(
+                    Classroom(
+                      hasDetails: false,
+                      placeType: "Salle de classe",
+                      placeName: "Salle E13",
+                      shortDescription: "Salle de classe situé au bâtiment E, mystère, contenu inconnu",
+                      rating: "4.5",
+                      floor: "Étage 0",
+                      building: "Bâtiment E",
+                      timeDetail: "Ouvert",
+                      entityPosition: LatLng(14.700335468769655, -17.45076399296522),
+                      photos: [
+                        "assets/images/salle_e13.jpeg",
+                        "assets/images/place_placeholder.png",
+                        "assets/images/esmt_3.png"
+                      ],
+                      about: "Salle de classe situé au bâtiment E faisant office de Labo TP",
+                      isOpen: true,
+                      entityName: "Salle E13",
+                    )
+                ));
+                break;
+
+              case "Salle E14":
+                context.read<MapBloc>().add(SetSelectedMapEntity(
+                    Classroom(
+                      hasDetails: false,
+                      placeType: "Salle de classe",
+                      placeName: "Salle E14",
+                      shortDescription: "Salle de classe situé au bâtiment E, mystère, contenu inconnu",
+                      rating: "4.5",
+                      floor: "Étage 0",
+                      building: "Bâtiment E",
+                      timeDetail: "Ouvert",
+                      entityPosition: LatLng(14.700469405160389, -17.450793161988262),
+                      photos: [
+                        "assets/images/salle_e14.jpeg",
+                        "assets/images/place_placeholder.png",
+                        "assets/images/esmt_3.png"
+                      ],
+                      about: "Salle de classe situé au bâtiment E faisant office de Labo TP",
+                      isOpen: true,
+                      entityName: "Salle E14",
+                    )
+                ));
+                break;
+
+              case "Salle E15":
+                context.read<MapBloc>().add(SetSelectedMapEntity(
+                    Classroom(
+                      hasDetails: false,
+                      placeType: "Laboratoire",
+                      placeName: "Salle E15",
+                      shortDescription: "Laboratoire Feu Abdoulaye Sadou situé au bâtiment E, faisant office de Labo TP",
+                      rating: "4.5",
+                      floor: "Étage 0",
+                      building: "Bâtiment E",
+                      timeDetail: "Ouvert",
+                      entityPosition: LatLng(14.700419138485834, -17.450932636857033),
+                      photos: [
+                        "assets/images/salle_e15.jpeg",
+                        "assets/images/place_placeholder.png",
+                        "assets/images/esmt_3.png"
+                      ],
+                      about: "Salle de classe situé au bâtiment E faisant office de Labo TP",
+                      isOpen: true,
+                      entityName: "Salle E15",
+                    )
+                ));
+                break;
+
+              case "Salle E16":
+                context.read<MapBloc>().add(SetSelectedMapEntity(
+                    Classroom(
+                      hasDetails: false,
+                      placeType: "Salle de classe",
+                      placeName: "Salle E16",
+                      shortDescription: "Salle de classe situé au bâtiment E, faisant office de Labo TP",
+                      rating: "4.5",
+                      floor: "Étage 0",
+                      building: "Bâtiment E",
+                      timeDetail: "Ouvert",
+                      entityPosition: LatLng(14.700374709221931, -17.451071441173553),
+                      photos: [
+                        "assets/images/salle_e16.jpeg",
+                        "assets/images/place_placeholder.png",
+                        "assets/images/esmt_3.png"
+                      ],
+                      about: "Salle de classe situé au bâtiment E faisant office de Labo TP",
+                      isOpen: true,
+                      entityName: "Salle E16",
+                    )
+                ));
+                break;
+
+              case "Salle E17":
+                context.read<MapBloc>().add(SetSelectedMapEntity(
+                    Classroom(
+                      hasDetails: false,
+                      placeType: "Salle de classe",
+                      placeName: "Salle E17",
+                      shortDescription: "Salle de classe situé au bâtiment E, faisant office de Labo TP",
+                      rating: "4.5",
+                      floor: "Étage 0",
+                      building: "Bâtiment E",
+                      timeDetail: "Ouvert",
+                      entityPosition: LatLng(14.70028098614654, -17.451208233833313),
+                      photos: [
+                        "assets/images/salle_e17.jpeg",
+                        "assets/images/place_placeholder.png",
+                        "assets/images/esmt_3.png"
+                      ],
+                      about: "Salle de classe situé au bâtiment E faisant office de Labo TP",
+                      isOpen: true,
+                      entityName: "Salle E17",
+                    )
+                ));
+                break;
+
+              case "Salle E18":
+                context.read<MapBloc>().add(SetSelectedMapEntity(
+                    Classroom(
+                      hasDetails: false,
+                      placeType: "Salle de classe",
+                      placeName: "Salle E18",
+                      shortDescription: "Salle de classe situé au bâtiment E occupé par la classe LMEN1",
+                      rating: "4.5",
+                      floor: "Étage 0",
+                      building: "Bâtiment E",
+                      timeDetail: "Ouvert",
+                      entityPosition: LatLng(14.700207045422003, -17.45118040591478),
+                      photos: [
+                        "assets/images/salle_e18.jpeg",
+                        "assets/images/place_placeholder.png",
+                        "assets/images/esmt_3.png"
+                      ],
+                      about: "Salle de classe situé au bâtiment E occupé par la classe LMEN1",
+                      isOpen: true,
+                      entityName: "Salle E18",
+                    )
+                ));
+                break;
+
+              case "Salle HA1":
+                context.read<MapBloc>().add(SetSelectedMapEntity(
+                    Classroom(
+                      hasDetails: false,
+                      placeType: "Salle de classe",
+                      placeName: "Salle HA1",
+                      shortDescription: "Salle de classe situé au bâtiment H occupé par la classe LTI1",
+                      rating: "4.5",
+                      floor: "Étage 0",
+                      building: "Bâtiment H",
+                      timeDetail: "Ouvert",
+                      entityPosition: LatLng(14.69973, -17.45105),
+                      photos: [
+                        "assets/images/salle_ha1.jpeg",
                         "assets/images/place_placeholder.png",
                         "assets/images/esmt_3.png"
                       ],
@@ -2499,6 +3646,7 @@ class MapWState extends State<GMap> {
               case "Salle informatique DAR (SES)":
                 context.read<MapBloc>().add(SetSelectedMapEntity(
                     Classroom(
+                      hasDetails: false,
                       placeType: "Salle de classe",
                       placeName: "Salle informatique DAR (SES)",
                       shortDescription: "Salle dédiée aux cours d'informatique pour la section SES.",
@@ -2508,7 +3656,7 @@ class MapWState extends State<GMap> {
                       timeDetail: "Ouvert",
                       entityPosition: LatLng(14.699996573661137, -17.451602183282375),
                       photos: [
-                        "assets/images/salle_de_classe_esmt.jpg",
+                        "assets/images/salle_dar.jpeg",
                         "assets/images/place_placeholder.png",
                         "assets/images/esmt_3.png"
                       ],
@@ -2522,6 +3670,7 @@ class MapWState extends State<GMap> {
               case "Salle de classe RT":
                 context.read<MapBloc>().add(SetSelectedMapEntity(
                     Classroom(
+                      hasDetails: false,
                       placeType: "Salle de classe",
                       placeName: "Salle de classe HB2",
                       shortDescription: "Salle de classe dédiée aux cours de la filière RT.",
@@ -2531,7 +3680,7 @@ class MapWState extends State<GMap> {
                       timeDetail: "Ouvert",
                       entityPosition: LatLng(14.699910309367722, -17.45156731456518),
                       photos: [
-                        "assets/images/salle_de_classe_esmt.jpg",
+                        "assets/images/salle_hb2.jpeg",
                         "assets/images/place_placeholder.png",
                         "assets/images/esmt_3.png"
                       ],
@@ -2545,6 +3694,7 @@ class MapWState extends State<GMap> {
               case "Restaurant administration (Accès interdit)":
                 context.read<MapBloc>().add(SetSelectedMapEntity(
                     Classroom(
+                      hasDetails: false,
                       placeType: "Restaurant",
                       placeName: "Restaurant administration",
                       shortDescription: "Restaurant réservé à l'administration.",
@@ -2568,6 +3718,7 @@ class MapWState extends State<GMap> {
               case "Salle de classe HB3":
                 context.read<MapBloc>().add(SetSelectedMapEntity(
                     Classroom(
+                      hasDetails: false,
                       placeType: "Salle de classe",
                       placeName: "Salle de classe HB3",
                       shortDescription: "Salle de classe située au bâtiment H, destinée aux cours généraux.",
@@ -2577,7 +3728,7 @@ class MapWState extends State<GMap> {
                       timeDetail: "Ouvert",
                       entityPosition: LatLng(14.69982599085251, -17.451537810266014),
                       photos: [
-                        "assets/images/salle_de_classe_esmt.jpg",
+                        "assets/images/salle_hb3.jpeg",
                         "assets/images/place_placeholder.png",
                         "assets/images/esmt_3.png"
                       ],
@@ -2591,6 +3742,7 @@ class MapWState extends State<GMap> {
               case "Gymnase":
                 context.read<MapBloc>().add(SetSelectedMapEntity(
                     Classroom(
+                      hasDetails: false,
                       placeType: "Gymnase",
                       placeName: "Gymnase",
                       shortDescription: "Espace sportif pour les activités physiques et sportives.",
@@ -2600,7 +3752,7 @@ class MapWState extends State<GMap> {
                       timeDetail: "Ouvert",
                       entityPosition: LatLng(14.699498769844816, -17.451488524675373),
                       photos: [
-                        "assets/images/gymnase_esmt.jpg",
+                        "assets/images/gymnase_esmt.jpeg",
                         "assets/images/place_placeholder.png",
                         "assets/images/esmt_3.png"
                       ],
@@ -2614,6 +3766,7 @@ class MapWState extends State<GMap> {
               case "Salle de classe HB6":
                 context.read<MapBloc>().add(SetSelectedMapEntity(
                     Classroom(
+                      hasDetails: false,
                       placeType: "Salle de classe",
                       placeName: "Salle de classe HB6",
                       shortDescription: "Salle de classe située au bâtiment H pour divers cours.",
@@ -2623,7 +3776,7 @@ class MapWState extends State<GMap> {
                       timeDetail: "Ouvert",
                       entityPosition: LatLng(14.699535091725156, -17.451366148889065),
                       photos: [
-                        "assets/images/salle_de_classe_esmt.jpg",
+                        "assets/images/salle_hb6.jpeg",
                         "assets/images/place_placeholder.png",
                         "assets/images/esmt_3.png"
                       ],
@@ -2634,11 +3787,12 @@ class MapWState extends State<GMap> {
                 ));
                 break;
 
-              case "Salle de classe mystère (a côté HB6) HB7":
+              case "Salle de classe mystère (a côté HB6) HA7":
                 context.read<MapBloc>().add(SetSelectedMapEntity(
                     Classroom(
+                      hasDetails: false,
                       placeType: "Salle de classe",
-                      placeName: "Salle HB7",
+                      placeName: "Salle HA7",
                       shortDescription: "Salle mystère située près de HB6.",
                       rating: "3.8",
                       floor: "Étage 0",
@@ -2646,22 +3800,23 @@ class MapWState extends State<GMap> {
                       timeDetail: "Ouvert",
                       entityPosition: LatLng(14.699569792087336, -17.451251484453678),
                       photos: [
-                        "assets/images/salle_de_classe_esmt.jpg",
+                        "assets/images/salle_ha7.jpeg",
                         "assets/images/place_placeholder.png",
                         "assets/images/esmt_3.png"
                       ],
                       about: "Salle de classe pour les cours.",
                       isOpen: true,
-                      entityName: "Salle HB7",
+                      entityName: "Salle HA7",
                     )
                 ));
                 break;
 
-              case "salle HB8?":
+              case "salle HA8?":
                 context.read<MapBloc>().add(SetSelectedMapEntity(
                     Classroom(
+                      hasDetails: false,
                       placeType: "Salle de classe",
-                      placeName: "Salle HB8",
+                      placeName: "Salle HA8",
                       shortDescription: "Salle de classe située au bâtiment H.",
                       rating: "4.1",
                       floor: "Étage 0",
@@ -2669,13 +3824,13 @@ class MapWState extends State<GMap> {
                       timeDetail: "Ouvert",
                       entityPosition: LatLng(14.699631409539332, -17.451135143637657),
                       photos: [
-                        "assets/images/salle_de_classe_esmt.jpg",
+                        "assets/images/salle_ha8.jpeg",
                         "assets/images/place_placeholder.png",
                         "assets/images/esmt_3.png"
                       ],
                       about: "Salle de classe pour divers cours.",
                       isOpen: true,
-                      entityName: "Salle HB8",
+                      entityName: "Salle HA8",
                     )
                 ));
                 break;
@@ -2683,6 +3838,7 @@ class MapWState extends State<GMap> {
               case "salle HB1":
                 context.read<MapBloc>().add(SetSelectedMapEntity(
                     Classroom(
+                      hasDetails: false,
                       placeType: "Salle de classe",
                       placeName: "Salle HB1",
                       shortDescription: "Salle de classe HB1 pour les cours divers.",
@@ -2692,7 +3848,7 @@ class MapWState extends State<GMap> {
                       timeDetail: "Ouvert",
                       entityPosition: LatLng(14.7000585152944, -17.451403364539146),
                       photos: [
-                        "assets/images/salle_de_classe_esmt.jpg",
+                        "assets/images/salle_hb1.jpeg",
                         "assets/images/place_placeholder.png",
                         "assets/images/esmt_3.png"
                       ],
@@ -2706,6 +3862,7 @@ class MapWState extends State<GMap> {
               case "salle mystère admin":
                 context.read<MapBloc>().add(SetSelectedMapEntity(
                     Classroom(
+                      hasDetails: false,
                       placeType: "Salle mystère",
                       placeName: "Salle mystère admin",
                       shortDescription: "Salle mystère pour l'administration.",
@@ -2715,7 +3872,7 @@ class MapWState extends State<GMap> {
                       timeDetail: "Accès réservé",
                       entityPosition: LatLng(14.699995600755758, -17.451235055923462),
                       photos: [
-                        "assets/images/salle_admin.jpg",
+                        "assets/images/salle_admin_mystere_resto.jpeg",
                         "assets/images/place_placeholder.png",
                         "assets/images/esmt_3.png"
                       ],
@@ -2729,6 +3886,8 @@ class MapWState extends State<GMap> {
               case "salle HB9 - Cyber":
                 context.read<MapBloc>().add(SetSelectedMapEntity(
                     Classroom(
+                      hasDetails: false,
+                      
                       placeType: "Salle de classe",
                       placeName: "Salle Cyber - HB9",
                       shortDescription: "Salle HB9 dédiée aux cours de cyber.",
@@ -2738,7 +3897,7 @@ class MapWState extends State<GMap> {
                       timeDetail: "Ouvert",
                       entityPosition: LatLng(14.699784804489017, -17.451064065098763),
                       photos: [
-                        "assets/images/salle_de_classe_esmt.jpg",
+                        "assets/images/salle_cyber.jpeg",
                         "assets/images/place_placeholder.png",
                         "assets/images/esmt_3.png"
                       ],
@@ -2752,20 +3911,21 @@ class MapWState extends State<GMap> {
               case "Salle HA3":
                 context.read<MapBloc>().add(SetSelectedMapEntity(
                     Classroom(
+                      hasDetails: false,
                       placeType: "Salle de classe",
                       placeName: "Salle HA3",
-                      shortDescription: "Salle de classe situé au bâtiment H occupé par la classe HA3",
+                      shortDescription: "Salle de classe situé au bâtiment H occupé par la classe LMEN3",
                       rating: "4.2",
                       floor: "Étage 0",
                       building: "Bâtiment H",
                       timeDetail: "Ouvert",
                       entityPosition: LatLng(14.6996, -17.45112),
                       photos: [
-                        "assets/images/salle_de_classe_esmt.jpg",
+                        "assets/images/salle_ha3.jpeg",
                         "assets/images/place_placeholder.png",
                         "assets/images/esmt_3.png"
                       ],
-                      about: "Salle de classe situé au bâtiment H occupé par la classe HA3",
+                      about: "Salle de classe situé au bâtiment H occupé par la classe LMEN3",
                       isOpen: true,
                       entityName: "Salle HA3",
                     )
@@ -2775,20 +3935,21 @@ class MapWState extends State<GMap> {
               case "Salle HA5":
                 context.read<MapBloc>().add(SetSelectedMapEntity(
                     Classroom(
+                      hasDetails: false,
                       placeType: "Salle de classe",
                       placeName: "Salle HA5",
-                      shortDescription: "Salle de classe situé au bâtiment H occupé par la classe HA5",
+                      shortDescription: "Salle de classe situé au bâtiment H occupé par la classe INGC3",
                       rating: "4.4",
                       floor: "Étage 0",
                       building: "Bâtiment H",
                       timeDetail: "Ouvert",
                       entityPosition: LatLng(14.69956, -17.45125),
                       photos: [
-                        "assets/images/salle_de_classe_esmt.jpg",
+                        "assets/images/salle_ha5.jpeg",
                         "assets/images/place_placeholder.png",
                         "assets/images/esmt_3.png"
                       ],
-                      about: "Salle de classe situé au bâtiment H occupé par la classe HA5",
+                      about: "Salle de classe situé au bâtiment H occupé par la classe INGC3",
                       isOpen: true,
                       entityName: "Salle HA5",
                     )
@@ -2798,22 +3959,23 @@ class MapWState extends State<GMap> {
               case "Salle HA6":
                 context.read<MapBloc>().add(SetSelectedMapEntity(
                       Classroom(
+                      hasDetails: false,
                         placeType: "Salle de classe",
                         placeName: "Salle HA6",
                         shortDescription:
-                            "Salle de classe située au bâtiment H occupée par la classe HA6",
+                            "Salle de classe située au bâtiment H occupée par la classe MTM2",
                         rating: "4.2",
                         floor: "Étage 0",
                         building: 'Bâtiment H',
                         timeDetail: 'Ouvert',
                         entityPosition: position,
                         photos: [
-                          "assets/images/salle_de_classe_esmt.jpg",
+                          "assets/images/salle_ha6.jpeg",
                           "assets/images/place_placeholder.png",
                           "assets/images/esmt_3.png"
                         ],
                         about:
-                            "Salle de classe située au bâtiment H occupée par la classe HA6",
+                            "Salle de classe située au bâtiment H occupée par la classe MTM2",
                         isOpen: true,
                         entityName: 'Salle HA6',
                       ),
@@ -2823,33 +3985,35 @@ class MapWState extends State<GMap> {
               case "Salle HA4":
                 context.read<MapBloc>().add(SetSelectedMapEntity(
                       Classroom(
+                      hasDetails: false,
                         placeType: "Salle de classe",
                         placeName: "Salle HA4",
                         shortDescription:
-                            "Salle de classe située au bâtiment H occupée par la classe HA4",
+                            "Salle de classe située au bâtiment H occupée par la classe LMEN3",
                         rating: "4.1",
                         floor: "Étage 0",
                         building: 'Bâtiment H',
                         timeDetail: 'Ouvert',
                         entityPosition: position,
                         photos: [
-                          "assets/images/salle_de_classe_esmt.jpg",
+                          "assets/images/salle_ha4.jpeg",
                           "assets/images/place_placeholder.png",
                           "assets/images/esmt_3.png"
                         ],
                         about:
-                            "Salle de classe située au bâtiment H occupée par la classe HA4",
+                            "Salle de classe située au bâtiment H occupée par la classe LMEN3",
                         isOpen: true,
                         entityName: 'Salle HA4',
                       ),
                     ));
                 break;
 
-              case "Salle HA?":
+              case "Bureau HA1":
                 context.read<MapBloc>().add(SetSelectedMapEntity(
                       Classroom(
-                        placeType: "Salle de classe",
-                        placeName: "Salle HA?",
+                      hasDetails: false,
+                        placeType: "Bureau",
+                        placeName: "Bureau HA1",
                         shortDescription:
                             "Salle de classe située au bâtiment H, classe non spécifiée",
                         rating: "3.8",
@@ -2858,14 +4022,14 @@ class MapWState extends State<GMap> {
                         timeDetail: 'Ouvert',
                         entityPosition: position,
                         photos: [
-                          "assets/images/salle_de_classe_esmt.jpg",
+                          "assets/images/bureau_ha1.jpeg",
                           "assets/images/place_placeholder.png",
                           "assets/images/esmt_3.png"
                         ],
                         about:
                             "Salle de classe située au bâtiment H, classe non spécifiée",
                         isOpen: true,
-                        entityName: 'Salle HA?',
+                        entityName: 'Bureau HA1',
                       ),
                     ));
                 break;
@@ -2873,6 +4037,7 @@ class MapWState extends State<GMap> {
               case "Salle MP-SSI2":
                 context.read<MapBloc>().add(SetSelectedMapEntity(
                       Classroom(
+                      hasDetails: false,
                         placeType: "Salle de classe",
                         placeName: "Salle MP-SSI2",
                         shortDescription:
@@ -2883,7 +4048,7 @@ class MapWState extends State<GMap> {
                         timeDetail: 'Ouvert',
                         entityPosition: position,
                         photos: [
-                          "assets/images/salle_de_classe_esmt.jpg",
+                          "assets/images/salle_mpssi2.jpeg",
                           "assets/images/place_placeholder.png",
                           "assets/images/esmt_3.png"
                         ],
@@ -2898,6 +4063,7 @@ class MapWState extends State<GMap> {
               case "Salle MP-ISI2":
                 context.read<MapBloc>().add(SetSelectedMapEntity(
                       Classroom(
+                      hasDetails: false,
                         placeType: "Salle de classe",
                         placeName: "Salle MP-ISI2",
                         shortDescription:
@@ -2908,7 +4074,7 @@ class MapWState extends State<GMap> {
                         timeDetail: 'Ouvert',
                         entityPosition: position,
                         photos: [
-                          "assets/images/salle_de_classe_esmt.jpg",
+                          "assets/images/salle_mpisi2.jpeg",
                           "assets/images/place_placeholder.png",
                           "assets/images/esmt_3.png"
                         ],
@@ -2923,6 +4089,7 @@ class MapWState extends State<GMap> {
               case "Salle mystère":
                 context.read<MapBloc>().add(SetSelectedMapEntity(
                       Classroom(
+                      hasDetails: false,
                         placeType: "Salle de classe",
                         placeName: "Salle mystère",
                         shortDescription:
@@ -2933,7 +4100,7 @@ class MapWState extends State<GMap> {
                         timeDetail: 'Ouvert',
                         entityPosition: position,
                         photos: [
-                          "assets/images/salle_de_classe_esmt.jpg",
+                          "assets/images/salle_mystere_h1.jpeg",
                           "assets/images/place_placeholder.png",
                           "assets/images/esmt_3.png"
                         ],
@@ -2948,17 +4115,17 @@ class MapWState extends State<GMap> {
               case "Salle mystère 2":
                 context.read<MapBloc>().add(SetSelectedMapEntity(
                       Classroom(
+                      hasDetails: false,
                         placeType: "Salle de classe",
                         placeName: "Salle mystère 2",
-                        shortDescription:
-                            "Salle de classe située au bâtiment H, nom de la classe inconnu",
+                        shortDescription: "Salle de classe située au bâtiment H, nom de la classe inconnu",
                         rating: "3.9",
                         floor: "Étage 0",
                         building: 'Bâtiment H',
                         timeDetail: 'Ouvert',
                         entityPosition: position,
                         photos: [
-                          "assets/images/salle_de_classe_esmt.jpg",
+                          "assets/images/salle_finance_digit.jpeg",
                           "assets/images/place_placeholder.png",
                           "assets/images/esmt_3.png"
                         ],
@@ -2968,6 +4135,32 @@ class MapWState extends State<GMap> {
                         entityName: 'Salle mystère 2',
                       ),
                     ));
+                break;
+
+              case "Bureau service technique":
+                context.read<MapBloc>().add(SetSelectedMapEntity(
+                  Classroom(
+                      hasDetails: false,
+                    placeType: "Salle de classe",
+                    placeName: "Bureau service technique",
+                    shortDescription:
+                    "Bureau service technique situé au batiment H",
+                    rating: "3.7",
+                    floor: "Étage 0",
+                    building: 'Bâtiment H',
+                    timeDetail: 'Ouvert',
+                    entityPosition: position,
+                    photos: [
+                      "assets/images/bureau_service_technique.jpeg",
+                      "assets/images/place_placeholder.png",
+                      "assets/images/esmt_3.png"
+                    ],
+                    about:
+                    "Salle de classe située au bâtiment H, nom de la classe inconnu",
+                    isOpen: true,
+                    entityName: 'Salle mystère',
+                  ),
+                ));
                 break;
 
               default:
@@ -3079,15 +4272,15 @@ class MapWState extends State<GMap> {
         "rotation": -20.0,
       },
       {
-        "markerId": "Salle de classe mystère (a côté HB6) HB7",
+        "markerId": "Salle de classe mystère (a côté HB6) HA7",
         "position": LatLng(14.699569792087336, -17.451251484453678),
-        "title": "Salle HB7",
+        "title": "Salle HA7",
         "rotation": -20.0,
       },
       {
-        "markerId": "salle HB8?",
+        "markerId": "salle HA8?",
         "position": LatLng(14.699631409539332, -17.451135143637657),
-        "title": "Salle HB8",
+        "title": "Salle HA8",
         "rotation": 73.0,
       },
       {
@@ -3139,6 +4332,7 @@ class MapWState extends State<GMap> {
         onTap: () {
           context.read<MapBloc>().add(SetSelectedMapEntity(
             Restroom(
+                      hasDetails: false,
               occupancyLevel: "Faible",
               urinalsAvailable: "Oui",
               cleanlinessLevel: "Très propre",
@@ -3156,7 +4350,7 @@ class MapWState extends State<GMap> {
               "Ces toilettes mixtes sont bien entretenues et offrent un accès universel. Elles se situent au rez de chaussée du bâtiment E, toujours prêtes à l'emploi.",
               isOpen: true,
               photos: [
-                "assets/images/school_toilets.jpg",
+                "assets/images/toilettes_e17.jpeg",
                 "assets/images/place_placeholder.png",
                 "assets/images/esmt_3.png"
               ],
@@ -3174,6 +4368,7 @@ class MapWState extends State<GMap> {
         onTap: () {
           context.read<MapBloc>().add(SetSelectedMapEntity(
             Restroom(
+                      hasDetails: false,
               occupancyLevel: "Faible",
               urinalsAvailable: "Oui",
               cleanlinessLevel: "Très propre",
@@ -3191,7 +4386,7 @@ class MapWState extends State<GMap> {
               "Ces toilettes mixtes sont bien entretenues et offrent un accès universel. Elles se situent au rez de chaussée du bâtiment E, toujours prêtes à l'emploi.",
               isOpen: true,
               photos: [
-                "assets/images/school_toilets.jpg",
+                "assets/images/toilettes_e11.jpeg",
                 "assets/images/place_placeholder.png",
                 "assets/images/esmt_3.png"
               ],
@@ -3214,6 +4409,7 @@ class MapWState extends State<GMap> {
         onTap: () {
           context.read<MapBloc>().add(SetSelectedMapEntity(
                 Restroom(
+                      hasDetails: false,
                   occupancyLevel: "Faible",
                   urinalsAvailable: "Oui",
                   cleanlinessLevel: "Très propre",
@@ -3231,7 +4427,7 @@ class MapWState extends State<GMap> {
                       "Ces toilettes mixtes sont bien entretenues et offrent un accès universel. Elles se situent au rez-de-chaussée du bâtiment G, toujours prêtes à l'emploi.",
                   isOpen: true,
                   photos: [
-                    "assets/images/school_toilets.jpg",
+                    "assets/images/toilettes_7_homme.jpeg",
                     "assets/images/place_placeholder.png",
                     "assets/images/esmt_3.png"
                   ],
@@ -3249,6 +4445,7 @@ class MapWState extends State<GMap> {
         onTap: () {
           context.read<MapBloc>().add(SetSelectedMapEntity(
                 Restroom(
+                      hasDetails: false,
                   occupancyLevel: "Faible",
                   urinalsAvailable: "Oui",
                   cleanlinessLevel: "Très propre",
@@ -3266,7 +4463,7 @@ class MapWState extends State<GMap> {
                       "Ces toilettes mixtes sont bien entretenues et offrent un accès universel. Elles se situent au rez-de-chaussée du bâtiment G, toujours prêtes à l'emploi.",
                   isOpen: true,
                   photos: [
-                    "assets/images/school_toilets.jpg",
+                    "assets/images/toilettes_7_bat_h.jpeg",
                     "assets/images/place_placeholder.png",
                     "assets/images/esmt_3.png"
                   ],
@@ -3284,6 +4481,7 @@ class MapWState extends State<GMap> {
         onTap: () {
           context.read<MapBloc>().add(SetSelectedMapEntity(
                 Restroom(
+                      hasDetails: false,
                   occupancyLevel: "Faible",
                   urinalsAvailable: "Oui",
                   cleanlinessLevel: "Très propre",
@@ -3319,6 +4517,7 @@ class MapWState extends State<GMap> {
         onTap: () {
           context.read<MapBloc>().add(SetSelectedMapEntity(
                 Restroom(
+                      hasDetails: false,
                   occupancyLevel: "Faible",
                   urinalsAvailable: "Oui",
                   cleanlinessLevel: "Très propre",
@@ -3335,7 +4534,7 @@ class MapWState extends State<GMap> {
                       "Ces toilettes femme sont bien entretenues et offrent un accès universel. Elles se situent au rez-de-chaussée du bâtiment G, toujours prêtes à l'emploi.",
                   isOpen: true,
                   photos: [
-                    "assets/images/school_toilets.jpg",
+                    "assets/images/toilettes_5_bat_h.jpeg",
                     "assets/images/place_placeholder.png",
                     "assets/images/esmt_3.png"
                   ],
@@ -3353,6 +4552,7 @@ class MapWState extends State<GMap> {
         onTap: () {
           context.read<MapBloc>().add(SetSelectedMapEntity(
                 Restroom(
+                      hasDetails: false,
                   occupancyLevel: "Faible",
                   urinalsAvailable: "Oui",
                   cleanlinessLevel: "Très propre",
@@ -3370,7 +4570,7 @@ class MapWState extends State<GMap> {
                       "Ces toilettes homme sont bien entretenues et offrent un accès universel. Elles se situent au rez-de-chaussée du bâtiment G, toujours prêtes à l'emploi.",
                   isOpen: true,
                   photos: [
-                    "assets/images/school_toilets.jpg",
+                    "assets/images/toilettes_7_homme.jpeg",
                     "assets/images/place_placeholder.png",
                     "assets/images/esmt_3.png"
                   ],
@@ -3388,6 +4588,7 @@ class MapWState extends State<GMap> {
         onTap: () {
           context.read<MapBloc>().add(SetSelectedMapEntity(
                 Restroom(
+                      hasDetails: false,
                   occupancyLevel: "Faible",
                   urinalsAvailable: "Oui",
                   cleanlinessLevel: "Très propre",
@@ -3405,7 +4606,7 @@ class MapWState extends State<GMap> {
                       "Ces toilettes mixtes sont bien entretenues et offrent un accès universel. Elles se situent au rez-de-chaussée du bâtiment G, toujours prêtes à l'emploi.",
                   isOpen: true,
                   photos: [
-                    "assets/images/school_toilets.jpg",
+                    "assets/images/toilettes_7_bat_h.jpeg",
                     "assets/images/place_placeholder.png",
                     "assets/images/esmt_3.png"
                   ],
@@ -3423,6 +4624,7 @@ class MapWState extends State<GMap> {
         onTap: () {
           context.read<MapBloc>().add(SetSelectedMapEntity(
                 Restroom(
+                      hasDetails: false,
                   occupancyLevel: "Faible",
                   urinalsAvailable: "Oui",
                   cleanlinessLevel: "Très propre",
@@ -3458,24 +4660,25 @@ class MapWState extends State<GMap> {
         onTap: () {
           context.read<MapBloc>().add(SetSelectedMapEntity(
                 Restroom(
+                      hasDetails: false,
                   occupancyLevel: "Faible",
                   urinalsAvailable: "Oui",
                   cleanlinessLevel: "Très propre",
-                  placeName: "Toilettes 4 (FEMME)",
+                  placeName: "Toilettes 4 (H/F)",
                   shortDescription:
-                      "Sanitaires modernes, accessibles aux femmes. Ces toilettes femme sont bien entretenues et offrent un accès universel.",
+                      "Sanitaires modernes, accessibles aux femmes et hommes. Ces toilettes sont bien entretenues et offrent un accès universel.",
                   entityPosition:
                       LatLng(14.699616167329145, -17.451066747307777),
-                  entityName: "Toilettes femme)",
+                  entityName: "Toilettes mixte)",
                   rating: "4.5/5",
                   floor: "Étage 0",
                   building: "Bat H",
                   timeDetail: "Ouvert H24",
                   about:
-                      "Ces toilettes femme sont bien entretenues et offrent un accès universel. Elles se situent au rez-de-chaussée du bâtiment G, toujours prêtes à l'emploi.",
+                      "Ces toilettes sont bien entretenues et offrent un accès universel. Elles se situent au rez-de-chaussée du bâtiment H, toujours prêtes à l'emploi.",
                   isOpen: true,
                   photos: [
-                    "assets/images/school_toilets.jpg",
+                    "assets/images/toilettes_4_bat_h.jpeg",
                     "assets/images/place_placeholder.png",
                     "assets/images/esmt_3.png"
                   ],
@@ -3508,6 +4711,7 @@ class MapWState extends State<GMap> {
         onTap: () {
           context.read<MapBloc>().add(SetSelectedMapEntity(
             Restroom(
+                      hasDetails: false,
               occupancyLevel: "Faible",
               urinalsAvailable: "Oui",
               cleanlinessLevel: "Très propre",
@@ -3545,6 +4749,7 @@ class MapWState extends State<GMap> {
         onTap: () {
           context.read<MapBloc>().add(SetSelectedMapEntity(
                 Restroom(
+                      hasDetails: false,
                   occupancyLevel: "Faible", // Peut être ajusté
                   urinalsAvailable: "Oui", // Peut être ajusté
                   cleanlinessLevel: "Bonne", // Peut être ajusté
@@ -3562,7 +4767,7 @@ class MapWState extends State<GMap> {
                       "Ces toilettes mixtes sont bien entretenues et offrent un accès universel. Elles se situent au rez-de-chaussée du bâtiment G, toujours prêtes à l'emploi.",
                   isOpen: true,
                   photos: [
-                    "assets/images/school_toilets.jpg",
+                    "assets/images/toilettes1_2f_bat_h.jpeg",
                     "assets/images/place_placeholder.png",
                     "assets/images/esmt_3.png"
                   ],
@@ -3580,6 +4785,7 @@ class MapWState extends State<GMap> {
         onTap: () {
           context.read<MapBloc>().add(SetSelectedMapEntity(
                 Restroom(
+                      hasDetails: false,
                   occupancyLevel: "Modéré",
                   urinalsAvailable: "Non",
                   cleanlinessLevel: "Propre",
@@ -3595,7 +4801,7 @@ class MapWState extends State<GMap> {
                   timeDetail: "Ouvert H24",
                   about:
                       "Ces toilettes féminines sont bien entretenues et offrent un accès universel. Elles se situent au rez-de-chaussée du bâtiment G, toujours prêtes à l'emploi.",
-                  isOpen: true,
+                  isOpen: false,
                   photos: [
                     "assets/images/school_toilets.jpg",
                     "assets/images/place_placeholder.png",
@@ -3615,6 +4821,7 @@ class MapWState extends State<GMap> {
         onTap: () {
           context.read<MapBloc>().add(SetSelectedMapEntity(
                 Restroom(
+                      hasDetails: false,
                   occupancyLevel: "Faible",
                   urinalsAvailable: "Oui",
                   cleanlinessLevel: "Très propre",
@@ -3630,7 +4837,7 @@ class MapWState extends State<GMap> {
                   timeDetail: "Ouvert H24",
                   about:
                       "Ces toilettes masculines sont bien entretenues et offrent un accès universel. Elles se situent au rez-de-chaussée du bâtiment G, toujours prêtes à l'emploi.",
-                  isOpen: true,
+                  isOpen: false,
                   photos: [
                     "assets/images/school_toilets.jpg",
                     "assets/images/place_placeholder.png",
@@ -3650,6 +4857,7 @@ class MapWState extends State<GMap> {
         onTap: () {
           context.read<MapBloc>().add(SetSelectedMapEntity(
                 Restroom(
+                      hasDetails: false,
                   occupancyLevel: "Élevé",
                   urinalsAvailable: "Oui",
                   cleanlinessLevel: "Correct",
@@ -3685,6 +4893,7 @@ class MapWState extends State<GMap> {
         onTap: () {
           context.read<MapBloc>().add(SetSelectedMapEntity(
                 Restroom(
+                      hasDetails: false,
                   occupancyLevel: "Indisponible",
                   urinalsAvailable: "Non",
                   cleanlinessLevel: "Inconnu",
@@ -3732,7 +4941,7 @@ class MapWState extends State<GMap> {
           ScaffoldMessenger.of(context).showSnackBar(
             buildCustomSnackBar(
               context,
-              "Ce lieu sera disponible prochainement 😉",
+              "Tu peux venir prier ici 🫡",
               SnackBarType.info,
               showCloseIcon: false,
             ),
@@ -3749,14 +4958,29 @@ class MapWState extends State<GMap> {
         position: LatLng(14.69949649972709, -17.45146505534649),
         icon: icons["salle_reprographie.png"]!,
         onTap: () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            buildCustomSnackBar(
-              context,
-              "Ce lieu sera disponible prochainement 😉",
-              SnackBarType.info,
-              showCloseIcon: false,
-            ),
-          );
+
+          context.read<MapBloc>().add(SetSelectedMapEntity(
+              Classroom(
+                hasDetails: false,
+                placeType: "Salle de classe",
+                placeName: "Reprographie",
+                shortDescription: "Reprographie de l'ESMT : Pour toutes vos impressions et photocopies veuillez...",
+                rating: "4.5",
+                floor: "Étage 0",
+                building: "Bâtiment H",
+                timeDetail: "Ouvert",
+                entityPosition: LatLng(14.69949649972709, -17.45146505534649),
+                photos: [
+                  "assets/images/reprographie_esmt.jpeg",
+                  "assets/images/place_placeholder.png",
+                  "assets/images/esmt_3.png"
+                ],
+                about: "Salle de classe situé au bâtiment H occupé par la classe HA1",
+                isOpen: true,
+                entityName: "Salle HA1",
+              )
+          ));
+
           // add(SetSelectedMapEntity(event.newMapEntity));
         },
       ),
@@ -3767,15 +4991,27 @@ class MapWState extends State<GMap> {
         position: LatLng(14.699460177840324, -17.451517023146152),
         icon: icons["salle_amicale.png"]!,
         onTap: () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            buildCustomSnackBar(
-              context,
-              "La salle amicale sera disponible prochainement 😉",
-              SnackBarType.info,
-              showCloseIcon: false,
-            ),
-          );
-          // add(SetSelectedMapEntity(event.newMapEntity));
+          context.read<MapBloc>().add(SetSelectedMapEntity(
+              Classroom(
+                hasDetails: false,
+                placeType: "Bureau amicale",
+                placeName: "Bureau amicale",
+                shortDescription: "Bureau de l'amicale",
+                rating: "4.5",
+                floor: "Étage 0",
+                building: "Bâtiment H",
+                timeDetail: "Ouvert",
+                entityPosition: LatLng(14.699460177840324, -17.451517023146152),
+                photos: [
+                  "assets/images/bureau_amicale.jpeg",
+                  "assets/images/place_placeholder.png",
+                  "assets/images/esmt_3.png"
+                ],
+                about: "Salle de classe situé au bâtiment H occupé par la classe HA1",
+                isOpen: true,
+                entityName: "Salle HA1",
+              )
+          ));
         },
       ),
 
@@ -3785,14 +5021,26 @@ class MapWState extends State<GMap> {
         position: LatLng(14.700041327303694, -17.451469749212265),
         icon: icons["labo.png"]!,
         onTap: () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            buildCustomSnackBar(
-              context,
-              "Ce lieu sera disponible prochainement 😉",
-              SnackBarType.info,
-              showCloseIcon: false,
-            ),
-          );
+          context.read<MapBloc>().add(const SetSelectedMapEntity(MainPlace(
+              photos: [
+                "assets/images/labo_telecom_bath_1.jpeg",
+                "assets/images/place_placeholder.png",
+                "assets/images/esmt_2.png",
+                "assets/images/esmt_3.png"
+              ],
+              placeType: "Laboratoire",
+              placeName: "Laboratoire Télécom",
+              entityPosition: LatLng(14.700041327303694, -17.451469749212265),
+              entityName: "Labo1-HE0",
+              shortDescription:
+              'dédié à la pratique des technologies telecom avec des équipements Cisco.',
+              floor: "Étage 0",
+              rating: '4.7/5',
+              building: 'Bat H',
+              timeDetail: 'Ferme à 14h',
+              about: 'Test',
+              isOpen: true, hasDetails: false)));
+
           // add(SetSelectedMapEntity(event.newMapEntity));
         },
       ),
@@ -3803,14 +5051,26 @@ class MapWState extends State<GMap> {
         position: LatLng(14.700004681205748, -17.45160486549139),
         icon: icons["labo.png"]!,
         onTap: () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            buildCustomSnackBar(
-              context,
-              "Ce lieu sera disponible prochainement 😉",
-              SnackBarType.info,
-              showCloseIcon: false,
-            ),
-          );
+          context.read<MapBloc>().add(const SetSelectedMapEntity(MainPlace(
+              photos: [
+                "assets/images/labo_1.jpeg",
+                "assets/images/place_placeholder.png",
+                "assets/images/esmt_2.png",
+                "assets/images/esmt_3.png"
+              ],
+              placeType: "Laboratoire",
+              placeName: "Laboratoire Télécom",
+              entityPosition:
+              LatLng(14.700004681205748, -17.45160486549139),
+              entityName: "Labo1-HE0",
+              shortDescription:
+              'dédié à la pratique des technologies telecom avec des équipements Cisco.',
+              floor: "Étage 0",
+              rating: '4.7/5',
+              building: 'Bat H',
+              timeDetail: 'Ferme à 14h',
+              about: 'Test',
+              isOpen: true, hasDetails: false)));
           // add(SetSelectedMapEntity(event.newMapEntity));
         },
       ),
@@ -3824,6 +5084,7 @@ class MapWState extends State<GMap> {
           debugPrint("Tapped on labo 1");
           context.read<MapBloc>().add(const SetSelectedMapEntity(MainPlace(
                   photos: [
+                    "assets/images/labo_cisco.jpeg",
                     "assets/images/labo_1.jpeg",
                     "assets/images/place_placeholder.png",
                     "assets/images/esmt_2.png",
@@ -3841,7 +5102,7 @@ class MapWState extends State<GMap> {
                   building: 'Bat H',
                   timeDetail: 'Ferme à 14h',
                   about: 'Test',
-                  isOpen: true)));
+                  isOpen: true, hasDetails: true)));
           // add(SetSelectedMapEntity(event.newMapEntity));
         },
       ),
@@ -3893,7 +5154,7 @@ class MapWState extends State<GMap> {
           ScaffoldMessenger.of(context).showSnackBar(
             buildCustomSnackBar(
               context,
-              "Ce lieu sera disponible prochainement 😉",
+              "Ce lieu sera disponible prochainement 3 😉",
               SnackBarType.info,
               showCloseIcon: false,
             ),
@@ -3911,7 +5172,7 @@ class MapWState extends State<GMap> {
           ScaffoldMessenger.of(context).showSnackBar(
             buildCustomSnackBar(
               context,
-              "Ce lieu sera disponible prochainement 😉",
+              "Ce lieu sera disponible prochainement 4 😉",
               SnackBarType.info,
               showCloseIcon: false,
             ),
@@ -3929,7 +5190,7 @@ class MapWState extends State<GMap> {
           ScaffoldMessenger.of(context).showSnackBar(
             buildCustomSnackBar(
               context,
-              "Ce lieu sera disponible prochainement 😉",
+              "Ce lieu sera disponible prochainement 5 😉",
               SnackBarType.info,
               showCloseIcon: false,
             ),
@@ -3947,7 +5208,7 @@ class MapWState extends State<GMap> {
           ScaffoldMessenger.of(context).showSnackBar(
             buildCustomSnackBar(
               context,
-              "Ce lieu sera disponible prochainement 😉",
+              "Ce lieu sera disponible prochainement 6 😉",
               SnackBarType.info,
               showCloseIcon: false,
             ),
@@ -3955,17 +5216,16 @@ class MapWState extends State<GMap> {
           // add(SetSelectedMapEntity(event.newMapEntity));
         },
       ),
-
       Marker(
         markerId: const MarkerId("Labo 8 BATE E11"),
         anchor: const Offset(0.5, 0.5),
-        position: LatLng(14.700130185958107, -17.450766675174236),
+        position: LatLng(14.700126294338954, -17.450763322412968),
         icon: icons["labo.png"]!,
         onTap: () {
           ScaffoldMessenger.of(context).showSnackBar(
             buildCustomSnackBar(
               context,
-              "Ce lieu sera disponible prochainement 😉",
+              "Ce lieu sera disponible prochainement 7 😉",
               SnackBarType.info,
               showCloseIcon: false,
             ),
@@ -3994,7 +5254,7 @@ class MapWState extends State<GMap> {
           ScaffoldMessenger.of(context).showSnackBar(
             buildCustomSnackBar(
               context,
-              "Ce lieu sera disponible prochainement 😉",
+              "Tu peux venir prier ici 😉",
               SnackBarType.info,
               showCloseIcon: false,
             ),
@@ -4012,7 +5272,7 @@ class MapWState extends State<GMap> {
           ScaffoldMessenger.of(context).showSnackBar(
             buildCustomSnackBar(
               context,
-              "Ce lieu sera disponible prochainement 😉",
+              "Tu peux venir prier ici 😉",
               SnackBarType.info,
               showCloseIcon: false,
             ),
@@ -4135,7 +5395,7 @@ class MapWState extends State<GMap> {
       //     ScaffoldMessenger.of(context).showSnackBar(
       //       buildCustomSnackBar(
       //         context,
-      //         "Ce lieu sera disponible prochainement 😉",
+      //
       //         SnackBarType.info,
       //         showCloseIcon: false,
       //       ),
@@ -4215,6 +5475,116 @@ class MapWState extends State<GMap> {
           // polylines: mapState.polylinesSet,
           polylines: {
 
+            // Escaliers 1 (Bat A) :
+
+            Polyline(
+              polylineId: PolylineId('Ligne 1 Escalier 1 Bat A'),
+              points: [
+                LatLng(14.7001297, -17.4509429),
+                LatLng(14.70014, -17.4509124),
+              ],
+              color: const Color(0XFFDCDCDE),
+              width: 2,
+            ),
+            Polyline(
+              polylineId: PolylineId('Ligne 3 Escalier 1 Bat A'),
+              points: [
+                LatLng(14.700124, -17.4509415),
+                LatLng(14.7001344, -17.450911),
+              ],
+              color: const Color(0XFFDCDCDE),
+              width: 2,
+            ),
+            Polyline(
+              polylineId: PolylineId('Ligne 4 Escalier 1 Bat A'),
+              points: [
+                LatLng(14.7001292, -17.45091),
+                LatLng(14.7001185, -17.4509388),
+              ],
+              color: const Color(0XFFDCDCDE),
+              width: 2,
+            ),
+            Polyline(
+              polylineId: PolylineId('Ligne 5 Escalier 1 Bat A'),
+              points: [
+                LatLng(14.7001136, -17.4509365),
+                LatLng(14.7001243, -17.4509073),
+              ],
+              color: const Color(0XFFDCDCDE),
+              width: 2,
+            ),
+            Polyline(
+              polylineId: PolylineId('Ligne 6 Escalier 1 Bat A'),
+              points: [
+                LatLng(14.7001085, -17.4509356),
+                LatLng(14.7001192, -17.4509061),
+              ],
+              color: const Color(0XFFDCDCDE),
+              width: 2,
+            ),
+            Polyline(
+              polylineId: PolylineId('Ligne 7 Escalier 1 Bat A'),
+              points: [
+                LatLng(14.7001396, -17.4509306),
+                LatLng(14.7001101, -17.4509195),
+              ],
+              color: const Color(0XFFDCDCDE),
+              width: 2,
+            ),
+            Polyline(
+              polylineId: PolylineId('Ligne 2 Escalier 2 Bat A'),
+              points: [
+                LatLng(14.7000895, -17.4510602),
+                LatLng(14.700095, -17.4510461),
+              ],
+              color: const Color(0XFFDCDCDE),
+              width: 2,
+            ),
+            Polyline(
+              polylineId: PolylineId('Ligne 3 Escalier 2 Bat A'),
+              points: [
+                LatLng(14.7000788, -17.4510729),
+                LatLng(14.7000896, -17.4510438),
+              ],
+              color: const Color(0XFFDCDCDE),
+              width: 2,
+            ),
+            Polyline(
+              polylineId: PolylineId('Ligne 4 Escalier 2 Bat A'),
+              points: [
+                LatLng(14.7000745, -17.4510698),
+                LatLng(14.7000842, -17.451042),
+              ],
+              color: const Color(0XFFDCDCDE),
+              width: 2,
+            ),
+            Polyline(
+              polylineId: PolylineId('Ligne 5 Escalier 2 Bat A'),
+              points: [
+                LatLng(14.7000693, -17.4510681),
+                LatLng(14.7000793, -17.4510397),
+              ],
+              color: const Color(0XFFDCDCDE),
+              width: 2,
+            ),
+            Polyline(
+              polylineId: PolylineId('Ligne 6 Escalier 2 Bat A'),
+              points: [
+                LatLng(14.7000644, -17.4510654),
+                LatLng(14.7000744, -17.4510383),
+              ],
+              color: const Color(0XFFDCDCDE),
+              width: 2,
+            ),
+            Polyline(
+              polylineId: PolylineId('Ligne 7 Escalier 2 Bat A'),
+              points: [
+                LatLng(14.700093864176718, -17.451062723994255),
+                LatLng(14.700063379819838, -17.45104931294918)
+              ],
+              color: const Color(0XFFDCDCDE),
+              width: 2,
+            ),
 
             // Escaliers 9 : Ligne 2
             Polyline(
@@ -5378,7 +6748,23 @@ class MapWState extends State<GMap> {
               if (zoomLevel > 20.5) ..._levelOneMarkers2,
               if (zoomLevel > 19) ..._levelTwoMarkers2,
               if (zoomLevel > 18.5) ..._levelThreeMarkers,
-            }
+            },
+            // .. giftsMarkers (no levels yet)
+            ...mapState.gifts.map((gift) {
+              return Marker(
+                markerId: MarkerId(gift.giftId),
+                anchor: const Offset(0.5, 0.5),
+                position: LatLng(gift.lat, gift.lng),
+                icon: _getIconForEvent(gift.event, icons),
+                onTap: () {
+                  context
+                      .read<MapBloc>()
+                      .add(SetSelectedMapEntity(GiftMapEntity(gift: gift, entityName: gift.title, entityPosition: LatLng(gift.lat, gift.lng))));
+                  // add(SetSelectedMapEntity(event.newMapEntity));
+                },
+              );
+            }).toSet()
+
           },
           mapType: MapType.normal,
         );
@@ -5425,7 +6811,7 @@ class MapFloatingButton extends StatelessWidget {
           child: Center(
             child: Image.asset(
               iconUrl,
-              height: 16,
+              height: 22,
               width: 16,
             ),
           ),
@@ -5461,6 +6847,8 @@ class _FloorFloatingButtonState extends State<FloorFloatingButton> {
 
   void updateLocalFloorLevel(int level) {
     // Mettre à jour localement le floorLevel et appeler updateFloorLevel
+    FirebaseEngine.logCustomEvent("update_map_floor_level", {"level":level.toString()});
+
     setState(() {
       localFloorLevel = level;
     });
@@ -5542,12 +6930,13 @@ class BottomSheetExpandableContent extends StatefulWidget {
     Key? key,
     required this.bsKey,
     required this.pagingController,
-    required this.toggleDetailsPage,
+    required this.toggleDetailsPage, required this.toggleGiftsPage,
   }) : super(key: key);
 
   final PagingController<int, SearchHitEntity> pagingController;
   final GlobalKey<ExpandableBottomSheetState> bsKey;
   final Function(MainPlace detailsPage) toggleDetailsPage;
+  final Function() toggleGiftsPage;
   @override
   State<BottomSheetExpandableContent> createState() =>
       _BottomSheetExpandableContentState();
@@ -5654,6 +7043,21 @@ class _BottomSheetExpandableContentState
                       });
                     },
                     animateTo: 0.5);
+              } else if (mapState.selectedEntity is GiftMapEntity) {
+                debugPrint("In gift map entitiy mode");
+                debugPrint("This is height :" + 1.sh.toString());
+                widget.bsKey.currentState!.setMinExpandableHeight(0.5);
+                widget.bsKey.currentState!.setMaxExpandableHeight(
+                    newMax: 0.5,
+                    updateMax: () {
+                      setState(() {
+                        if (isSearchModeEnabled != false) {
+                          isSearchModeEnabled = false;
+                        }
+                        selectedMapEntity = mapState.selectedEntity;
+                      });
+                    },
+                    animateTo: 0.5);
               }
             } else {
               widget.bsKey.currentState!.setMinExpandableHeight(0.06);
@@ -5705,151 +7109,149 @@ class _BottomSheetExpandableContentState
                                 sheetPosition: sheetPosition,
                                 pagingController: widget.pagingController,
                                 onTapSuggestion: (mapEntity, searchHitEntity) {
-                                  if (searchHitEntity != null) {
-                                    if (searchHitEntity.entityType == "place") {
-                                      context
-                                          .read<MapBloc>()
-                                          .add(const SetSelectedMapEntity(Place(
-                                            entityName:
-                                                'Ecole supérieure multinationale des télécommunications (ESMT)',
-                                            placeName:
-                                                'Ecole supérieure multinationale des télécommunications (ESMT)',
-                                            entityPosition: LatLng(
-                                                14.700029517700326,
-                                                -17.451019219831917),
-                                          )));
-                                    } else if (searchHitEntity.entityType ==
-                                        "stop") {
-                                      context.read<MapBloc>().add(
-                                            const SetSelectedMapEntity(
-                                              Stop(
-                                                  entityName:
-                                                      'Arrêt Dardanelles',
-                                                  stopName: 'Arrêt Dardanelles',
-                                                  entityPosition: LatLng(
-                                                      14.695223067123997,
-                                                      -17.44946546833327)),
-                                            ),
-                                          );
-                                    } else {
-                                      context.read<MapBloc>().add(
-                                            const SetSelectedMapEntity(Bus(
+                                  if (searchHitEntity.entityType == "place") {
+                                    context
+                                        .read<MapBloc>()
+                                        .add(const SetSelectedMapEntity(Place(
+                                          entityName:
+                                              'Ecole supérieure multinationale des télécommunications (ESMT)',
+                                          placeName:
+                                              'Ecole supérieure multinationale des télécommunications (ESMT)',
+                                          entityPosition: LatLng(
+                                              14.700029517700326,
+                                              -17.451019219831917),
+                                        )));
+                                  } else if (searchHitEntity.entityType ==
+                                      "stop") {
+                                    context.read<MapBloc>().add(
+                                          const SetSelectedMapEntity(
+                                            Stop(
                                                 entityName:
-                                                    "Ligne 001 - Dakar Dem Dikk",
-                                                state: BusState.UNKNOWN,
-                                                capacity: 45,
-                                                line: Line(
-                                                  arrival: 'LECLERC',
-                                                  departure:
-                                                      'PARCELLES ASSAINIES',
-                                                  lineNumber: "001",
-                                                  description:
-                                                      'Cette ligne couvre la distance PARCELLES ASSAINIES-LECLERC',
-                                                  rating: 5,
-                                                  fareRange: '200-300',
-                                                  onwardShape: [
-                                                    LatLng(14.76033717791818,
-                                                        -17.438687495664922),
-                                                    LatLng(14.763940762120395,
-                                                        -17.441183406746163),
-                                                    LatLng(14.762826227208505,
-                                                        -17.446516269735618),
-                                                    LatLng(14.75983177074642,
-                                                        -17.44810450812752),
-                                                    LatLng(14.758248455408173,
-                                                        -17.44776497933181),
-                                                    LatLng(14.756328841098107,
-                                                        -17.44733680657224),
-                                                    LatLng(14.754299800845413,
-                                                        -17.446884226197255),
-                                                    LatLng(14.750523231135967,
-                                                        -17.446540219732984),
-                                                    LatLng(14.750049793921685,
-                                                        -17.44799082092741),
-                                                    LatLng(14.7502938867721,
-                                                        -17.44962752085666),
-                                                    LatLng(14.750618183071591,
-                                                        -17.451216308405563),
-                                                    LatLng(14.751908674768655,
-                                                        -17.45432092949277),
-                                                    LatLng(14.751323779488551,
-                                                        -17.45614723355753),
-                                                    LatLng(14.750277612687961,
-                                                        -17.45788510152128),
-                                                    LatLng(14.746394954969995,
-                                                        -17.466588512861758),
-                                                    LatLng(14.744905821864554,
-                                                        -17.46887636539269),
-                                                    LatLng(14.740497732127464,
-                                                        -17.471505759915615),
-                                                    LatLng(14.735673214191454,
-                                                        -17.473247964998105),
-                                                    LatLng(14.729655629460476,
-                                                        -17.472863237737428),
-                                                    LatLng(14.72590576002534,
-                                                        -17.471812771657483),
-                                                    LatLng(14.722566078908324,
-                                                        -17.471226477452866),
-                                                    LatLng(14.719750523903995,
-                                                        -17.47138906188038),
-                                                    LatLng(14.712284520605824,
-                                                        -17.471902590631213),
-                                                    LatLng(14.709249652444962,
-                                                        -17.471284811984475),
-                                                    LatLng(14.70503495422966,
-                                                        -17.470293948214813),
-                                                    LatLng(14.700211986761264,
-                                                        -17.468850235517714),
-                                                    LatLng(14.695885291241627,
-                                                        -17.465384372683875),
-                                                    LatLng(14.69356583153468,
-                                                        -17.46262004957258),
-                                                    LatLng(14.691573627552767,
-                                                        -17.460203620061222),
-                                                    LatLng(14.689322117315578,
-                                                        -17.457816311477483),
-                                                    LatLng(14.686677185172137,
-                                                        -17.45551296891371),
-                                                    LatLng(14.683540150827751,
-                                                        -17.452373935181324),
-                                                    LatLng(14.68151197255026,
-                                                        -17.450238695218715),
-                                                    LatLng(14.679699854072759,
-                                                        -17.4482861599848),
-                                                    LatLng(14.678560024739568,
-                                                        -17.447046170035282),
-                                                    LatLng(14.675097340711405,
-                                                        -17.443518609858753),
-                                                    LatLng(14.670725088433215,
-                                                        -17.440326509804457),
-                                                    LatLng(14.669173822827892,
-                                                        -17.43795000330283),
-                                                    LatLng(14.6693667259859,
-                                                        -17.434781353950044),
-                                                    LatLng(14.669498559521607,
-                                                        -17.432615841203198),
-                                                    LatLng(14.669904854641885,
-                                                        -17.43170395936341),
-                                                    LatLng(14.6742458189469,
-                                                        -17.43261082618835),
-                                                    LatLng(14.673962216827931,
-                                                        -17.43167132154245),
-                                                    LatLng(14.671892986596275,
-                                                        -17.42734131811217),
-                                                    LatLng(14.67212311504506,
-                                                        -17.42733760332219),
-                                                  ],
-                                                  lineId: 1,
-                                                ),
-                                                isAccessible: false,
+                                                    'Arrêt Dardanelles',
+                                                stopName: 'Arrêt Dardanelles',
                                                 entityPosition: LatLng(
-                                                    14.67212311504506,
-                                                    -17.42733760332219))),
-                                            // Ajoutez d'autres éléments de la liste ici
-                                          );
-                                    }
+                                                    14.695223067123997,
+                                                    -17.44946546833327)),
+                                          ),
+                                        );
+                                  } else {
+                                    context.read<MapBloc>().add(
+                                          const SetSelectedMapEntity(Bus(
+                                              entityName:
+                                                  "Ligne 001 - Dakar Dem Dikk",
+                                              state: BusState.UNKNOWN,
+                                              capacity: 45,
+                                              line: Line(
+                                                arrival: 'LECLERC',
+                                                departure:
+                                                    'PARCELLES ASSAINIES',
+                                                lineNumber: "001",
+                                                description:
+                                                    'Cette ligne couvre la distance PARCELLES ASSAINIES-LECLERC',
+                                                rating: 5,
+                                                fareRange: '200-300',
+                                                onwardShape: [
+                                                  LatLng(14.76033717791818,
+                                                      -17.438687495664922),
+                                                  LatLng(14.763940762120395,
+                                                      -17.441183406746163),
+                                                  LatLng(14.762826227208505,
+                                                      -17.446516269735618),
+                                                  LatLng(14.75983177074642,
+                                                      -17.44810450812752),
+                                                  LatLng(14.758248455408173,
+                                                      -17.44776497933181),
+                                                  LatLng(14.756328841098107,
+                                                      -17.44733680657224),
+                                                  LatLng(14.754299800845413,
+                                                      -17.446884226197255),
+                                                  LatLng(14.750523231135967,
+                                                      -17.446540219732984),
+                                                  LatLng(14.750049793921685,
+                                                      -17.44799082092741),
+                                                  LatLng(14.7502938867721,
+                                                      -17.44962752085666),
+                                                  LatLng(14.750618183071591,
+                                                      -17.451216308405563),
+                                                  LatLng(14.751908674768655,
+                                                      -17.45432092949277),
+                                                  LatLng(14.751323779488551,
+                                                      -17.45614723355753),
+                                                  LatLng(14.750277612687961,
+                                                      -17.45788510152128),
+                                                  LatLng(14.746394954969995,
+                                                      -17.466588512861758),
+                                                  LatLng(14.744905821864554,
+                                                      -17.46887636539269),
+                                                  LatLng(14.740497732127464,
+                                                      -17.471505759915615),
+                                                  LatLng(14.735673214191454,
+                                                      -17.473247964998105),
+                                                  LatLng(14.729655629460476,
+                                                      -17.472863237737428),
+                                                  LatLng(14.72590576002534,
+                                                      -17.471812771657483),
+                                                  LatLng(14.722566078908324,
+                                                      -17.471226477452866),
+                                                  LatLng(14.719750523903995,
+                                                      -17.47138906188038),
+                                                  LatLng(14.712284520605824,
+                                                      -17.471902590631213),
+                                                  LatLng(14.709249652444962,
+                                                      -17.471284811984475),
+                                                  LatLng(14.70503495422966,
+                                                      -17.470293948214813),
+                                                  LatLng(14.700211986761264,
+                                                      -17.468850235517714),
+                                                  LatLng(14.695885291241627,
+                                                      -17.465384372683875),
+                                                  LatLng(14.69356583153468,
+                                                      -17.46262004957258),
+                                                  LatLng(14.691573627552767,
+                                                      -17.460203620061222),
+                                                  LatLng(14.689322117315578,
+                                                      -17.457816311477483),
+                                                  LatLng(14.686677185172137,
+                                                      -17.45551296891371),
+                                                  LatLng(14.683540150827751,
+                                                      -17.452373935181324),
+                                                  LatLng(14.68151197255026,
+                                                      -17.450238695218715),
+                                                  LatLng(14.679699854072759,
+                                                      -17.4482861599848),
+                                                  LatLng(14.678560024739568,
+                                                      -17.447046170035282),
+                                                  LatLng(14.675097340711405,
+                                                      -17.443518609858753),
+                                                  LatLng(14.670725088433215,
+                                                      -17.440326509804457),
+                                                  LatLng(14.669173822827892,
+                                                      -17.43795000330283),
+                                                  LatLng(14.6693667259859,
+                                                      -17.434781353950044),
+                                                  LatLng(14.669498559521607,
+                                                      -17.432615841203198),
+                                                  LatLng(14.669904854641885,
+                                                      -17.43170395936341),
+                                                  LatLng(14.6742458189469,
+                                                      -17.43261082618835),
+                                                  LatLng(14.673962216827931,
+                                                      -17.43167132154245),
+                                                  LatLng(14.671892986596275,
+                                                      -17.42734131811217),
+                                                  LatLng(14.67212311504506,
+                                                      -17.42733760332219),
+                                                ],
+                                                lineId: 1,
+                                              ),
+                                              isAccessible: false,
+                                              entityPosition: LatLng(
+                                                  14.67212311504506,
+                                                  -17.42733760332219))),
+                                          // Ajoutez d'autres éléments de la liste ici
+                                        );
                                   }
-                                  context.read<MapBloc>().add(
+                                                                  context.read<MapBloc>().add(
                                       AddSearchHitToCache(
                                           searchHitEntity: searchHitEntity));
                                 },
@@ -5872,7 +7274,7 @@ class _BottomSheetExpandableContentState
                                 : selectedMapEntity is Bus
                                     ? BusInfoDisplayer(
                                         sheetPosition: sheetPosition)
-                                    : selectedMapEntity is MainPlace
+                                    : selectedMapEntity is GiftMapEntity
                                         ? Padding(
                                             padding: const EdgeInsets.symmetric(
                                                 horizontal: 20),
@@ -5882,9 +7284,7 @@ class _BottomSheetExpandableContentState
                                               children: [
                                                 ImageSwiper(
                                                   isLikeable: false,
-                                                  images: (selectedMapEntity!
-                                                          as MainPlace)
-                                                      .photos,
+                                                  images: ["assets/images/gifts_ad_image.png"],
                                                 ),
                                                 Container(
                                                   margin: const EdgeInsets.only(
@@ -5896,12 +7296,12 @@ class _BottomSheetExpandableContentState
                                                       : 39,
                                                   child: Text(
                                                     (selectedMapEntity!
-                                                                as MainPlace)
-                                                            .placeName +
+                                                                as GiftMapEntity)
+                                                            .gift.title +
                                                         " : " +
                                                         (selectedMapEntity!
-                                                                as MainPlace)
-                                                            .shortDescription,
+                                                        as GiftMapEntity)
+                                                            .gift.description,
                                                     style: TextStyle(
                                                         color: AppColors
                                                             .primaryText,
@@ -5934,7 +7334,7 @@ class _BottomSheetExpandableContentState
                                                           .spaceBetween,
                                                   children: [
                                                     Text(
-                                                      "${(selectedMapEntity! as MainPlace).floor}  • ${(selectedMapEntity! as MainPlace).placeType}",
+                                                      "Il ne te reste plus que :",
                                                       style: TextStyle(
                                                           color: AppColors
                                                               .secondaryText,
@@ -5946,42 +7346,8 @@ class _BottomSheetExpandableContentState
                                                               ? 14
                                                               : 13),
                                                     ),
-                                                    Container(
-                                                      padding: const EdgeInsets
-                                                          .symmetric(
-                                                          horizontal: 8,
-                                                          vertical: 2),
-                                                      decoration: BoxDecoration(
-                                                          borderRadius:
-                                                              BorderRadius
-                                                                  .circular(7),
-                                                          border: Border.all(
-                                                              color: (selectedMapEntity!
-                                                                          as MainPlace)
-                                                                      .isOpen
-                                                                  ? AppColors
-                                                                      .bootstrapGreen
-                                                                  : AppColors
-                                                                      .bootstrapRed)),
-                                                      child: Text(
-                                                        (selectedMapEntity!
-                                                                    as MainPlace)
-                                                                .isOpen
-                                                            ? "Ouvert"
-                                                            : "Fermé",
-                                                        style: TextStyle(
-                                                            color: (selectedMapEntity!
-                                                                        as MainPlace)
-                                                                    .isOpen
-                                                                ? AppColors
-                                                                    .bootstrapGreen
-                                                                : AppColors
-                                                                    .bootstrapRed,
-                                                            fontWeight:
-                                                                FontWeight.w400,
-                                                            fontSize: 13),
-                                                      ),
-                                                    ),
+                                                    CountdownTimerWidget(height: 30,)
+
                                                   ],
                                                 ),
                                                 SizedBox(
@@ -5992,55 +7358,12 @@ class _BottomSheetExpandableContentState
                                                       : 20,
                                                 ),
                                                 Material(
-                                                  color: (context
-                                                                      .read<
-                                                                          MapBloc>()
-                                                                      .state
-                                                                      .selectedEntity
-                                                                  as MainPlace)
-                                                              .placeType ==
-                                                          "Salle de classe"
-                                                      ? AppColors.secondaryText
-                                                      : AppColors.primaryColor,
+                                                  color: AppColors.primaryColor,
                                                   borderRadius:
                                                       BorderRadius.circular(17),
                                                   child: InkWell(
                                                     onTap: () {
-                                                      if ((context
-                                                                      .read<
-                                                                          MapBloc>()
-                                                                      .state
-                                                                      .selectedEntity!
-                                                                  as MainPlace)
-                                                              .placeType ==
-                                                          "Laboratoire") {
-                                                        ScaffoldMessenger.of(
-                                                                context)
-                                                            .showSnackBar(
-                                                          buildCustomSnackBar(
-                                                            context,
-                                                            "Fonctionnalité disponible prochainement 😉",
-                                                            SnackBarType.info,
-                                                            showCloseIcon:
-                                                                false,
-                                                          ),
-                                                        );
-                                                      } else if ((context
-                                                                      .read<
-                                                                          MapBloc>()
-                                                                      .state
-                                                                      .selectedEntity!
-                                                                  as MainPlace)
-                                                              .placeType ==
-                                                          "Salle de classe") {
-                                                      } else {
-                                                        widget.toggleDetailsPage(context
-                                                                .read<MapBloc>()
-                                                                .state
-                                                                .selectedEntity
-                                                            as MainPlace);
-                                                      }
-                                                      ;
+                                                      widget.toggleGiftsPage();
                                                     },
                                                     borderRadius:
                                                         BorderRadius.circular(
@@ -6055,7 +7378,7 @@ class _BottomSheetExpandableContentState
                                                                 .center,
                                                         children: [
                                                           Text(
-                                                            "Voir détails",
+                                                            "En savoir plus",
                                                             style: TextStyle(
                                                                 color: Colors
                                                                     .white,
@@ -6084,6 +7407,223 @@ class _BottomSheetExpandableContentState
                                               ],
                                             ),
                                           )
+                                          : selectedMapEntity is MainPlace
+                                                ? Padding(
+                                              padding: const EdgeInsets.symmetric(
+                                                  horizontal: 20),
+                                              child: Column(
+                                                crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                                children: [
+                                                  ImageSwiper(
+                                                    isLikeable: false,
+                                                    images: (selectedMapEntity!
+                                                    as MainPlace)
+                                                        .photos,
+                                                  ),
+                                                  Container(
+                                                    margin: const EdgeInsets.only(
+                                                        top: 10),
+                                                    height: AppConstants
+                                                        .screenWidth <=
+                                                        360
+                                                        ? 15
+                                                        : 39,
+                                                    child: Text(
+                                                      (selectedMapEntity!
+                                                      as MainPlace)
+                                                          .placeName +
+                                                          " : " +
+                                                          (selectedMapEntity!
+                                                          as MainPlace)
+                                                              .shortDescription,
+                                                      style: TextStyle(
+                                                          color: AppColors
+                                                              .primaryText,
+                                                          fontWeight:
+                                                          FontWeight.w400,
+                                                          fontSize: AppConstants
+                                                              .screenWidth >=
+                                                              360
+                                                              ? 14
+                                                              : 13),
+                                                      overflow:
+                                                      TextOverflow.ellipsis,
+                                                      maxLines: AppConstants
+                                                          .screenWidth <=
+                                                          360
+                                                          ? 1
+                                                          : 2,
+                                                    ),
+                                                  ),
+                                                  SizedBox(
+                                                    height: AppConstants
+                                                        .screenWidth <=
+                                                        360
+                                                        ? 5
+                                                        : 8,
+                                                  ),
+                                                  Row(
+                                                    mainAxisAlignment:
+                                                    MainAxisAlignment
+                                                        .spaceBetween,
+                                                    children: [
+                                                      Text(
+                                                        "${(selectedMapEntity! as MainPlace).floor}  • ${(selectedMapEntity! as MainPlace).placeType}",
+                                                        style: TextStyle(
+                                                            color: AppColors
+                                                                .secondaryText,
+                                                            fontWeight:
+                                                            FontWeight.w400,
+                                                            fontSize: AppConstants
+                                                                .screenWidth >=
+                                                                342
+                                                                ? 14
+                                                                : 13),
+                                                      ),
+                                                      Container(
+                                                        padding: const EdgeInsets
+                                                            .symmetric(
+                                                            horizontal: 8,
+                                                            vertical: 2),
+                                                        decoration: BoxDecoration(
+                                                            borderRadius:
+                                                            BorderRadius
+                                                                .circular(7),
+                                                            border: Border.all(
+                                                                color: (selectedMapEntity!
+                                                                as MainPlace)
+                                                                    .isOpen
+                                                                    ? AppColors
+                                                                    .bootstrapGreen
+                                                                    : AppColors
+                                                                    .bootstrapRed)),
+                                                        child: Text(
+                                                          (selectedMapEntity!
+                                                          as MainPlace)
+                                                              .isOpen
+                                                              ? "Ouvert"
+                                                              : "Fermé",
+                                                          style: TextStyle(
+                                                              color: (selectedMapEntity!
+                                                              as MainPlace)
+                                                                  .isOpen
+                                                                  ? AppColors
+                                                                  .bootstrapGreen
+                                                                  : AppColors
+                                                                  .bootstrapRed,
+                                                              fontWeight:
+                                                              FontWeight.w400,
+                                                              fontSize: 13),
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                  SizedBox(
+                                                    height: AppConstants
+                                                        .screenWidth <=
+                                                        360
+                                                        ? 8
+                                                        : 20,
+                                                  ),
+                                                  Material(
+                                                    color: !(context
+                                                        .read<
+                                                        MapBloc>()
+                                                        .state
+                                                        .selectedEntity
+                                                    as MainPlace)
+                                                        .hasDetails
+                                                        ? AppColors.secondaryText
+                                                        : AppColors.primaryColor,
+                                                    borderRadius:
+                                                    BorderRadius.circular(17),
+                                                    child: InkWell(
+                                                      onTap: () {
+
+                                                        FirebaseEngine.logCustomEvent("map_see_details_pressed", {"selected_entity":context
+                                                            .read<
+                                                            MapBloc>()
+                                                            .state
+                                                            .selectedEntity!.entityName});
+
+                                                        if ((context
+                                                            .read<
+                                                            MapBloc>()
+                                                            .state
+                                                            .selectedEntity!
+                                                        as MainPlace)
+                                                            .placeType ==
+                                                            "Laboratoire") {
+                                                          ScaffoldMessenger.of(
+                                                              context)
+                                                              .showSnackBar(
+                                                            buildCustomSnackBar(
+                                                              context,
+                                                              "Fonctionnalité disponible prochainement 😉",
+                                                              SnackBarType.info,
+                                                              showCloseIcon:
+                                                              false,
+                                                            ),
+                                                          );
+                                                        } else if (!(context
+                                                            .read<
+                                                            MapBloc>()
+                                                            .state
+                                                            .selectedEntity!
+                                                        as MainPlace)
+                                                            .hasDetails) {
+                                                        } else {
+                                                          widget.toggleDetailsPage(context
+                                                              .read<MapBloc>()
+                                                              .state
+                                                              .selectedEntity
+                                                          as MainPlace);
+                                                        }
+                                                        ;
+                                                      },
+                                                      borderRadius:
+                                                      BorderRadius.circular(
+                                                          17),
+                                                      child: Padding(
+                                                        padding: const EdgeInsets
+                                                            .symmetric(
+                                                            vertical: 14),
+                                                        child: Row(
+                                                          mainAxisAlignment:
+                                                          MainAxisAlignment
+                                                              .center,
+                                                          children: [
+                                                            Text(
+                                                              "Voir détails",
+                                                              style: TextStyle(
+                                                                  color: Colors
+                                                                      .white,
+                                                                  fontWeight:
+                                                                  FontWeight
+                                                                      .w400,
+                                                                  fontSize:
+                                                                  AppConstants.screenWidth >=
+                                                                      342
+                                                                      ? 15
+                                                                      : 14),
+                                                            ),
+                                                            const SizedBox(
+                                                              width: 7,
+                                                            ),
+                                                            Image.asset(
+                                                              "assets/icons/direction.png",
+                                                              height: 12,
+                                                              width: 12,
+                                                            ),
+                                                          ],
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  )
+                                                ],
+                                              ),
+                                            )
                                         : const NearbyUserInfoDisplayer()
 
                     // : const NearbyUserInfoDisplayer(),

@@ -4,11 +4,14 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:widget_to_marker/widget_to_marker.dart';
+import 'package:yeebus_filthy_mvp/map_feature/domain/model/gift.dart';
+import 'package:yeebus_filthy_mvp/map_feature/domain/use_cases/get_all_gifts_from_remote.dart';
+import 'package:yeebus_filthy_mvp/map_feature/domain/use_cases/sync_gifts_use_case.dart';
 
 import '../../../../core/commons/theme/app_colors.dart';
 import '../../../../core/commons/utils/app_constants.dart';
+import '../../../../core/commons/utils/firebase_engine.dart';
 import '../../../../core/commons/utils/resource.dart';
-import '../../../../core/domain/models/user_position.dart';
 import '../../../domain/model/bus.dart';
 import '../../../domain/model/main_place.dart';
 import '../../../domain/model/place.dart';
@@ -16,6 +19,7 @@ import '../../../domain/model/stop.dart';
 import '../../../domain/model/user_position.dart';
 import '../../../domain/use_cases/add_search_hit_to_cache.dart';
 import '../../../domain/use_cases/algolia_search_use_case.dart';
+import '../../../domain/use_cases/get_all_gifts_from_cache.dart';
 import '../../../domain/use_cases/get_buses_nearby_use_case.dart';
 import '../../../domain/use_cases/get_search_history_from_cache.dart';
 import '../../../domain/use_cases/update_location_use_case.dart';
@@ -37,8 +41,10 @@ class MapBloc extends Bloc<MapEvent, MapState>{
   final _getSearchHistoryFromCacheUseCase = GetSearchHistoryUseCase();
   // Peut-être que les use case n'ont pas nécessairement besoin d'être des singletons
   final _algoliaSearchUseCase = MultimodalSearchUseCase();
+  final _getAllGiftsFromRemoteUseCase = GetAllGiftsFromRemoteUseCase();
+  final _getAllGiftsFromCacheUseCase = GetAllGiftsFromCacheUseCase();
+  final _syncGifts = SyncGiftsUseCase();
   // final _algoliaSearchUseCase = locator.get<MultimodalSearchUseCase>();
-
   // Les mécanismes de fermeture et d'ouverture ne sont pas encore au point pour le update user position
   // tu dois aussi le mettre en place plus proprement pour get buses nearby
   @override
@@ -67,6 +73,11 @@ class MapBloc extends Bloc<MapEvent, MapState>{
     on<SetGoogleMapController>(_setGoogleMapController);
 
 
+    on<GetGifts>(_getGifts);
+
+
+
+    add(GetGifts(isConnectedToInternet: true));
     // Search section :
     // Cet évènement est ce qui ouvre le stream ou en tout cas qui l'écoute, j'ai un doute parce que
     // si on le met là, le stream sera constamment ouvert même quand on ne recherche pas.
@@ -90,6 +101,46 @@ class MapBloc extends Bloc<MapEvent, MapState>{
         }
     ), newMarkerSubset: null));
   }
+
+  // Gifts section :
+
+  void _getGifts(GetGifts event, Emitter<MapState> emit) async {
+    // emit(state.copyWith(isLoading: true)); // Indique le début du chargement.
+
+    await for (final resource in _syncGifts.execute()) {
+      switch (resource.type) {
+        case ResourceType.success:
+          debugPrint("Cadeaux récupérés avec succès : ${resource.data}");
+
+          // Met à jour le state avec la liste des cadeaux.
+          emit(state.copyWith(
+            gifts: resource.data,
+            giftLoading: false, // Fin du chargement.
+          ));
+          debugPrint("Voici les cadeaux du state :" + state.gifts.toString());
+          break;
+
+        case ResourceType.error:
+          debugPrint("Erreur lors de la récupération des cadeaux : ${resource.message}");
+
+          // Met à jour le state en cas d'erreur.
+          // Gérer l'affichage d'un snackbar en cas d'erreur ici
+          emit(state.copyWith(
+            // errorMessage: resource.message,
+            giftLoading: false,
+          ));
+          break;
+
+        case ResourceType.loading:
+          debugPrint("Chargement des cadeaux en cours...");
+          emit(state.copyWith(
+            giftLoading: false,
+          ));
+          break;
+      }
+    }
+  }
+
 
   // Search section :
   void _updatePrompt(UpdatePrompt event, Emitter<MapState> emit) async {
@@ -139,6 +190,7 @@ class MapBloc extends Bloc<MapEvent, MapState>{
     }
 
   }
+
 
 
   void _applyAlgoliaState(ApplyAlgoliaState event, Emitter<MapState> emit) async {
@@ -354,9 +406,12 @@ class MapBloc extends Bloc<MapEvent, MapState>{
           add(UpdatePolylinesSet(newPolyline: newPolyline, newPolylineSubset: null));
 
           // Tu viendras ajouter la line après.
-        }else if(event.newMapEntity is MainPlace){
+        }else if(event.newMapEntity is MainPlace || event.newMapEntity is GiftMapEntity){
 
-          debugPrint("added a MainPlace from bloc");
+
+          FirebaseEngine.logCustomEvent("selected_map_entity", {"entity_id": event.newMapEntity!.entityName});
+
+          debugPrint("added a MainPlace or Gift from bloc");
           emit(state.copyWith(selectedEntity: event.newMapEntity));
 
 
@@ -370,8 +425,6 @@ class MapBloc extends Bloc<MapEvent, MapState>{
     }
 
     // Si dans le futur tu prévois de retirer le marqueur après la recherche, il faudra y remédier.
-
-
 
   }
 
